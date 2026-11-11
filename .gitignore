@@ -1,0 +1,19 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.serena/
+_to_delete/
+# Données personnelles (instantanés, base, relevés, exports) : jamais dans le dépôt, même privé.
+data/
+*.csv
+*.pdf
+*.sqlite
+# Identifiants et sessions : woob les garde dans ~/.config/woob et ~/.config/metabank, hors dépôt.
+*.storage
+.env
+credentials*
+# Configuration locale qui surcharge config/metabank.json (noms de backends, chemins personnels).
+config/local.json
