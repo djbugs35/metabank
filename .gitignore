@@ -6,14 +6,14 @@ __pycache__/
 .ruff_cache/
 .serena/
 _to_delete/
-# Données personnelles (instantanés, base, relevés, exports) : jamais dans le dépôt, même privé.
+# Base Wealthfolio, secrets chiffrés, exports et relevés : données personnelles, jamais dans le dépôt.
 data/
 *.csv
 *.pdf
+*.db
 *.sqlite
-# Identifiants et sessions : woob les garde dans ~/.config/woob et ~/.config/metabank, hors dépôt.
-*.storage
+# Clé secrète et empreinte du mot de passe Wealthfolio (outils/preparer_env.sh).
 .env
+.env.*
+!.env.exemple
 credentials*
-# Configuration locale qui surcharge config/metabank.json (noms de backends, chemins personnels).
-config/local.json

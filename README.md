@@ -1,41 +1,46 @@
 # metabank
 
-Vision globale et analyse de mon patrimoine financier — comptes courants, assurances vie, PER, PEA —
-en local, sans abonnement, avec l'aide de l'IA pour la synthèse. **Lecture seule : aucun ordre n'est jamais passé.**
+Vision globale et analyse de mon patrimoine financier — comptes courants, assurance vie, PER, PEA —
+en local et sans abonnement. Le tableau de bord est [Wealthfolio](https://github.com/wealthfolio/wealthfolio)
+(open source, données sur la machine) ; metabank le déploie et l'alimente. **Lecture seule : aucun ordre n'est jamais passé.**
 
-Plan et jalons : [docs/PLAN.md](docs/PLAN.md). Format des données : [docs/FORMATS.md](docs/FORMATS.md).
+Plan et jalons : [docs/PLAN.md](docs/PLAN.md).
 
-## Installer
+## Lancer Wealthfolio
 
-macOS : double-clic sur `installer.command` (ou `./installer.command`). Windows : `installer.bat`.
-
-L'installeur :
-1. installe uv s'il manque, puis les dépendances (`uv sync`) ;
-2. télécharge les modules woob (`uv run woob config update`) ;
-3. propose de déclarer l'accès BNP (`uv run woob config add bnp`) : identifiant, mot de passe,
-   site « pp » (particuliers). Ces identifiants restent dans `~/.config/woob/backends`, jamais dans ce dépôt ;
-   l'installeur restreint ce fichier à votre seul compte (droits 600).
-
-## Premier inventaire
+Prérequis sur Mac : Docker Desktop lancé, et deux outils :
 
 ```sh
-uv run woob bank list -b bnp
-uv run python -m metabank inventaire --interactif
+brew install argon2 openssl
 ```
 
-La première commande vérifie que woob voit les comptes BNP ; la seconde collecte et écrit l'instantané.
-
-`--interactif` autorise un code SMS ou une validation sur l'application BNP : à utiliser quand vous êtes devant
-l'écran. Sans cette option (tâche planifiée), la collecte s'arrête proprement et dit de relancer en interactif.
-
-La commande affiche chaque compte (type, libellé, quatre derniers chiffres, solde, nombre de supports) et écrit
-un instantané daté dans `data/instantanes/`, ignoré par git.
-
-## Développer
+Puis double-clic sur `lancer.command`, ou :
 
 ```sh
-uv run pytest -q
-uv run ruff check metabank tests && uv run ruff format metabank tests
+./lancer.command
+```
+
+Au premier lancement, `outils/preparer_env.sh` demande un mot de passe pour Wealthfolio et crée `.env`
+(clé secrète et empreinte du mot de passe, droits 600, jamais versionné). Wealthfolio s'ouvre ensuite sur
+http://localhost:8088.
+
+Arrêter :
+
+```sh
+./lancer.command arreter
+```
+
+## Où sont les données
+
+Dans `data/` : la base Wealthfolio (`wealthfolio.db`) et ses secrets chiffrés. Ce dossier n'est jamais versionné :
+c'est lui qu'il faut sauvegarder, avec le fichier `.env` (sans `WF_SECRET_KEY`, les secrets deviennent illisibles).
+
+## Sur le NAS
+
+Le même `compose.yml` tourne sous Container Station. Pour l'ouvrir au réseau local :
+
+```sh
+./outils/preparer_env.sh reseau
 ```
 
 Consignes du projet : [CLAUDE.md](CLAUDE.md).

@@ -1,0 +1,19 @@
+# Wealthfolio, servi en local (Mac ou NAS). Lancement : ./lancer.command, ou « docker compose up -d ».
+# Les variables viennent de .env (créé par outils/preparer_env.sh, jamais versionné).
+services:
+  wealthfolio:
+    # Version figée dans .env (WF_VERSION) : une mise à jour se décide, elle ne tombe pas au redémarrage.
+    image: wealthfolio/wealthfolio:${WF_VERSION:-latest}
+    container_name: wealthfolio
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WF_LISTEN_ADDR: 0.0.0.0:8088
+      WF_DB_PATH: /data/wealthfolio.db
+      WF_STATIC_DIR: dist
+    ports:
+      # 127.0.0.1 par défaut : accessible depuis cette machine seulement. WF_BIND=0.0.0.0 pour le réseau local.
+      - "${WF_BIND:-127.0.0.1}:${WF_PORT:-8088}:8088"
+    volumes:
+      # Dossier du dépôt plutôt qu'un volume Docker : on le voit, on le sauvegarde (base SQLite + secrets chiffrés).
+      - ./data:/data
