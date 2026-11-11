@@ -19,9 +19,11 @@ L'installeur :
 ## Premier inventaire
 
 ```sh
-uv run woob bank list -b bnporc                 # vérifier que woob voit les comptes BNP
+uv run woob bank list -b bnporc
 uv run python -m metabank inventaire --interactif
 ```
+
+La première commande vérifie que woob voit les comptes BNP ; la seconde collecte et écrit l'instantané.
 
 `--interactif` autorise un code SMS ou une validation sur l'application BNP : à utiliser quand vous êtes devant
 l'écran. Sans cette option (tâche planifiée), la collecte s'arrête proprement et dit de relancer en interactif.
