@@ -15,12 +15,12 @@ uv sync || goto :echec
 echo Modules woob...
 uv run woob config update || goto :echec
 
-uv run woob config list 2>nul | findstr /c:"bnporc" >nul
+uv run woob config list 2>nul | findstr /c:"bnp" >nul
 if errorlevel 1 (
   set /p REPONSE="Declarer maintenant votre acces BNP (identifiant, mot de passe, site pp) ? [o/N] "
-  if /i "%REPONSE%"=="o" uv run woob config add bnporc
+  if /i "%REPONSE%"=="o" uv run woob config add bnp
 ) else (
-  echo Acces BNP deja declare ^(backend bnporc^).
+  echo Acces BNP deja declare ^(backend bnp^).
 )
 
 echo.

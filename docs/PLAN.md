@@ -14,7 +14,7 @@ metabank **ne passe jamais d'ordre** : ni virement, ni achat, ni arbitrage. Il l
 ```
  Sources                 Collecte                 Entrepôt                 Analyse            Restitution
  ───────                 ────────                 ────────                 ───────            ───────────
- BNP (courant, AV, PER) ─ woob (bnporc) ─┐
+ BNP (courant, AV, PER) ─ woob (bnp) ─┐
  Trade Republic (PEA)   ─ pytr          ─┼─► instantanés JSON ─► SQLite ─► Python pur ─┬─► tableau de bord local
  Revolut                ─ export CSV    ─┤   (bruts, datés)      (historique) (testé)   └─► rapport Claude (claude -p)
  Autres / manquants     ─ saisie CSV    ─┘
@@ -34,7 +34,7 @@ metabank **ne passe jamais d'ordre** : ni virement, ni achat, ni arbitrage. Il l
 | # | Jalon | Contenu | État |
 |---|---|---|---|
 | 1 | Squelette + woob | dépôt, conventions, modèle commun, collecte BNP via woob, instantané JSON | fait |
-| 2 | Premier inventaire réel | `woob config add bnporc`, collecte sur mes vrais comptes, ajuster la traduction (types, fonds euros) | à faire |
+| 2 | Premier inventaire réel | `woob config add bnp`, collecte sur mes vrais comptes, ajuster la traduction (types, fonds euros) | à faire |
 | 3 | Trade Republic | connecteur pytr (positions et flux du PEA) ; tester d'abord si woob a un module Trade Republic | à faire |
 | 4 | Revolut + saisie manuelle | lecture de l'export CSV Revolut ; CSV de saisie pour ce qu'aucun connecteur n'atteint | à faire |
 | 5 | Entrepôt SQLite | historique des valorisations et des flux, reconstruit depuis les instantanés | à faire |

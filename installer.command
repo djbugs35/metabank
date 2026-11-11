@@ -24,12 +24,12 @@ uv sync || { pause_finale; exit 1; }
 echo "Modules woob…"
 uv run woob config update || { echo "Échec : vérifier la connexion internet."; pause_finale; exit 1; }
 
-if uv run woob config list 2>/dev/null | grep -q bnporc; then
-  echo "Accès BNP déjà déclaré (backend bnporc)."
+if uv run woob config list 2>/dev/null | grep -q bnp; then
+  echo "Accès BNP déjà déclaré (backend bnp)."
 else
   printf 'Déclarer maintenant votre accès BNP (identifiant, mot de passe, site « pp ») ? [o/N] '
   read -r reponse
-  case "$reponse" in o|O|oui) uv run woob config add bnporc ;; esac
+  case "$reponse" in o|O|oui) uv run woob config add bnp ;; esac
 fi
 
 # woob range les mots de passe dans ce fichier : il ne doit être lisible que par vous.

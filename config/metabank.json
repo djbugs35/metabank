@@ -1,11 +1,11 @@
 {
   "_aide": {
-    "woob_backends": "Noms des backends woob à interroger, tels que créés par « uv run woob config add bnporc » (le nom donné à la création ; par défaut celui du module, « bnporc »).",
+    "woob_backends": "Noms des backends woob à interroger, tels que créés par « uv run woob config add bnp » (le nom donné à la création ; par défaut celui du module, « bnp »).",
     "dossier_donnees": "Dossier des données personnelles (instantanés, base). Ignoré par git. Relatif à la racine du dépôt.",
     "dossier_session_woob": "Dossier où metabank garde la session woob (cookies) entre deux collectes, pour limiter les validations sur téléphone. Hors dépôt.",
     "_surcharge": "config/local.json (ignoré par git), s'il existe, remplace clé par clé les valeurs de ce fichier."
   },
-  "woob_backends": ["bnporc"],
+  "woob_backends": ["bnp"],
   "dossier_donnees": "data",
   "dossier_session_woob": "~/.config/metabank"
 }

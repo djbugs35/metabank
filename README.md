@@ -12,14 +12,14 @@ macOS : double-clic sur `installer.command` (ou `./installer.command`). Windows 
 L'installeur :
 1. installe uv s'il manque, puis les dépendances (`uv sync`) ;
 2. télécharge les modules woob (`uv run woob config update`) ;
-3. propose de déclarer l'accès BNP (`uv run woob config add bnporc`) : identifiant, mot de passe,
+3. propose de déclarer l'accès BNP (`uv run woob config add bnp`) : identifiant, mot de passe,
    site « pp » (particuliers). Ces identifiants restent dans `~/.config/woob/backends`, jamais dans ce dépôt ;
    l'installeur restreint ce fichier à votre seul compte (droits 600).
 
 ## Premier inventaire
 
 ```sh
-uv run woob bank list -b bnporc
+uv run woob bank list -b bnp
 uv run python -m metabank inventaire --interactif
 ```
 

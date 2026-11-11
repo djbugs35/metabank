@@ -11,8 +11,8 @@ Photo de tous les comptes d'une source à un instant. Écrit par `metabank/insta
   "date_collecte": "2026-11-11T15:30:00+01:00",
   "comptes": [
     {
-      "source": "woob:bnporc",
-      "identifiant": "bnporc:<id woob>",
+      "source": "woob:bnp",
+      "identifiant": "bnp:<id woob>",
       "libelle": "Multiplacements 2",
       "type_compte": "assurance_vie",
       "solde": "15234.56",

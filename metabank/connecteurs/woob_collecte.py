@@ -1,7 +1,7 @@
 """Collecte des comptes et des supports via woob (frontière réseau du projet).
 
 Les identifiants ne passent jamais par metabank : ils sont dans la configuration de woob
-(« uv run woob config add bnporc »), hors dépôt. metabank ne fait que lire, sans aucun virement ni arbitrage.
+(« uv run woob config add bnp »), hors dépôt. metabank ne fait que lire, sans aucun virement ni arbitrage.
 """
 
 import getpass
