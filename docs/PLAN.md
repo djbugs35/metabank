@@ -34,7 +34,8 @@ metabank **ne passe jamais d'ordre** : ni virement, ni achat, ni arbitrage. Il l
 | # | Jalon | Contenu | État |
 |---|---|---|---|
 | 1 | Squelette + woob | dépôt, conventions, modèle commun, collecte BNP via woob, instantané JSON | fait |
-| 2 | Premier inventaire réel | `woob config add bnp`, collecte sur mes vrais comptes, ajuster la traduction (types, fonds euros) | à faire |
+| 2 | Premier inventaire réel | `woob config add bnp`, collecte sur mes vrais comptes, ajuster la traduction (types, fonds euros) | bloqué (voir ci-dessous) |
+| 2 bis | BNP par relevés | lecture des relevés PDF d'assurance vie et de PER téléchargés depuis l'espace client ; repli CSV trimestriel | à faire |
 | 3 | Trade Republic | connecteur pytr (positions et flux du PEA) ; tester d'abord si woob a un module Trade Republic | à faire |
 | 4 | Revolut + saisie manuelle | lecture de l'export CSV Revolut ; CSV de saisie pour ce qu'aucun connecteur n'atteint | à faire |
 | 5 | Entrepôt SQLite | historique des valorisations et des flux, reconstruit depuis les instantanés | à faire |
@@ -43,6 +44,12 @@ metabank **ne passe jamais d'ordre** : ni virement, ni achat, ni arbitrage. Il l
 | 8 | Tableau de bord | page locale : évolution, allocation, frais, performance par enveloppe | à faire |
 | 9 | Rapport IA | synthèse mensuelle via `claude -p` sur le JSON d'analyse | à faire |
 | 10 | Planification | collecte et rapport automatiques (NAS ou PC), avec repli quand une banque demande une validation | à faire |
+
+## Décisions prises
+- **2026-11-11 — BNP via woob bloqué.** Le pare-feu Akamai de mabanque.bnpparibas répond « Access Denied »
+  (référence errors.edgesuite.net) dès la première requête de woob, avant toute connexion. On ne contourne pas
+  une protection anti-robot de sa banque : BNP passe par ses relevés (jalon 2 bis). Le connecteur woob reste,
+  pour d'autres établissements ou si le module redevient utilisable ; un ticket peut être ouvert chez woob.
 
 ## Décisions à prendre
 - **Tableau de bord** : page statique servie en local comme Égide (bibliothèque de graphiques copiée dans `vendor/`)
