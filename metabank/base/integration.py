@@ -18,8 +18,8 @@ from metabank.base.archives import (
     ecrire_archive,
     lister_archives,
 )
+from metabank.base.ecriture import enregistrer_lot
 from metabank.base.lot import Lot
-from metabank.base.montants import en_centimes
 from metabank.base.schema import ouvrir
 
 FICHIER_BASE = "metabank.db"
@@ -157,39 +157,3 @@ def _journaliser(
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (archive.archivee_le, archive_id, *issue),
     )
-
-
-def enregistrer_lot(connexion: sqlite3.Connection, lot: Lot, archive_id: int | None) -> int:
-    """Rendre le nombre d'opérations ajoutées et de soldes enregistrés ; les opérations déjà connues sont ignorées.
-
-    Un compte déjà en base prend la description du lot le plus récent ; un solde du même jour aussi.
-    Ne valide pas la transaction : c'est à l'appelant de le faire.
-    """
-    for compte in lot.comptes:
-        connexion.execute(
-            "INSERT INTO comptes (cle, titulaire, etablissement, type_compte, numero_masque, libelle, devise) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (cle) DO UPDATE SET titulaire = excluded.titulaire, "
-            "etablissement = excluded.etablissement, type_compte = excluded.type_compte, "
-            "numero_masque = excluded.numero_masque, libelle = excluded.libelle, devise = excluded.devise",
-            (compte.cle, compte.titulaire, compte.etablissement, compte.type_compte, compte.numero_masque,
-             compte.libelle, compte.devise),
-        )  # fmt: skip
-    ids = dict(connexion.execute("SELECT cle, id FROM comptes"))
-    elements = 0
-    for operation in lot.operations:
-        curseur = connexion.execute(
-            "INSERT OR IGNORE INTO operations (compte_id, identifiant, jour, libelle, nature, montant_centimes, "
-            "devise, archive_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (ids[operation.compte_cle], operation.identifiant, operation.jour.isoformat(), operation.libelle,
-             operation.nature, en_centimes(operation.montant), operation.devise, archive_id),
-        )  # fmt: skip
-        elements += curseur.rowcount
-    for solde in lot.soldes:
-        connexion.execute(
-            "INSERT INTO soldes (compte_id, jour, montant_centimes, devise, archive_id) VALUES (?, ?, ?, ?, ?) "
-            "ON CONFLICT (compte_id, jour) DO UPDATE SET montant_centimes = excluded.montant_centimes, "
-            "devise = excluded.devise, archive_id = excluded.archive_id",
-            (ids[solde.compte_cle], solde.jour.isoformat(), en_centimes(solde.montant), solde.devise, archive_id),
-        )
-        elements += 1
-    return elements

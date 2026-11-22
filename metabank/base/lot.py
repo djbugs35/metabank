@@ -5,7 +5,10 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
-# « ****1234 » : au plus quatre chiffres visibles. Un numéro complet ou un IBAN n'entre jamais en base.
+from metabank.releves.modele import Releve
+
+# « ****1234 » : au plus quatre chiffres visibles. Le registre des comptes ne garde jamais de numéro complet ni d'IBAN ;
+# le détail d'un relevé, lui, reste tel que l'assureur l'écrit, comme l'archive dont il vient (data/, jamais versionné).
 NUMERO_MASQUE = re.compile(r"\*+\d{1,4}")
 
 
@@ -49,6 +52,7 @@ class OperationLue:
     libelle: str
     montant: Decimal
     nature: str = ""
+    sous_nature: str = ""
     devise: str = "EUR"
 
 
@@ -63,6 +67,14 @@ class SoldeLu:
 
 
 @dataclass(frozen=True)
+class ReleveLu:
+    """Relevé d'assureur d'un contrat (montants en euros)."""
+
+    compte_cle: str
+    releve: Releve
+
+
+@dataclass(frozen=True)
 class Lot:
     """Tout ce qu'un import apporte ; chaque opération et chaque solde se rattache à un compte du lot."""
 
@@ -70,9 +82,11 @@ class Lot:
     comptes: tuple[CompteLu, ...] = field(default=())
     operations: tuple[OperationLue, ...] = field(default=())
     soldes: tuple[SoldeLu, ...] = field(default=())
+    releves: tuple[ReleveLu, ...] = field(default=())
 
     def __post_init__(self) -> None:
         cles = {c.cle for c in self.comptes}
-        orphelins = ({o.compte_cle for o in self.operations} | {s.compte_cle for s in self.soldes}) - cles
+        rattaches = {e.compte_cle for e in self.operations} | {e.compte_cle for e in self.soldes}
+        orphelins = (rattaches | {e.compte_cle for e in self.releves}) - cles
         if orphelins:
             raise ValueError(f"comptes absents du lot : {', '.join(sorted(orphelins))}")
