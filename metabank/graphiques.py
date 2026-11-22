@@ -108,3 +108,45 @@ def _legende(series: list[Serie]) -> str:
     return '<div class="legende">' + "".join(
         f'<span><i class="pastille {s.classe}"></i>{escape(s.nom)}</span>' for s in series
     ) + "</div>"  # fmt: skip
+
+
+def barres_groupees(titre: str, annees: list[int], series: list[Serie], formater: Callable[[Decimal], str]) -> str:
+    """Rendre un histogramme par année où les séries sont côte à côte, chaque barre avec sa valeur au-dessus."""
+    largeur, hauteur, haut, bas = 600, 230, 24, 26
+    valeurs = [v for s in series for v in s.valeurs if v is not None] or [ZERO]
+    bas_echelle, haut_echelle = min(*valeurs, ZERO), max(*valeurs, ZERO)
+    etendue = (haut_echelle - bas_echelle) or Decimal(1)
+
+    def y(valeur: Decimal) -> float:
+        return haut + float((haut_echelle - valeur) / etendue) * (hauteur - haut - bas)
+
+    pas = largeur / len(annees)
+    barre = min(64, pas * 0.7 / len(series))
+    contenu = [f'<line x1="0" y1="{y(ZERO):.1f}" x2="{largeur}" y2="{y(ZERO):.1f}" class="axe"/>']
+    for rang, annee in enumerate(annees):
+        centre = pas * (rang + 0.5)
+        gauche = centre - barre * len(series) / 2 - ECART_EMPILEMENT * (len(series) - 1) / 2
+        for numero, serie in enumerate(series):
+            valeur = serie.valeurs[rang]
+            if valeur is None:
+                continue
+            x = gauche + numero * (barre + ECART_EMPILEMENT)
+            dessus, dessous = (valeur, ZERO) if valeur >= 0 else (ZERO, valeur)
+            texte = formater(valeur)
+            contenu.append(
+                f'<rect x="{x:.1f}" y="{y(dessus):.1f}" width="{barre:.1f}" height="{max(y(dessous) - y(dessus), 1):.1f}" '
+                f'rx="4" class="{serie.classe}"><title>{escape(serie.nom)} {annee} : {escape(texte)}</title></rect>'
+            )
+            y_texte = y(dessus) - 6 if valeur >= 0 else y(dessous) + 14
+            contenu.append(
+                f'<text x="{x + barre / 2:.1f}" y="{y_texte:.1f}" class="valeur-barre" text-anchor="middle">'
+                f"{escape(texte)}</text>"
+            )
+        contenu.append(
+            f'<text x="{centre:.1f}" y="{hauteur - 6}" class="graduation" text-anchor="middle">{annee}</text>'
+        )
+    return (
+        f'<figure class="graphique"><figcaption>{escape(titre)}</figcaption>{_legende(series)}'
+        f'<svg viewBox="0 0 {largeur} {hauteur}" role="img" aria-label="{escape(titre)}">{"".join(contenu)}</svg>'
+        "</figure>"
+    )

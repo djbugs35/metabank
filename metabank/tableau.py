@@ -12,10 +12,10 @@ from html import escape
 from metabank.bilan import BilanContrat
 from metabank.frais import AnalyseFrais
 from metabank.frais_historique import HistoriqueFrais
-from metabank.graphiques import Serie, histogramme
+from metabank.graphiques import Serie, barres_groupees
 from metabank.rapport import LIBELLES_TYPES, euros, pourcent
 from metabank.rapport_frais import points
-from metabank.synthese import AnneeSynthese, Synthese, synthetiser
+from metabank.synthese import Synthese, synthetiser
 
 ZERO = Decimal(0)
 
@@ -44,7 +44,10 @@ def generer_html(tableau: Tableau) -> str:
         for bilan in sorted(b, key=lambda x: (x.titulaire, -x.valeur))
     )
     blocs.append(f'<div class="bloc"><h2>Par contrat</h2>{contrats}</div>')
-    blocs.append(_section("Les supports, du plus coûteux au moins coûteux", _table_supports(tableau.analyses)))
+    blocs.append(
+        f'<details class="contrat"><summary>Détail des fonds, du plus coûteux au moins coûteux</summary>'
+        f"{_table_supports(tableau.analyses)}</details>"
+    )
     blocs.append(_section("Points d'attention", _points_attention(tableau)))
     return GABARIT.format(date=f"{tableau.genere_le:%d/%m/%Y}", corps="\n".join(blocs))
 
@@ -65,21 +68,22 @@ def _bloc(s: Synthese, niveau_titre: str | None) -> str:
 
 
 def _tuiles(s: Synthese) -> str:
-    gain_pct = s.gain / s.verse if s.verse else None
+    """Rendre les quatre chiffres de la période : versé, valeur, gagné, frais."""
+    gagne_note = ""
+    if s.verse:
+        gagne_note = f"{_signe(s.gain / s.verse * 100)} % sur la période"
+        if s.rendement_annualise is not None:
+            gagne_note += f", soit {pourcent(s.rendement_annualise)} par an"
+    frais = (
+        (euros(s.frais_cumules), f"{_signe(s.frais_cumules / s.verse * 100, False)} % du versé")
+        if s.annees and s.verse
+        else ("—", "inconnus (relevé de situation seul)")
+    )
     tuiles = [
-        ("Valeur", euros(s.valeur), ""),
-        ("Versé", euros(s.verse), ""),
-        ("Gain", euros(s.gain), f"{pourcent(gain_pct)} du versé" if gain_pct is not None else ""),
-        (
-            "Rentabilité annualisée",
-            pourcent(s.rendement_annualise),
-            "⚠ versements incertains" if s.versements_incertains else "par an depuis l'ouverture",
-        ),
-        (
-            ("Frais payés", euros(s.frais_cumules), "depuis l'ouverture, fonds compris")
-            if s.annees
-            else ("Frais payés", "—", "inconnus : relevé de situation seul")
-        ),
+        ("Versé", euros(s.verse), "votre argent placé"),
+        ("Valeur aujourd'hui", euros(s.valeur), ""),
+        ("Gagné, frais déduits", f"{'+' if s.gain >= 0 else ''}{euros(s.gain)}", gagne_note),
+        ("Frais payés", frais[0], frais[1]),
     ]
     contenu = "".join(
         f'<div class="tuile"><div class="etiquette">{escape(e)}</div><div class="valeur">{escape(v)}</div>'
@@ -89,80 +93,32 @@ def _tuiles(s: Synthese) -> str:
     return f'<div class="tuiles">{contenu}</div>'
 
 
+def _signe(nombre: Decimal, avec_plus: bool = True) -> str:
+    texte = f"{nombre:.1f}".replace(".", ",")
+    return f"+{texte}" if avec_plus and nombre >= 0 else texte
+
+
 def _graphiques(s: Synthese) -> str:
     if not s.annees:
-        return "<p class='note'>Relevé de situation seul : pas d'historique année par année.</p>"
+        return ""
     annees = [a.annee for a in s.annees]
-    versements = histogramme(
-        "Versements par année", annees, [Serie("serie-1", "Versé", [a.verse for a in s.annees])], euros
-    )
-    rentabilite = histogramme(
-        "Rentabilité par année (après frais)",
-        annees,
-        [Serie("serie-3", "Rentabilité", [a.rendement for a in s.annees])],
-        pourcent,
-        etiquettes=[_etiquette_rentabilite(a) for a in s.annees],
-        infos=[_info_rentabilite(a) for a in s.annees],
-    )
-    frais = histogramme(
-        "Frais par année",
+    return barres_groupees(
+        "Ce que vous avez gagné et payé en frais, chaque année",
         annees,
         [
-            Serie("serie-1", "Frais du contrat (relevé)", [a.frais_releve for a in s.annees]),
-            Serie("serie-2", "Frais des fonds (estimés)", [a.frais_fonds for a in s.annees]),
+            Serie("serie-3", "Gagné (frais déduits)", [a.gain for a in s.annees]),
+            Serie("serie-2", "Frais payés", [a.frais for a in s.annees]),
         ],
         euros,
     )
-    return f'<div class="graphiques">{versements}{rentabilite}{frais}</div>'
-
-
-def _etiquette_rentabilite(a: AnneeSynthese) -> list[str]:
-    """Rendre « ≈ 8,2 % » ou « 3,3 % · 5 mois », puis le gain exact en euros."""
-    prefixe = "≈ " if a.approximatif else ""
-    duree = f" · {a.duree_mois} mois" if a.duree_mois else ""
-    signe = "+" if a.gain >= 0 else ""
-    return [f"{prefixe}{pourcent(a.rendement)}{duree}", f"{signe}{euros(a.gain)}"]
-
-
-def _info_rentabilite(a: AnneeSynthese) -> str:
-    texte = f"{a.annee} : gain {euros(a.gain)}, rentabilité {pourcent(a.rendement)}"
-    if a.duree_mois:
-        texte += f" sur {a.duree_mois} mois de placement (année d'ouverture)"
-    if a.approximatif:
-        texte += (
-            f" ; entre {pourcent(a.rendement_min)} (versements en janvier) et {pourcent(a.rendement_max)} "
-            "(versements en décembre) : les relevés ne datent pas les versements"
-        )
-    return texte
 
 
 def _notes(s: Synthese) -> str:
     notes = []
-    if any(a.approximatif for a in s.annees):
-        notes.append(
-            "≈ : les versements de l'année sont importants et les relevés ne les datent pas ; rentabilité calculée "
-            "avec des versements en milieu d'année (fourchette au survol). Le gain en euros, lui, est exact."
-        )
-    if any(a.duree_mois for a in s.annees):
-        notes.append("Année d'ouverture : rentabilité réelle sur la durée de placement indiquée, pas sur un an.")
     if s.sans_historique and s.annees:
-        notes.append(
-            "Valeur, versé et gain incluent "
-            + ", ".join(s.sans_historique)
-            + " (relevé de situation seul) ; graphiques et frais non."
-        )
-    if s.situations_dans_rendement:
-        notes.append(
-            "Rentabilité annualisée : pour "
-            + ", ".join(s.situations_dans_rendement)
-            + ", tout le versé est supposé placé à l'ouverture (les dates des versements sont inconnues) ;"
-            " c'est la rentabilité la plus basse possible."
-        )
+        notes.append("Le graphique ne montre pas " + ", ".join(s.sans_historique) + " : pas de relevé année par année.")
     if s.versements_incertains:
-        notes.append(
-            "⚠ Les relevés donnent deux montants différents pour les versements PER d'une année (voir points "
-            "d'attention) : la rentabilité affichée retient le plus petit et peut donc être surestimée."
-        )
+        notes.append("⚠ PER : les relevés donnent deux montants de versements pour 2024 ; le gain peut être surestimé.")
     return "".join(f"<p class='note'>{escape(n)}</p>" for n in notes)
 
 
@@ -238,9 +194,9 @@ ul {{ margin:0; padding-left:20px; }} li {{ margin:4px 0; }}
 <body><main>
 <h1>Patrimoine du foyer</h1>
 <div class="sous-titre">Généré le {date} par metabank, à partir des relevés de data/. Données locales, rien n'est envoyé.
-Survoler un graphique pour le détail.</div>
+Gagné : valeur aujourd'hui moins versé, tous frais déjà déduits.</div>
 {corps}
-<p class="note">Rendements estimés (versements supposés en milieu d'année) ; frais annuels estimés sur la valeur au
-31/12. Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
+<p class="note">Frais : ceux du relevé (exacts) et ceux des fonds, déjà déduits de leur cours (estimés). Rentabilité par an :
+moyenne annuelle depuis l'ouverture. Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
 </main></body></html>
 """

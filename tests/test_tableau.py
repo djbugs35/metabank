@@ -32,7 +32,7 @@ def test_page_contient_les_contrats_et_le_total():
     assert "Patrimoine du foyer" in page
     assert "B · PERP Cardif Essentiel Retraite (Cardif)" in page
     assert "41\u202f400 €" in page  # 21 100 + 20 300
-    assert "Rentabilité par année" in page
+    assert "gagné et payé en frais" in page
 
 
 def test_situation_seule_signalee_dans_les_points_d_attention():
@@ -57,4 +57,4 @@ def test_texte_des_releves_echappe():
 
 def test_frais_inconnus_et_non_nuls_pour_un_releve_de_situation():
     """Un PERP sans relevé annuel affichait « 0 € » de frais : faux, ils sont seulement inconnus."""
-    assert "inconnus : relevé de situation seul" in _page()
+    assert "inconnus (relevé de situation seul)" in _page()
