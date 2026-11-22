@@ -8,7 +8,7 @@ __pycache__/
 .coverage
 htmlcov/
 docs/api/
-.serena/
+# Serena : configuration et mémoires versionnées, cache et réglages locaux ignorés (.serena/.gitignore).
 _to_delete/
 # Base Wealthfolio, secrets chiffrés, exports et relevés : données personnelles, jamais dans le dépôt.
 data/
