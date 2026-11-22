@@ -154,7 +154,7 @@ def test_contexte_de_l_assistant_sans_numero_de_compte(tmp_path):
     dossier = tmp_path / "Alice" / "CC - BNP - 1234"
     dossier.mkdir(parents=True)
     (dossier / "export.csv").write_bytes((EXEMPLES / "bnp_courant.csv").read_bytes())
-    vues, _ = etat_banque(tmp_path)
+    vues, _, _ = etat_banque(tmp_path)
     texte = contexte({"vues": [], "fonds": [], "points": [], "banque": vues})
     assert "Alice · Compte courant BNP" in texte
     assert "1234" not in texte

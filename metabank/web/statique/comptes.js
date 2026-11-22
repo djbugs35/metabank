@@ -1,4 +1,4 @@
-// Onglet « Comptes » : compte courant, Livret A, LDD. Les chiffres viennent de l'API (banque/analyse.py, testé).
+// Onglet « Budget » : comptes courants. Les chiffres viennent de l'API (banque/analyse.py, testé).
 import { barresGroupees, barresHorizontales, courbes, echapper } from "./graphiques.js";
 import { euros, eurosSignes, pct } from "./rendu.js";
 
@@ -13,13 +13,13 @@ const tuile = ([etiquette, valeur, part, note]) =>
    <div class="pct">${echapper(part)}</div><div class="note">${echapper(note)}</div></div>`;
 
 export function afficherComptes(etat) {
-  const comptes = etat.banque ?? [];
+  const comptes = (etat.banque ?? []).filter((c) => c.type === "courant");
   $("comptes-vide").classList.toggle("cache", comptes.length > 0);
   $("comptes-contenu").classList.toggle("cache", !comptes.length);
   if (!comptes.length) return;
   if (!comptes.some((c) => c.id === choisi)) choisi = comptes[0].id;
   const total = comptes.reduce((t, c) => t + c.solde, 0);
-  $("comptes-total").textContent = `Liquidités : ${euros(total)} sur ${comptes.length} compte${comptes.length > 1 ? "s" : ""}`;
+  $("comptes-total").textContent = comptes.length > 1 ? `Comptes courants : ${euros(total)} au total` : "";
   $("choix-compte").replaceChildren(...comptes.map((c) => {
     const b = document.createElement("button");
     b.className = "puce";
@@ -30,13 +30,13 @@ export function afficherComptes(etat) {
   }));
   const compte = comptes.find((c) => c.id === choisi);
   $("compte-periode").textContent = `Du ${dateFr(compte.debut)} au ${dateFr(compte.date_solde)} (${compte.nombre_mois.toFixed(0)} mois), d'après les exports.`;
-  if (compte.type === "courant") afficherCourant(compte); else afficherLivret(compte);
+  afficherCourant(compte);
   $("compte-anomalies").innerHTML = compte.anomalies.map((a) => `<p class="alerte">${echapper(a)}</p>`).join("");
 }
 
 function afficherCourant(c) {
   $("compte-tuiles").innerHTML = [
-    ["Solde", euros(c.solde), pct(c.part_liquidites), `des liquidités ; solde moyen ${euros(c.solde_moyen)}`],
+    ["Solde", euros(c.solde), pct(c.part_liquidites), `des liquidités (comptes et livrets) ; solde moyen ${euros(c.solde_moyen)}`],
     ["Revenus par mois", euros(c.revenus_mois), "100,0 %", "salaires, remboursements et autres entrées"],
     ["Dépenses par mois", euros(c.depenses_mois), pct(c.part_depenses), "des revenus (hors virements entre vos comptes)"],
     ["Épargne placée par mois", euros(c.epargne_mois), pct(c.part_epargne), "des revenus (assurance vie, PER, livrets…)"],
@@ -71,40 +71,6 @@ function afficherCourant(c) {
     .map((f) => `<tr><td>${echapper(f.libelle)}</td><td class="n">${euros(f.montant)}</td></tr>`).join("") || "<tr><td colspan='2'>Aucun.</td></tr>"}</tbody>`;
   $("compte-non-classees").innerHTML = `<thead><tr><th>Libellé</th><th class="n">Nombre</th><th class="n">Montant</th></tr></thead><tbody>${c.non_classees
     .map((o) => `<tr><td>${echapper(o.libelle)}</td><td class="n">${o.nombre}</td><td class="n">${euros(o.montant)}</td></tr>`).join("") || "<tr><td colspan='3'>Tout est classé.</td></tr>"}</tbody>`;
-  $("bloc-courant").classList.remove("cache");
-  $("bloc-livret").classList.add("cache");
-}
-
-function afficherLivret(c) {
-  const verse = c.interets.filter((i) => i.interets !== null).at(-1);
-  const enCours = c.interets.find((i) => i.estimation !== null);
-  const tuiles = [
-    ["Solde", euros(c.solde), pct(c.part_liquidites), "des liquidités"],
-    [`Intérêts ${verse?.annee ?? ""}`, euros(verse?.interets), pct(verse?.taux),
-      `du solde moyen (taux obtenu), pour un taux moyen réglementé de ${pct(verse?.taux_reglemente)}`],
-  ];
-  if (enCours) {
-    tuiles.push([`Intérêts ${enCours.annee} attendus`, `≈ ${euros(enCours.estimation)}`, pct(enCours.taux_reglemente),
-      `taux moyen de l'année ; versés début janvier ${enCours.annee + 1}, si le solde ne bouge pas`]);
-  }
-  if (c.plafond !== null) {
-    tuiles.push(["Plafond des versements", euros(c.plafond), pct(c.part_plafond),
-      c.part_plafond >= 1 ? "atteint : plus de versement possible, les intérêts continuent de s'ajouter"
-        : `encore ${euros(c.plafond - c.solde)} de versements possibles`]);
-  }
-  tuiles.push(["Taux actuel", pct(c.taux_livret_a), "", `depuis le ${dateFr(c.taux_livret_a_depuis)}, net d'impôt`]);
-  $("compte-tuiles").innerHTML = tuiles.map(tuile).join("");
-  afficherSolde(c);
-  $("livret-interets").innerHTML = `<thead><tr><th>Année</th><th class="n">Intérêts</th><th class="n">Solde moyen</th>
-    <th class="n">Taux obtenu</th><th class="n">Taux réglementé moyen</th></tr></thead><tbody>${c.interets
-    .map((i) => `<tr><td>${i.annee}</td>
-      <td class="n">${i.interets !== null ? euros(i.interets) : i.estimation !== null ? `≈ ${euros(i.estimation)} (attendus)` : "—"}</td>
-      <td class="n">${euros(i.solde_moyen)}${i.solde_suppose ? " *" : ""}</td><td class="n">${pct(i.taux)}</td>
-      <td class="n">${pct(i.taux_reglemente)}</td></tr>`).join("")}</tbody>`;
-  $("livret-note").textContent = c.interets.some((i) => i.solde_suppose)
-    ? "* Année antérieure à l'export : solde supposé constant, égal à celui de la veille du versement des intérêts." : "";
-  $("bloc-courant").classList.add("cache");
-  $("bloc-livret").classList.remove("cache");
 }
 
 function afficherSolde(c) {

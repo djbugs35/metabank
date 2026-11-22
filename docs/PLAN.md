@@ -71,4 +71,4 @@ et ne code lui-même que ce qu'aucun ne fait (lecture des relevés d'assureurs, 
 | Export PDF de tout ou partie des synthèses (une page A4 par vue, prénoms masquables) | 7 bis | fait (`metabank web`, bouton « Exporter en PDF ») |
 | Comptes bancaires BNP (courant, Livret A, LDD) : solde, budget, dépenses par catégorie, frais, argent qui dort | 8 | fait (onglet « Comptes », export CSV) |
 | Règles de classement des dépenses modifiables depuis la page | 8 | à faire |
-| Liquidités ajoutées au patrimoine du foyer dans le tableau de bord | 8 | à faire |
+| Patrimoine complet dans le tableau de bord (placements, livrets, comptes courants) et onglet Budget | 8 | fait |

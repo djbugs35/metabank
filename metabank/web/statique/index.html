@@ -13,7 +13,7 @@
     <span class="marque">metabank</span>
     <nav role="tablist">
       <button role="tab" data-onglet="tableau" aria-selected="true">Tableau de bord</button>
-      <button role="tab" data-onglet="comptes" aria-selected="false">Comptes</button>
+      <button role="tab" data-onglet="comptes" aria-selected="false">Budget</button>
       <button role="tab" data-onglet="releves" aria-selected="false">Relevés</button>
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
@@ -42,6 +42,11 @@
     </div>
     <div class="puces" id="choix-contrat"></div>
     <h1 id="titre-vue"></h1>
+    <div id="bloc-patrimoine">
+      <h2>Patrimoine</h2>
+      <div id="patrimoine"></div>
+    </div>
+    <h2 id="titre-placements">Placements : assurance vie, PER, PERP</h2>
     <div class="tuiles" id="tuiles"></div>
     <div class="carte" id="bloc-annees">
       <div class="puces" id="choix-annees"><span class="titre-puces">Années :</span></div>
@@ -51,6 +56,7 @@
       <div class="defile"><table id="table-annees"></table></div>
     </div>
     <div id="notes"></div>
+    <div class="carte" id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="livrets"></div></div>
     <details class="carte"><summary>Fonds de cette vue, du plus coûteux au moins coûteux</summary>
       <div class="defile"><table id="table-fonds"></table></div></details>
     <div class="carte"><h2>Points d'attention</h2><div id="points"></div></div>
@@ -60,11 +66,12 @@
   </section>
 
   <section id="comptes" data-panneau class="cache">
-    <h1>Comptes bancaires</h1>
+    <h1>Budget : compte courant</h1>
+    <p class="discret">Ce qui entre et ce qui sort. Les livrets sont dans le tableau de bord, avec le reste du patrimoine.</p>
     <div id="comptes-vide" class="carte">
-      <p>Aucun compte bancaire pour l'instant. Déposez l'export CSV des opérations (BNP : « Télécharger mes
+      <p>Aucun compte courant pour l'instant. Déposez l'export CSV des opérations (BNP : « Télécharger mes
         opérations ») dans l'onglet Relevés, ou rangez-le dans data/&lt;titulaire&gt;/CC - BNP - &lt;numéro&gt;/
-        (LA pour le Livret A, LDD pour le LDD).</p>
+        (LA pour le Livret A et LDD pour le LDD : ils apparaissent dans le tableau de bord).</p>
     </div>
     <div id="comptes-contenu" class="cache">
       <p class="discret" id="comptes-total"></p>
@@ -84,12 +91,6 @@
           <p class="note">Pour les classer, ajoutez une règle dans data/categories.json, par exemple
             {"regles": [{"motif": "TY VORN", "categorie": "Restaurants"}]}.</p>
           <div class="defile"><table id="compte-non-classees"></table></div></details>
-      </div>
-      <div id="bloc-livret" class="cache">
-        <div class="carte"><h2>Intérêts par année</h2><div class="defile"><table id="livret-interets"></table></div>
-          <p class="note">Taux obtenu : intérêts crédités / solde moyen de l'année. Le taux réglementé s'applique par
-            quinzaine : un versement en cours de quinzaine ne rapporte qu'à partir de la suivante. Les intérêts versés
-            début janvier sont ceux de l'année précédente.</p><p class="note" id="livret-note"></p></div>
       </div>
       <p class="note">Formules : docs/MODELE.md § 7. Éléments d'aide à la décision, pas un conseil financier.</p>
     </div>

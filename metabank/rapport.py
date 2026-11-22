@@ -10,6 +10,12 @@ from metabank.bilan import BilanContrat
 LIBELLES_TYPES = {"assurance_vie": "Assurance vie", "per": "PER", "perp": "PERP", "pea": "PEA", "cto": "CTO"}
 
 
+def nom_contrat(bilan: BilanContrat) -> str:
+    """Rendre « Cédric · PER Pertinence Retraite (Suravenir) » : de quoi reconnaître le contrat sans son numéro."""
+    type_ = LIBELLES_TYPES.get(bilan.type_contrat, bilan.type_contrat)
+    return f"{bilan.titulaire} · {type_} {bilan.produit} ({bilan.assureur})"
+
+
 def euros(montant: Decimal | None) -> str:
     """Rendre « 101 348 € » (arrondi à l'euro, espace fine insécable entre milliers), ou « — »."""
     if montant is None:

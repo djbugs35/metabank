@@ -168,3 +168,10 @@ solde supposé constant, égal à celui de la veille du versement (exact sans mo
 Taux réglementé moyen de Y = moyenne des taux du Livret A (identique pour le LDDS) en vigueur le 1er de chaque
 mois. Intérêts attendus de l'année en cours ≈ solde actuel × taux réglementé moyen de l'année.
 Plafond des versements : 22 950 € (Livret A), 12 000 € (LDDS) ; les intérêts peuvent le dépasser.
+
+## 8. Patrimoine complet (tableau de bord)
+
+Pour le foyer et pour chaque personne : total = Σ valeurs des placements (assurance vie, PER, PERP, au dernier
+relevé) + Σ soldes des livrets (épargne disponible) + Σ soldes des comptes courants (au dernier export).
+Part d'une famille ou d'un compte = son montant / total. Les dates de valeur diffèrent d'un compte à l'autre :
+chacune est affichée.

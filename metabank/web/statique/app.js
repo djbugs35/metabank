@@ -2,7 +2,8 @@
 import { afficherComptes } from "./comptes.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
-  euros, eurosSignes, fondsDeVue, noteSansHistorique, pct, seriesAnnees, tableAnneesHtml, tableFondsHtml, tuilesHtml,
+  euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
+  tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -79,6 +80,15 @@ function afficherTableau() {
     ),
   );
   $("titre-vue").textContent = vue.nom;
+  const patrimoine = etat.patrimoine?.[vue.id];
+  $("bloc-patrimoine").classList.toggle("cache", !patrimoine);
+  if (patrimoine) $("patrimoine").innerHTML = patrimoineHtml(patrimoine);
+  const avecPlacements = vue.verse > 0 || vue.valeur > 0;
+  for (const id of ["titre-placements", "tuiles", "bloc-annees", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
+  $("titre-placements").textContent = vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP";
+  const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
+  $("bloc-livrets").classList.toggle("cache", !livrets.length);
+  if (livrets.length) $("livrets").innerHTML = livretsHtml(livrets);
   afficherTuiles(vue);
   afficherAnnees(vue);
   afficherNotes(vue);
@@ -92,7 +102,7 @@ function afficherTuiles(vue) {
 
 function afficherAnnees(vue) {
   const bloc = $("bloc-annees");
-  bloc.classList.toggle("cache", !vue.annees.length);
+  bloc.classList.toggle("cache", !vue.annees.length || $("tuiles").classList.contains("cache"));
   if (!vue.annees.length) return;
   anneesChoisies ??= new Set(vue.annees.map((a) => a.annee));
   const choix = $("choix-annees");

@@ -41,6 +41,10 @@ def trouver_claude() -> str | None:
 def contexte(etat: dict) -> str:
     """Rendre le texte envoyé avec chaque question : les chiffres de toutes les vues et des fonds."""
     lignes = ["Chiffres calculés par metabank (montants en euros, taux en %) :"]
+    for cle, patrimoine in etat.get("patrimoine", {}).items():
+        qui = "Foyer" if cle == "foyer" else cle.removeprefix("p:")
+        repartition = ", ".join(f"{f['famille']} {_e(f['montant'])} ({_p(f['part'])})" for f in patrimoine["familles"])
+        lignes.append(f"- Patrimoine {qui} : {_e(patrimoine['total'])} = {repartition}")
     for vue in etat["vues"]:
         lignes.append(_ligne_vue(vue))
         lignes.extend(
@@ -55,6 +59,15 @@ def contexte(etat: dict) -> str:
         for f in etat["fonds"]
     )
     for compte in etat.get("banque", []):
+        if compte["type"] != "courant":
+            lignes.append(f"- {compte['court']} : solde {_e(compte['solde'])}, plafond {_e(compte['plafond'])}")
+            lignes.extend(
+                f"    intérêts {i['annee']} : {_e(i['interets'])} (taux obtenu {_p(i['taux'])}, taux réglementé moyen "
+                f"{_p(i['taux_reglemente'])})"
+                for i in compte["interets"]
+                if i["interets"] is not None
+            )
+            continue
         lignes.append(
             f"- {compte['court']} : solde {_e(compte['solde'])}, solde moyen {_e(compte['solde_moyen'])}, "
             f"par mois : revenus {_e(compte['revenus_mois'])}, dépenses {_e(compte['depenses_mois'])} "

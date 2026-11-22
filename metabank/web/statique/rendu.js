@@ -14,7 +14,7 @@ export function tuilesHtml(vue) {
     : `${vue.frais_sur_partie ? "du versé des contrats à relevés annuels" : "du versé, sur toute la période"} ; soit ${pct(vue.frais_par_an)} par an des sommes placées`;
   const tuiles = [
     ["Versé", euros(vue.verse), pct(vue.part_verse), "du versé du foyer"],
-    ["Valeur aujourd'hui", euros(vue.valeur), pct(vue.part_valeur), "du patrimoine du foyer"],
+    ["Valeur aujourd'hui", euros(vue.valeur), pct(vue.part_valeur), "des placements du foyer"],
     ["Gagné, frais déduits", eurosSignes(vue.gain), pct(vue.gain_taux, true),
       `du versé, sur toute la période${vue.gain_par_an === null ? "" : ` ; soit ${pct(vue.gain_par_an, true)} par an`}`],
     ["Frais payés", euros(vue.frais), pct(vue.frais_taux), fraisNote],
@@ -64,3 +64,51 @@ export const MENTION =
   "Gagné : valeur aujourd'hui moins versé, tous frais déjà déduits. Pourcentages de l'année : par rapport aux sommes " +
   "placées dans l'année. Par an : moyenne annuelle depuis l'ouverture. Frais des fonds : estimés. Éléments d'aide à la " +
   "décision, pas un conseil financier.";
+
+const CLASSES_FAMILLES = { "Placements": "serie-1", "Épargne disponible": "serie-3", "Comptes courants": "serie-2" };
+const dateCourte = (iso) => new Date(iso).toLocaleDateString("fr-FR");
+
+// Patrimoine d'une vue : total, une tuile par famille, barre de répartition, liste de tous les comptes.
+export function patrimoineHtml(p, { sansNumero = false } = {}) {
+  const nom = (texte) => (sansNumero ? texte.replace(/\s*\*+\d+/g, "") : texte);
+  const tuiles = [["Patrimoine total", euros(p.total), "100,0 %", "placements, épargne disponible et comptes courants"],
+    ...p.familles.map((f) => [f.famille, euros(f.montant), pct(f.part), f.explication])];
+  let x = 0;
+  const segments = p.familles.map((f) => {
+    const largeur = (f.part ?? 0) * 640;
+    const segment = `<rect x="${x + (x ? 1 : 0)}" y="0" width="${Math.max(largeur - (x ? 1 : 0), 1)}" height="22" rx="4" class="${CLASSES_FAMILLES[f.famille]}"/>`;
+    x += largeur;
+    return segment;
+  }).join("");
+  const legende = p.familles.map((f) => `<span><i class="pastille ${CLASSES_FAMILLES[f.famille]}"></i>${echapper(f.famille)} ${pct(f.part)}</span>`).join("");
+  const lignes = p.lignes.map((l) => `<tr><td>${echapper(nom(l.nom))}</td><td>${echapper(l.famille)}</td>
+    <td class="n">${euros(l.valeur)}</td><td class="n">${pct(l.part)}</td><td class="n">${dateCourte(l.date)}</td></tr>`).join("");
+  return `<div class="tuiles">${tuiles.map(([e, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(e)}</div>
+      <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>
+    <figure class="repartition"><div class="legende">${legende}</div>
+      <svg viewBox="0 0 640 22" preserveAspectRatio="none" role="img" aria-label="Répartition du patrimoine">${segments}</svg></figure>
+    <div class="defile"><table><thead><tr><th>Compte</th><th>Famille</th><th class="n">Valeur</th><th class="n">Part</th>
+      <th class="n">Au</th></tr></thead><tbody>${lignes}</tbody></table></div>`;
+}
+
+// Livrets d'une vue : solde, intérêts de la dernière année versée, intérêts attendus, plafond.
+export function livretsHtml(livrets, { sansNumero = false } = {}) {
+  const nom = (texte) => (sansNumero ? texte.replace(/\s*\*+\d+/g, "") : texte);
+  const lignes = livrets.map((l) => {
+    const verse = l.interets.filter((i) => i.interets !== null).at(-1);
+    const enCours = l.interets.find((i) => i.estimation !== null);
+    return `<tr><td>${echapper(nom(l.nom))}</td><td class="n">${euros(l.solde)}</td>
+      <td class="n">${verse ? `${euros(verse.interets)} (${verse.annee})` : "—"}</td><td class="n">${pct(verse?.taux)}</td>
+      <td class="n">${pct(verse?.taux_reglemente)}</td>
+      <td class="n">${enCours ? `≈ ${euros(enCours.estimation)} (${pct(enCours.taux_reglemente)})` : "—"}</td>
+      <td class="n">${l.plafond === null ? "—" : `${pct(l.part_plafond)} de ${euros(l.plafond)}`}</td></tr>`;
+  }).join("");
+  return `<div class="defile"><table><thead><tr><th>Livret</th><th class="n">Solde</th><th class="n">Intérêts versés</th>
+    <th class="n">Taux obtenu</th><th class="n">Taux réglementé moyen</th><th class="n">Attendus cette année</th>
+    <th class="n">Plafond rempli</th></tr></thead><tbody>${lignes}</tbody></table></div>
+    <p class="note">Intérêts versés début janvier pour l'année précédente. Taux obtenu : intérêts / solde moyen de
+    l'année. Au-delà du plafond, plus de versement possible ; les intérêts continuent de s'ajouter.</p>`;
+}
+
+export const livretsDeVue = (etat, vue) =>
+  (etat.banque ?? []).filter((c) => c.type !== "courant" && (vue.niveau === "foyer" || c.titulaire === vue.nom));

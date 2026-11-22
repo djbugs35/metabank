@@ -6,7 +6,7 @@ from pathlib import Path
 from metabank.banque import lire_comptes
 from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
 from metabank.banque.categories import lire_regles
-from metabank.banque.modele import LIBELLES_TYPES
+from metabank.banque.modele import LIBELLES_TYPES, Compte
 
 ZERO = Decimal(0)
 DOUZE = Decimal(12)
@@ -24,13 +24,13 @@ def _part(montant: Decimal, total: Decimal) -> float | None:
     return _t(montant / total) if total else None
 
 
-def etat_banque(dossier: Path) -> tuple[list[dict], list[str]]:
-    """Rendre une vue par compte bancaire, et les erreurs de lecture des exports."""
+def etat_banque(dossier: Path) -> tuple[list[dict], list[str], list[Compte]]:
+    """Rendre une vue par compte bancaire, les erreurs de lecture des exports, et les comptes eux-mêmes."""
     comptes, erreurs = lire_comptes(dossier)
     regles = lire_regles(dossier)
     analyses = [analyser(compte, regles) for compte in comptes]
     total = sum((a.compte.solde for a in analyses), ZERO)
-    return [_vue(a, total) for a in analyses], erreurs
+    return [_vue(a, total) for a in analyses], erreurs, comptes
 
 
 def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:

@@ -88,3 +88,5 @@ button.action.secondaire { background: var(--surface); color: var(--texte); bord
 .export-vues { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
 .export-vues .personne { margin-left: 16px; } .export-vues .contrat { margin-left: 32px; }
 .carte h2:first-child { margin-top: 0; }
+.repartition { margin: 12px 0 4px; } .repartition svg { height: 22px; }
+#bloc-patrimoine .tuile:first-child { border-color: var(--texte-2); }

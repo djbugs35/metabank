@@ -10,18 +10,13 @@ from metabank.bilan import BilanContrat, faire_bilans
 from metabank.corrections import appliquer_verifications, cle_contrat, lire_corrections, lire_ouvertures
 from metabank.frais import AnalyseFrais, analyser_frais
 from metabank.frais_historique import historiques_frais
-from metabank.rapport import LIBELLES_TYPES
+from metabank.rapport import nom_contrat
 from metabank.releves import lire_dossier
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
+from metabank.web.patrimoine import patrimoines
 
 ZERO = Decimal(0)
-
-
-def nom_contrat(bilan: BilanContrat) -> str:
-    """Rendre « Cédric · PER Pertinence Retraite (Suravenir) » : de quoi reconnaître le contrat sans son numéro."""
-    type_ = LIBELLES_TYPES.get(bilan.type_contrat, bilan.type_contrat)
-    return f"{bilan.titulaire} · {type_} {bilan.produit} ({bilan.assureur})"
 
 
 def etat(dossier) -> dict:
@@ -32,9 +27,9 @@ def etat(dossier) -> dict:
     historiques = historiques_frais(releves)
     analyses = analyser_frais(releves)
     foyer = synthetiser("Foyer", bilans, historiques)
-    banque, erreurs_banque = etat_banque(dossier)
+    banque, erreurs_banque, comptes = etat_banque(dossier)
     vues = [_vue("foyer", "foyer", None, foyer, foyer)]
-    for titulaire in sorted({b.titulaire for b in bilans}):
+    for titulaire in sorted({b.titulaire for b in bilans} | {c.titulaire for c in comptes}):
         des_siens = [b for b in bilans if b.titulaire == titulaire]
         vues.append(_vue(f"p:{titulaire}", "personne", None, synthetiser(titulaire, des_siens, historiques), foyer))
         for bilan in sorted(des_siens, key=lambda b: -b.valeur):
@@ -48,6 +43,7 @@ def etat(dossier) -> dict:
         "points": _points(bilans),
         "erreurs": erreurs + erreurs_banque,
         "banque": banque,
+        "patrimoine": patrimoines(bilans, comptes),
         "corrections": lire_corrections(dossier),
         "titulaires": sorted({p.name for p in dossier.iterdir() if p.is_dir() and not p.name.startswith(".")})
         if dossier.exists()

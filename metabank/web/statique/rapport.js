@@ -1,7 +1,8 @@
 // Rapport à enregistrer en PDF : une page A4 par vue cochée dans l'application (/rapport?vues=foyer,p:Aude&fonds=1).
 import { barresGroupees, echapper } from "./graphiques.js";
 import {
-  MENTION, fondsDeVue, noteSansHistorique, seriesAnnees, euros, tableAnneesHtml, tableFondsHtml, tuilesHtml,
+  MENTION, euros, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, seriesAnnees,
+  tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
 const options = new URLSearchParams(location.search);
@@ -20,6 +21,10 @@ function anonymiser(etat) {
     })),
     fonds: etat.fonds.map((f) => ({ ...f, contrat: remplacer(f.contrat) })),
     points: etat.points.map(remplacer),
+    banque: (etat.banque ?? []).map((c) => ({ ...c, nom: remplacer(c.nom), court: remplacer(c.court), titulaire: remplacer(c.titulaire) })),
+    patrimoine: Object.fromEntries(Object.entries(etat.patrimoine ?? {}).map(([cle, p]) => [cle, {
+      ...p, lignes: p.lignes.map((l) => ({ ...l, nom: remplacer(l.nom), titulaire: remplacer(l.titulaire) })),
+    }])),
   };
 }
 
@@ -28,9 +33,15 @@ function pageVue(etat, vue, rang) {
   section.className = "page-vue";
   const note = noteSansHistorique(vue);
   const fonds = avec("fonds") ? fondsDeVue(etat, vue) : [];
+  const patrimoine = etat.patrimoine?.[vue.id];
+  const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
+  const avecPlacements = vue.verse > 0 || vue.valeur > 0;
   section.innerHTML = `<h2>${echapper(vue.nom)}</h2>
-    <div class="tuiles">${tuilesHtml(vue)}</div>
-    ${vue.annees.length ? `<figure id="graphique-${rang}"></figure><table>${tableAnneesHtml(vue.annees)}</table>` : ""}
+    ${patrimoine ? `<h3>Patrimoine</h3>${patrimoineHtml(patrimoine, { sansNumero: true })}` : ""}
+    ${livrets.length ? `<h3>Épargne disponible : livrets</h3>${livretsHtml(livrets, { sansNumero: true })}` : ""}
+    ${avecPlacements ? `<h3>${vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP"}</h3>
+    <div class="tuiles">${tuilesHtml(vue)}</div>` : ""}
+    ${vue.annees.length && avecPlacements ? `<figure id="graphique-${rang}"></figure><table>${tableAnneesHtml(vue.annees)}</table>` : ""}
     ${note ? `<p class="note">${echapper(note)}</p>` : ""}
     ${fonds.length ? `<h3>Fonds, du plus coûteux au moins coûteux</h3><table class="fonds">${tableFondsHtml(fonds)}</table>` : ""}`;
   return section;
@@ -49,7 +60,7 @@ async function construire() {
     <p class="discret">${echapper(vues.map((v) => v.nom).join(" · "))} — au ${date}, d'après les derniers relevés.</p></header>`;
   vues.forEach((vue, rang) => {
     rapport.append(pageVue(etat, vue, rang));
-    if (vue.annees.length) {
+    if (vue.annees.length && (vue.verse > 0 || vue.valeur > 0)) {
       barresGroupees(document.getElementById(`graphique-${rang}`), {
         titre: "Gagné et frais payés chaque année", annees: vue.annees.map((a) => a.annee),
         series: seriesAnnees(vue.annees), formater: euros,
