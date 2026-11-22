@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from metabank.banque import lire_comptes
-from metabank.banque.analyse import TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
+from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
 from metabank.banque.categories import lire_regles
 from metabank.banque.modele import LIBELLES_TYPES
 
@@ -67,6 +67,8 @@ def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:
         "coussin": _n(a.coussin),
         "manque_a_gagner": _n(a.manque_a_gagner),
         "taux_livret_a": _t(TAUX_LIVRET_A),
+        "plafond": _n(PLAFONDS.get(c.type_compte)),
+        "part_plafond": _part(c.solde, PLAFONDS[c.type_compte]) if c.type_compte in PLAFONDS else None,
         "taux_livret_a_depuis": TAUX_LIVRET_A_DEPUIS.isoformat(),
         "mois": [
             {
@@ -86,8 +88,16 @@ def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:
         "frais_detail": [{"libelle": l, "montant": _n(m)} for l, m in a.detail_frais],
         "non_classees": [{"libelle": l, "montant": _n(m), "nombre": n} for l, m, n in a.non_classees],
         "interets": [
-            {"annee": annee, "interets": _n(i), "solde_moyen": _n(moy), "taux": _part(i, moy)}
-            for annee, i, moy in a.interets_par_an
+            {
+                "annee": i.annee,
+                "interets": _n(i.interets),
+                "solde_moyen": _n(i.solde_moyen),
+                "taux": _t(i.taux_obtenu),
+                "taux_reglemente": _t(i.taux_reglemente_moyen),
+                "solde_suppose": i.solde_moyen_suppose,
+                "estimation": _n(i.estimation),
+            }
+            for i in a.interets_par_an
         ],
         "anomalies": list(c.anomalies),
     }

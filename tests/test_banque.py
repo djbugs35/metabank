@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from metabank.banque import fusionner, lire_comptes
-from metabank.banque.analyse import TAUX_LIVRET_A, analyser
+from metabank.banque.analyse import TAUX_LIVRET_A, analyser, taux_moyen_annee
 from metabank.banque.bnp import ExportIllisible, decoder, lire_export_bnp
 from metabank.banque.categories import DEPENSE, INTERNE, REVENU, classer
 from metabank.web.assistant import contexte
@@ -106,10 +106,27 @@ def test_argent_qui_dort_au_dela_de_deux_mois_de_depenses():
 
 def test_interets_du_livret_et_taux_obtenu():
     analyse = analyser(_compte("bnp_livret.csv", "livret_a"), [])
-    annee, interets, moyenne = analyse.interets_par_an[0]
-    assert (annee, interets) == (2025, Decimal("150.00"))
-    assert moyenne == pytest.approx(Decimal("10000.41"), abs=Decimal("0.01"))
+    annee = analyse.interets_par_an[0]
+    assert (annee.annee, annee.interets) == (2025, Decimal("150.00"))
+    assert annee.solde_moyen == pytest.approx(Decimal("10000.41"), abs=Decimal("0.01"))
     assert analyse.argent_qui_dort == 0
+
+
+def test_interets_verses_en_janvier_comptes_pour_l_annee_precedente():
+    """Export BNP réel : un seul mouvement, « REMUNERATION NETTE » le 01/01/2026, qui rémunère 2025."""
+    texte = "LA Alice;LA Alice;****1229;20/11/2026;;10 200,00\n01/01/2026;;; REMUNERATION NETTE;200,00\n"
+    compte = fusionner("Alice", "BNP", "livret_a", [lire_export_bnp(texte, "la.csv")])
+    annees = {i.annee: i for i in analyser(compte, []).interets_par_an}
+    assert annees[2025].interets == Decimal("200.00")
+    assert annees[2025].solde_moyen_suppose is True
+    assert annees[2025].taux_obtenu == Decimal("0.02")
+    assert annees[2026].interets is None
+    assert annees[2026].estimation == Decimal("10200.00") * taux_moyen_annee(2026)
+
+
+def test_taux_moyen_reglemente_d_une_annee():
+    assert taux_moyen_annee(2025) == (Decimal("0.030") + 6 * Decimal("0.024") + 5 * Decimal("0.017")) / 12
+    assert taux_moyen_annee(2024) == Decimal("0.030")
 
 
 def test_comptes_lus_depuis_les_dossiers_cc_la_ldd(tmp_path):

@@ -9,10 +9,22 @@ from metabank.banque.categories import DEPENSE, EPARGNE, INTERNE, REVENU, Operat
 from metabank.banque.modele import Compte
 
 ZERO = Decimal(0)
-# Taux du Livret A et du LDDS depuis le 1er août 2026 (info.gouv.fr) : repère du « manque à gagner » d'un solde
-# dormant. À mettre à jour à chaque changement de taux (1er février et 1er août).
-TAUX_LIVRET_A = Decimal("0.017")
-TAUX_LIVRET_A_DEPUIS = date(2026, 8, 1)
+# Taux du Livret A, identique pour le LDDS : (date d'effet, taux annuel net). Sources : economie.gouv.fr,
+# info.gouv.fr. À compléter à chaque changement (1er février et 1er août).
+TAUX_REGLEMENTES = (
+    (date(2022, 8, 1), Decimal("0.020")),
+    (date(2023, 2, 1), Decimal("0.030")),
+    (date(2025, 2, 1), Decimal("0.024")),
+    (date(2025, 8, 1), Decimal("0.017")),
+    (date(2026, 2, 1), Decimal("0.015")),
+    (date(2026, 8, 1), Decimal("0.017")),
+)
+TAUX_LIVRET_A_DEPUIS, TAUX_LIVRET_A = TAUX_REGLEMENTES[-1]
+# Intérêts d'un livret : calculés au 31/12 et crédités au tout début de janvier ; avant le 16, ils sont ceux de
+# l'année précédente (relevé BNP : « REMUNERATION NETTE » le 01/01/2026 pour 2025).
+JOUR_LIMITE_INTERETS_JANVIER = 15
+# Plafond des versements (service-public.fr) ; les intérêts peuvent le dépasser, pas les versements.
+PLAFONDS = {"livret_a": Decimal(22950), "ldd": Decimal(12000)}
 # Coussin laissé sur le compte courant avant de parler d'argent qui dort : deux mois de dépenses.
 MOIS_DE_COUSSIN = 2
 INTERETS = ("INTERET", "REMUNERATION")
@@ -47,7 +59,7 @@ class AnalyseCompte:
     frais_bancaires: Decimal
     detail_frais: tuple[tuple[str, Decimal], ...]
     non_classees: tuple[tuple[str, Decimal, int], ...]
-    interets_par_an: tuple[tuple[int, Decimal, Decimal], ...]
+    interets_par_an: tuple["InteretsAnnee", ...]
 
     @property
     def nombre_mois(self) -> Decimal:
@@ -75,6 +87,35 @@ class AnalyseCompte:
     def manque_a_gagner(self) -> Decimal:
         """Rendre ce que l'argent qui dort rapporterait par an au taux du Livret A, en euros."""
         return self.argent_qui_dort * TAUX_LIVRET_A
+
+
+@dataclass(frozen=True)
+class InteretsAnnee:
+    """Intérêts d'un livret pour une année, en euros ; taux en fractions. MODELE § 7.6."""
+
+    annee: int
+    interets: Decimal | None
+    solde_moyen: Decimal
+    taux_reglemente_moyen: Decimal | None
+    solde_moyen_suppose: bool
+    estimation: Decimal | None
+
+    @property
+    def taux_obtenu(self) -> Decimal | None:
+        """Rendre intérêts / solde moyen, ou None si les intérêts ne sont pas encore versés."""
+        return self.interets / self.solde_moyen if self.interets is not None and self.solde_moyen else None
+
+
+def taux_au(jour: date) -> Decimal | None:
+    """Rendre le taux du Livret A en vigueur ce jour-là, ou None avant le premier taux connu."""
+    connus = [taux for debut, taux in TAUX_REGLEMENTES if debut <= jour]
+    return connus[-1] if connus else None
+
+
+def taux_moyen_annee(annee: int) -> Decimal | None:
+    """Rendre la moyenne des taux en vigueur le 1er de chaque mois de l'année (les changements tombent le 1er)."""
+    taux = [taux_au(date(annee, mois, 1)) for mois in range(1, 13)]
+    return None if None in taux else sum(taux, ZERO) / 12
 
 
 def analyser(compte: Compte, regles_perso: list[tuple[str, str]]) -> AnalyseCompte:
@@ -165,17 +206,37 @@ def _non_classees(classees: list[OperationClassee]) -> list[tuple[str, Decimal, 
     return sorted(((l, sum(m, ZERO), len(m)) for l, m in groupes.items()), key=lambda t: -t[1])[:30]
 
 
-def _interets(compte: Compte, debut: date) -> list[tuple[int, Decimal, Decimal]]:
-    """Rendre, pour un livret, (année, intérêts crédités, solde moyen de l'année). MODELE § 7.6."""
+def _annee_des_interets(jour: date) -> int:
+    return jour.year - 1 if jour.month == 1 and jour.day <= JOUR_LIMITE_INTERETS_JANVIER else jour.year
+
+
+def _interets(compte: Compte, debut: date) -> list[InteretsAnnee]:
+    """Rendre, pour un livret, les intérêts de chaque année et le solde moyen qui les a produits. MODELE § 7.6.
+
+    Le solde moyen d'une année se calcule sur ses jours couverts par l'export. Si aucun ne l'est (intérêts de
+    l'année passée crédités en janvier), il est supposé égal au solde de la veille du versement : c'est exact
+    sans mouvement dans l'année, à vérifier sinon.
+    """
     if compte.type_compte == "courant":
         return []
+    versements: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    veille: dict[int, date] = {}
+    for o in compte.operations:
+        if o.montant > 0 and any(m in o.libelle.upper() for m in INTERETS):
+            annee = _annee_des_interets(o.jour)
+            versements[annee] += o.montant
+            veille.setdefault(annee, o.jour - timedelta(days=1))
     resultat = []
-    for annee in range(debut.year, compte.date_solde.year + 1):
-        interets = sum((o.montant for o in compte.operations
-                        if o.jour.year == annee and o.montant > 0 and any(m in o.libelle.upper() for m in INTERETS)),
-                       ZERO)  # fmt: skip
+    for annee in range(min([debut.year, *versements]), compte.date_solde.year + 1):
         premier, dernier = max(date(annee, 1, 1), debut), min(date(annee, 12, 31), compte.date_solde)
-        jours = (dernier - premier).days + 1
-        moyenne = sum((_solde_au(compte, premier + timedelta(days=r)) for r in range(jours)), ZERO) / jours
-        resultat.append((annee, interets, moyenne))
+        suppose = premier > dernier
+        if suppose:
+            moyenne = _solde_au(compte, veille.get(annee, debut - timedelta(days=1)))
+        else:
+            jours = (dernier - premier).days + 1
+            moyenne = sum((_solde_au(compte, premier + timedelta(days=r)) for r in range(jours)), ZERO) / jours
+        taux = taux_moyen_annee(annee)
+        interets = versements.get(annee)
+        estimation = compte.solde * taux if interets is None and annee == compte.date_solde.year and taux else None
+        resultat.append(InteretsAnnee(annee, interets, moyenne, taux, suppose, estimation))
     return resultat

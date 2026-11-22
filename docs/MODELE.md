@@ -161,5 +161,10 @@ compte courant seulement. Manque à gagner par an = argent qui dort × taux du L
 1er août 2026). Repère, pas une prévision : le taux change le 1er février et le 1er août.
 
 ### 7.6 Livrets
-Intérêts de l'année = Σ des entrées dont le libellé contient « INTERET » ou « REMUNERATION ». Taux obtenu =
-intérêts / solde moyen de l'année (7.3). Il est un peu inférieur au taux réglementé, calculé par quinzaine.
+Intérêts de l'année Y = Σ des entrées dont le libellé contient « INTERET » ou « REMUNERATION », datées de Y ou
+du 1er au 15 janvier de Y + 1 (la banque les crédite début janvier : BNP, « REMUNERATION NETTE » au 01/01).
+Taux obtenu = intérêts / solde moyen de Y (7.3), sur les jours de Y couverts par l'export ; si aucun ne l'est,
+solde supposé constant, égal à celui de la veille du versement (exact sans mouvement dans l'année).
+Taux réglementé moyen de Y = moyenne des taux du Livret A (identique pour le LDDS) en vigueur le 1er de chaque
+mois. Intérêts attendus de l'année en cours ≈ solde actuel × taux réglementé moyen de l'année.
+Plafond des versements : 22 950 € (Livret A), 12 000 € (LDDS) ; les intérêts peuvent le dépasser.
