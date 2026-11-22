@@ -2,7 +2,7 @@
 import { afficherComptes } from "./comptes.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
-  euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
+  epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
   tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
@@ -89,6 +89,8 @@ function afficherTableau() {
   const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
   $("bloc-livrets").classList.toggle("cache", !livrets.length);
   if (livrets.length) $("livrets").innerHTML = livretsHtml(livrets);
+  const epargne = etat.epargne?.[vue.id];
+  $("epargne").innerHTML = epargne && livrets.length ? epargneHtml(epargne) : "";
   afficherTuiles(vue);
   afficherAnnees(vue);
   afficherNotes(vue);

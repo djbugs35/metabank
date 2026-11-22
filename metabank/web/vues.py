@@ -14,6 +14,7 @@ from metabank.rapport import nom_contrat
 from metabank.releves import lire_dossier
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
+from metabank.web.epargne import syntheses_epargne
 from metabank.web.patrimoine import patrimoines
 
 ZERO = Decimal(0)
@@ -28,6 +29,7 @@ def etat(dossier) -> dict:
     analyses = analyser_frais(releves)
     foyer = synthetiser("Foyer", bilans, historiques)
     banque, erreurs_banque, comptes = etat_banque(dossier)
+    patrimoine = patrimoines(bilans, comptes)
     vues = [_vue("foyer", "foyer", None, foyer, foyer)]
     for titulaire in sorted({b.titulaire for b in bilans} | {c.titulaire for c in comptes}):
         des_siens = [b for b in bilans if b.titulaire == titulaire]
@@ -43,7 +45,8 @@ def etat(dossier) -> dict:
         "points": _points(bilans),
         "erreurs": erreurs + erreurs_banque,
         "banque": banque,
-        "patrimoine": patrimoines(bilans, comptes),
+        "patrimoine": patrimoine,
+        "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": lire_corrections(dossier),
         "titulaires": sorted({p.name for p in dossier.iterdir() if p.is_dir() and not p.name.startswith(".")})
         if dossier.exists()

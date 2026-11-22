@@ -112,3 +112,18 @@ export function livretsHtml(livrets, { sansNumero = false } = {}) {
 
 export const livretsDeVue = (etat, vue) =>
   (etat.banque ?? []).filter((c) => c.type !== "courant" && (vue.niveau === "foyer" || c.titulaire === vue.nom));
+
+// Synthèse de l'épargne disponible d'une vue : quatre chiffres, chacun en euros et en pourcentage.
+export function epargneHtml(e) {
+  const tuiles = [
+    ["Épargne disponible", euros(e.solde), pct(e.part_patrimoine), `du patrimoine ; ${e.nombre} livret${e.nombre > 1 ? "s" : ""}, disponibles à tout moment`],
+    [`Intérêts ${e.annee_interets ?? ""}`, euros(e.interets), pct(e.taux_obtenu),
+      `taux obtenu, pour un taux réglementé moyen de ${pct(e.taux_reglemente)}`],
+    [`Intérêts ${e.annee_attendue ?? ""} attendus`, e.attendus === null ? "—" : `≈ ${euros(e.attendus)}`, pct(e.taux_attendu),
+      `taux moyen de l'année ; versés début janvier, si les soldes ne bougent pas`],
+    ["Plafonds", euros(e.plafond), pct(e.part_plafond),
+      e.versements_possibles > 0 ? `remplis ; encore ${euros(e.versements_possibles)} de versements possibles` : "remplis : plus de versement possible"],
+  ];
+  return `<div class="tuiles">${tuiles.map(([t, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(t)}</div>
+    <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>`;
+}

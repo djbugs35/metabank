@@ -174,6 +174,12 @@ Avec plusieurs comptes courants (personnels, commun, locatif), un compte fictif 
 bout à bout, solde = Σ soldes. Les virements entre ces comptes sont « interne » (7.2) et s'annulent : seuls
 restent les revenus et dépenses du foyer avec l'extérieur.
 
+### 7.8 Synthèse de l'épargne disponible (tableau de bord)
+Pour le foyer et chaque personne : solde = Σ soldes des livrets, part du patrimoine (§ 8). Intérêts de la dernière
+année versée = Σ intérêts de cette année ; taux obtenu = intérêts / Σ soldes moyens de l'année (7.6), comparé au
+taux réglementé moyen. Intérêts attendus de l'année en cours = Σ estimations (7.6). Plafonds : rempli =
+Σ min(solde, plafond) / Σ plafonds ; versements encore possibles = Σ plafonds − Σ min(solde, plafond).
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : total = Σ valeurs des placements (assurance vie, PER, PERP, au dernier

@@ -1,7 +1,7 @@
 // Rapport à enregistrer en PDF : une page A4 par vue cochée dans l'application (/rapport?vues=foyer,p:Aude&fonds=1).
 import { barresGroupees, echapper } from "./graphiques.js";
 import {
-  MENTION, euros, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, seriesAnnees,
+  MENTION, epargneHtml, euros, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, seriesAnnees,
   tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
@@ -38,7 +38,8 @@ function pageVue(etat, vue, rang) {
   const avecPlacements = vue.verse > 0 || vue.valeur > 0;
   section.innerHTML = `<h2>${echapper(vue.nom)}</h2>
     ${patrimoine ? `<h3>Patrimoine</h3>${patrimoineHtml(patrimoine, { sansNumero: true })}` : ""}
-    ${livrets.length ? `<h3>Épargne disponible : livrets</h3>${livretsHtml(livrets, { sansNumero: true })}` : ""}
+    ${livrets.length ? `<h3>Épargne disponible : livrets</h3>${etat.epargne?.[vue.id] ? epargneHtml(etat.epargne[vue.id]) : ""}
+      ${livretsHtml(livrets, { sansNumero: true })}` : ""}
     ${avecPlacements ? `<h3>${vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP"}</h3>
     <div class="tuiles">${tuilesHtml(vue)}</div>` : ""}
     ${vue.annees.length && avecPlacements ? `<figure id="graphique-${rang}"></figure><table>${tableAnneesHtml(vue.annees)}</table>` : ""}
