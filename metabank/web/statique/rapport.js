@@ -1,7 +1,7 @@
 // Rapport à enregistrer en PDF : une page A4 par vue cochée dans l'application (/rapport?vues=foyer,p:Aude&fonds=1).
 import { barresGroupees, echapper } from "./graphiques.js";
 import {
-  MENTION, epargneHtml, euros, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, seriesAnnees,
+  MENTION, creditsDeVue, creditsHtml, epargneHtml, euros, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, seriesAnnees,
   tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
@@ -21,6 +21,7 @@ function anonymiser(etat) {
     })),
     fonds: etat.fonds.map((f) => ({ ...f, contrat: remplacer(f.contrat) })),
     points: etat.points.map(remplacer),
+    credits: (etat.credits ?? []).map((c) => ({ ...c, nom: remplacer(c.nom), titulaire: remplacer(c.titulaire) })),
     banque: (etat.banque ?? []).map((c) => ({ ...c, nom: remplacer(c.nom), court: remplacer(c.court), titulaire: remplacer(c.titulaire) })),
     patrimoine: Object.fromEntries(Object.entries(etat.patrimoine ?? {}).map(([cle, p]) => [cle, {
       ...p, lignes: p.lignes.map((l) => ({ ...l, nom: remplacer(l.nom), titulaire: remplacer(l.titulaire) })),
@@ -40,6 +41,7 @@ function pageVue(etat, vue, rang) {
     ${patrimoine ? `<h3>Patrimoine</h3>${patrimoineHtml(patrimoine, { sansNumero: true })}` : ""}
     ${livrets.length ? `<h3>Épargne disponible : livrets</h3>${etat.epargne?.[vue.id] ? epargneHtml(etat.epargne[vue.id]) : ""}
       ${livretsHtml(livrets, { sansNumero: true })}` : ""}
+    ${(vue.niveau !== "contrat" && creditsDeVue(etat, vue).length) ? `<h3>Crédits immobiliers</h3>${creditsHtml(creditsDeVue(etat, vue), etat.synthese_credits, patrimoine?.part_credits, { sansNumero: true })}` : ""}
     ${avecPlacements ? `<h3>${vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP"}</h3>
     <div class="tuiles">${tuilesHtml(vue)}</div>` : ""}
     ${vue.annees.length && avecPlacements ? `<figure id="graphique-${rang}"></figure><table>${tableAnneesHtml(vue.annees)}</table>` : ""}

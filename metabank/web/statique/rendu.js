@@ -65,14 +65,20 @@ export const MENTION =
   "placées dans l'année. Par an : moyenne annuelle depuis l'ouverture. Frais des fonds : estimés. Éléments d'aide à la " +
   "décision, pas un conseil financier.";
 
-const CLASSES_FAMILLES = { "Placements": "serie-1", "Épargne disponible": "serie-3", "Comptes courants": "serie-2" };
+const CLASSES_FAMILLES = { "Placements": "serie-1", "Épargne disponible": "serie-3", "Comptes courants": "serie-2", "Immobilier": "serie-4" };
 const dateCourte = (iso) => new Date(iso).toLocaleDateString("fr-FR");
 
 // Patrimoine d'une vue : total, une tuile par famille, barre de répartition, liste de tous les comptes.
 export function patrimoineHtml(p, { sansNumero = false } = {}) {
   const nom = (texte) => (sansNumero ? texte.replace(/\s*\*+\d+/g, "") : texte);
-  const tuiles = [["Patrimoine total", euros(p.total), "100,0 %", "placements, épargne disponible et comptes courants"],
-    ...p.familles.map((f) => [f.famille, euros(f.montant), pct(f.part), f.explication])];
+  const avecCredits = p.credits > 0;
+  const tuiles = avecCredits
+    ? [["Patrimoine net", p.credits_sans_bien ? "—" : euros(p.net), p.credits_sans_bien ? "" : pct(p.total ? p.net / p.total : null),
+        p.credits_sans_bien ? "actifs moins crédits : saisissez la valeur de vos biens dans Corrections" : "des actifs, une fois les crédits déduits"],
+       ["Actifs", euros(p.total), "100,0 %", "tout ce que vous possédez"]]
+    : [["Patrimoine total", euros(p.total), "100,0 %", "placements, épargne disponible et comptes courants"]];
+  tuiles.push(...p.familles.map((f) => [f.famille, euros(f.montant), pct(f.part), `des actifs ; ${f.explication}`]));
+  if (avecCredits) tuiles.push(["Crédits restant dus", `−${euros(p.credits)}`, pct(p.part_credits), "des actifs ; capital restant à rembourser"]);
   let x = 0;
   const segments = p.familles.map((f) => {
     const largeur = (f.part ?? 0) * 640;
@@ -82,7 +88,7 @@ export function patrimoineHtml(p, { sansNumero = false } = {}) {
   }).join("");
   const legende = p.familles.map((f) => `<span><i class="pastille ${CLASSES_FAMILLES[f.famille]}"></i>${echapper(f.famille)} ${pct(f.part)}</span>`).join("");
   const lignes = p.lignes.map((l) => `<tr><td>${echapper(nom(l.nom))}</td><td>${echapper(l.famille)}</td>
-    <td class="n">${euros(l.valeur)}</td><td class="n">${pct(l.part)}</td><td class="n">${dateCourte(l.date)}</td></tr>`).join("");
+    <td class="n">${l.valeur < 0 ? `−${euros(-l.valeur)}` : euros(l.valeur)}</td><td class="n">${pct(l.part)}</td><td class="n">${dateCourte(l.date)}</td></tr>`).join("");
   return `<div class="tuiles">${tuiles.map(([e, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(e)}</div>
       <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>
     <figure class="repartition"><div class="legende">${legende}</div>
@@ -127,3 +133,34 @@ export function epargneHtml(e) {
   return `<div class="tuiles">${tuiles.map(([t, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(t)}</div>
     <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>`;
 }
+
+const moisAnnee = (iso) => (iso ? new Date(iso).toLocaleDateString("fr-FR", { month: "long", year: "numeric" }) : "—");
+
+// Crédits d'une vue : synthèse en quatre chiffres (euros et pourcentage) et détail par prêt.
+export function creditsHtml(credits, synthese, partActifs, { sansNumero = false } = {}) {
+  const nom = (texte) => (sansNumero ? texte.replace(/\s*\*+\d+/g, "") : texte);
+  const capital = credits.reduce((t, c) => t + c.capital_restant, 0);
+  const mensualites = credits.reduce((t, c) => t + (c.mensualite_prelevee ?? c.mensualite ?? 0), 0);
+  const interets = credits.reduce((t, c) => t + (c.interets_restants ?? 0), 0);
+  const unSeul = credits.length === 1 ? credits[0] : null;
+  const tuiles = [
+    ["Capital restant dû", euros(capital), pct(partActifs), "des actifs"],
+    ["Mensualités", `${euros(mensualites)} / mois`, pct(unSeul ? unSeul.part_revenus : synthese?.part_revenus), "des revenus mensuels du foyer"],
+    ["Intérêts restant à payer", `≈ ${euros(interets)}`, pct(capital ? interets / capital : null), "du capital restant dû, d'ici la fin des prêts"],
+    ["Fin du dernier crédit", moisAnnee(credits.map((c) => c.fin_estimee).filter(Boolean).sort().at(-1)), "", "estimation, sans remboursement anticipé"],
+  ];
+  const lignes = credits.map((c) => `<tr><td>${echapper(nom(c.nom))}${c.bien_nom ? `<br><span class="note">${echapper(c.bien_nom)}${c.bien_valeur ? ` : ${euros(c.bien_valeur)}, ${pct(c.part_bien)} restant dû` : ""}</span>` : ""}</td>
+    <td class="n">${euros(c.capital_restant)}</td><td class="n">${euros(c.mensualite_prelevee ?? c.mensualite)}</td>
+    <td class="n">${euros(c.amortissement_mensuel)} / ${euros(c.interets_du_mois)}</td><td class="n">${pct(c.taux_annuel)}</td>
+    <td class="n">${moisAnnee(c.fin_estimee)}</td><td class="n">≈ ${euros(c.interets_restants)}</td></tr>`).join("");
+  return `<div class="tuiles">${tuiles.map(([t, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(t)}</div>
+    <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>
+    <div class="defile"><table><thead><tr><th>Crédit</th><th class="n">Capital restant dû</th><th class="n">Mensualité</th>
+      <th class="n">dont capital / intérêts</th><th class="n">Taux estimé</th><th class="n">Fin estimée</th><th class="n">Intérêts restants</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>
+    <p class="note">Taux, fin et intérêts restants sont déduits de la hausse mensuelle de la part de capital remboursée
+      (prêt à mensualité constante, hors assurance). La mensualité est celle prélevée sur vos comptes.</p>`;
+}
+
+export const creditsDeVue = (etat, vue) =>
+  (etat.credits ?? []).filter((c) => vue.niveau === "foyer" || c.titulaire === vue.nom);

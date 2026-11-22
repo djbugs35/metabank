@@ -7,6 +7,7 @@ Le type et le sous-type sont parfois vides (remboursement par carte). Tout écar
 """
 
 import csv
+import html
 import io
 import re
 from datetime import date
@@ -31,7 +32,8 @@ def decoder(contenu: bytes) -> str:
 
 def est_export_bnp(texte: str) -> bool:
     """Rendre vrai si la première ligne a la forme d'un en-tête d'export BNP."""
-    premiere = texte.lstrip().split("\n", 1)[0].split(";")
+    # Lecture CSV et non simple découpe : le nom d'un crédit est « "Cr&eacute;dit immobilier" », point-virgule compris.
+    premiere = next(csv.reader(io.StringIO(texte.lstrip().split("\n", 1)[0]), delimiter=";"), [])
     return len(premiere) >= 6 and bool(NUMERO_MASQUE.match(premiere[2].strip())) and _est_date(premiere[3])
 
 
@@ -54,7 +56,7 @@ def lire_export_bnp(texte: str, fichier: str = "") -> Export:
                                     re.sub(r"\s+", " ", libelle), _montant(montant, fichier, rang)))  # fmt: skip
     operations.sort(key=lambda o: o.jour)
     return Export(
-        nom=entete[0].strip(),
+        nom=html.unescape(html.unescape(entete[0].strip())),
         numero_masque=entete[2].strip(),
         date_solde=_date(entete[3], fichier, 1),
         solde=_montant(entete[5], fichier, 1),

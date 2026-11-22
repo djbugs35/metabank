@@ -48,6 +48,7 @@
     </div>
     <div id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="epargne"></div>
       <details class="carte"><summary>Détail par livret</summary><div id="livrets"></div></details></div>
+    <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div></div>
     <h2 id="titre-placements">Placements : assurance vie, PER, PERP</h2>
     <div class="tuiles" id="tuiles"></div>
     <div class="carte" id="bloc-annees">
@@ -122,6 +123,10 @@
     <h1>Corrections</h1>
     <p class="discret">Ce que les relevés ne disent pas. Enregistré dans data/corrections.json, sur ce Mac.</p>
     <div id="liste-corrections"></div>
+    <h2>Biens immobiliers</h2>
+    <p class="discret">La valeur estimée de chaque bien financé par un crédit : elle entre dans les actifs et permet de
+      calculer le patrimoine net (actifs moins crédits). Laissez vide pour ne pas la compter.</p>
+    <div id="liste-biens"></div>
     <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
   </section>
 

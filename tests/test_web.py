@@ -80,6 +80,7 @@ def test_corrections_enregistrees_puis_relues(tmp_path):
     assert lire_corrections(tmp_path) == {
         "ouvertures": {"12345678": "2023-03-30"},
         "versements_verifies": {"12345678": [2024, 2025]},
+        "biens": {},
     }
 
 

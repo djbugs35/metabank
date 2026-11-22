@@ -28,7 +28,7 @@ def etat_banque(dossier: Path) -> tuple[list[dict], list[str], list[Compte]]:
     """Rendre une vue par compte bancaire, les erreurs de lecture des exports, et les comptes eux-mêmes."""
     comptes, erreurs = lire_comptes(dossier)
     regles = lire_regles(dossier)
-    analyses = [analyser(compte, regles) for compte in comptes]
+    analyses = [analyser(compte, regles) for compte in comptes if compte.type_compte != "credit"]
     total = sum((a.compte.solde for a in analyses), ZERO)
     vues = [_vue(a, total) for a in analyses]
     courants = [c for c in comptes if c.type_compte in TYPES_COURANTS]

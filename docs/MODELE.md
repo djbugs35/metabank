@@ -180,9 +180,20 @@ année versée = Σ intérêts de cette année ; taux obtenu = intérêts / Σ s
 taux réglementé moyen. Intérêts attendus de l'année en cours = Σ estimations (7.6). Plafonds : rempli =
 Σ min(solde, plafond) / Σ plafonds ; versements encore possibles = Σ plafonds − Σ min(solde, plafond).
 
+### 7.9 Crédits immobiliers
+Source : export BNP du prêt. Solde négatif = capital restant dû C ; une ligne « AMORTISSEMENT PRET » par mois =
+part de capital remboursée A. À mensualité constante, A croît chaque mois du taux mensuel i :
+i = médiane des A(k+1) / A(k) − 1 ; taux annuel ≈ 12 × i. Prochaine mensualité P = A(dernier) × (1 + i) + C × i,
+dont intérêts C × i. Mois restants n = ln(P / (P − C × i)) / ln(1 + i), arrondi au-dessus ; fin estimée = date de
+l'export + n mois ; intérêts restant à payer ≈ n × P − C. Hors assurance et sans remboursement anticipé.
+Contrôle : P est comparée à la dernière « ECHEANCE PRET » portant le numéro du prêt sur les comptes courants.
+Les crédits rangés dans un dossier « credits » (hors personne) sont rattachés au compte joint.
+
 ## 8. Patrimoine complet (tableau de bord)
 
-Pour le foyer et pour chaque personne : total = Σ valeurs des placements (assurance vie, PER, PERP, au dernier
-relevé) + Σ soldes des livrets (épargne disponible) + Σ soldes des comptes courants (au dernier export).
-Part d'une famille ou d'un compte = son montant / total. Les dates de valeur diffèrent d'un compte à l'autre :
+Pour le foyer et pour chaque personne : actifs = Σ valeurs des placements (assurance vie, PER, PERP, au dernier
+relevé) + Σ soldes des livrets (épargne disponible) + Σ soldes des comptes courants (au dernier export) + Σ valeurs
+estimées des biens immobiliers (saisies dans Corrections). Crédits = Σ capitaux restant dus (7.9).
+Patrimoine net = actifs − crédits ; sans valeur de bien saisie, il n'est pas affiché (il serait trompeur).
+Part d'une famille, d'un compte ou des crédits = son montant / actifs. Les dates de valeur diffèrent d'un compte à l'autre :
 chacune est affichée.

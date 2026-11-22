@@ -1,6 +1,7 @@
 """Comptes bancaires rangés dans data/<titulaire>/<CC|LA|LDD - banque - compte>/…/*.csv. MODELE § 7."""
 
 from collections import Counter
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 
@@ -16,7 +17,8 @@ def lire_comptes(dossier: Path) -> tuple[list[Compte], list[str]]:
     for dossier_compte in sorted(dossier.glob("*/*")):
         morceaux = [m.strip() for m in dossier_compte.name.split(" - ")]
         type_compte = TYPES_PAR_PREFIXE.get(morceaux[0].upper())
-        if not dossier_compte.is_dir() or type_compte is None:
+        dossier_credits = _est_dossier_credits(dossier_compte.parent.name)
+        if not dossier_compte.is_dir() or (type_compte is None and not dossier_credits):
             continue
         exports = []
         for csv in sorted(dossier_compte.rglob("*.csv")):
@@ -26,8 +28,33 @@ def lire_comptes(dossier: Path) -> tuple[list[Compte], list[str]]:
                 erreurs.append(f"{dossier_compte.parent.name}/{csv.name} : {erreur}")
         if exports:
             banque = morceaux[1] if len(morceaux) > 1 else "?"
-            comptes.append(fusionner(dossier_compte.parent.name, banque, type_compte, exports))
+            titulaire = dossier_compte.parent.name
+            if est_credit(exports[-1]):
+                compte = fusionner(TITULAIRE_CREDITS if dossier_credits else titulaire, banque, "credit", exports)
+                compte = replace(compte, nom=f"Crédit {morceaux[0].lower()}")
+            elif type_compte is None:
+                erreurs.append(f"{titulaire}/{dossier_compte.name} : ni un crédit ni un type de compte connu")
+                continue
+            else:
+                compte = fusionner(titulaire, banque, type_compte, exports)
+            comptes.append(compte)
     return comptes, erreurs
+
+
+# Un dossier de premier niveau « credits », « crédits »… (et la faute de frappe « credtis ») range les crédits du
+# foyer : ils sont rattachés au compte joint, pas à une personne qui s'appellerait « credits ».
+TITULAIRE_CREDITS = "Joint"
+
+
+def _est_dossier_credits(nom: str) -> bool:
+    return nom.strip().upper().replace("É", "E").startswith("CRED")
+
+
+def est_credit(export: Export) -> bool:
+    """Rendre vrai pour l'export d'un prêt : solde négatif (capital restant dû) et nom ou lignes de prêt."""
+    nom = export.nom.upper().replace("É", "E")
+    lignes_de_pret = any("AMORTISSEMENT" in o.libelle.upper() for o in export.operations)
+    return export.solde < 0 and ("CREDIT" in nom or "PRET" in nom or lignes_de_pret)
 
 
 def fusionner(titulaire: str, banque: str, type_compte: str, exports: list[Export]) -> Compte:

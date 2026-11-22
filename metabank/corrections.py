@@ -2,10 +2,12 @@
 
 Format :
   {"ouvertures": {"270272854": "2023-03-30", "50025784": "2019-12-08"},
-   "versements_verifies": {"270549974": [2024, 2025]}}
+   "versements_verifies": {"270549974": [2024, 2025]},
+   "biens": {"6783": {"nom": "Résidence principale", "valeur": 450000}}}
 La clé est le numéro du contrat, ou sa fin : elle est comparée à la fin du numéro lu sur les relevés.
 « versements_verifies » : années où le titulaire a confirmé, par ses virements, le montant de la synthèse des
 mouvements (celui que metabank retient) ; l'écart avec le tableau « évolution du plan » n'est alors plus signalé.
+« biens » : valeur estimée par le titulaire du bien financé par un crédit (clé = fin du numéro du prêt).
 """
 
 import json
@@ -20,6 +22,7 @@ FICHIER = "corrections.json"
 ANOMALIE_VERSEMENTS = "versements de l'année"
 CLE_VALIDE = re.compile(r"^[0-9A-Za-z]{4,20}$")
 ANNEE_MIN, ANNEE_MAX = 1980, 2100
+VALEUR_BIEN_MAX = 100_000_000
 
 
 class CorrectionInvalide(ValueError):
@@ -42,6 +45,7 @@ def lire_corrections(dossier: Path) -> dict:
     return {
         "ouvertures": dict(contenu.get("ouvertures", {})),
         "versements_verifies": {cle: sorted(annees) for cle, annees in contenu.get("versements_verifies", {}).items()},
+        "biens": dict(contenu.get("biens", {})),
     }
 
 
@@ -51,7 +55,7 @@ def ecrire_corrections(dossier: Path, corrections: dict) -> dict:
     Raises:
         CorrectionInvalide: clé de contrat, date ou année hors format ; rien n'est écrit.
     """
-    propres = {"ouvertures": {}, "versements_verifies": {}}
+    propres = {"ouvertures": {}, "versements_verifies": {}, "biens": {}}
     for rubrique in propres:
         if not isinstance(corrections.get(rubrique) or {}, dict):
             raise CorrectionInvalide(f"{rubrique} : objet attendu")
@@ -70,6 +74,7 @@ def ecrire_corrections(dossier: Path, corrections: dict) -> dict:
             raise CorrectionInvalide(f"années invalides pour {cle} : {annees}")
         if annees:
             propres["versements_verifies"][cle] = sorted(set(annees))
+    propres["biens"] = _biens(corrections.get("biens") or {})
     # Les autres rubriques éventuelles du fichier sont gardées telles quelles.
     contenu = {**_lire(dossier), **propres}
     chemin = dossier / FICHIER
@@ -77,6 +82,22 @@ def ecrire_corrections(dossier: Path, corrections: dict) -> dict:
     temporaire.write_text(json.dumps(contenu, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporaire.replace(chemin)
     return lire_corrections(dossier)
+
+
+def _biens(biens: dict) -> dict:
+    """Rendre les biens immobiliers validés : {clé du crédit : {"nom", "valeur" en euros}} ; valeur vide = retiré."""
+    propres = {}
+    for cle, bien in biens.items():
+        _verifier_cle(cle)
+        if not isinstance(bien, dict):
+            raise CorrectionInvalide(f"bien {cle} : objet attendu")
+        valeur, nom = bien.get("valeur"), str(bien.get("nom") or "").strip()[:60]
+        if valeur in (None, ""):
+            continue
+        if not isinstance(valeur, int | float) or not 0 <= valeur <= VALEUR_BIEN_MAX:
+            raise CorrectionInvalide(f"valeur du bien {cle} : nombre entre 0 et {VALEUR_BIEN_MAX} attendu")
+        propres[cle] = {"nom": nom or "Bien immobilier", "valeur": valeur}
+    return propres
 
 
 def _verifier_cle(cle: str) -> None:

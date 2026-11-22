@@ -6,7 +6,13 @@ from decimal import Decimal
 
 # Préfixe du nom de dossier (« CC - BNP - … ») -> type de compte.
 TYPES_PAR_PREFIXE = {"CC": "courant", "LOCATIF": "locatif", "LA": "livret_a", "LDD": "ldd"}
-LIBELLES_TYPES = {"courant": "Compte courant", "locatif": "Compte locatif", "livret_a": "Livret A", "ldd": "LDD"}
+LIBELLES_TYPES = {
+    "courant": "Compte courant",
+    "locatif": "Compte locatif",
+    "livret_a": "Livret A",
+    "ldd": "LDD",
+    "credit": "Crédit",
+}
 # Comptes de flux (budget) d'un côté, livrets (épargne disponible) de l'autre.
 TYPES_COURANTS = ("courant", "locatif")
 TYPES_LIVRETS = ("livret_a", "ldd")
@@ -52,4 +58,5 @@ class Compte:
     @property
     def libelle(self) -> str:
         """Rendre « Cédric · Compte courant BNP ****2513 »."""
-        return f"{self.titulaire} · {LIBELLES_TYPES.get(self.type_compte, self.type_compte)} {self.banque} {self.numero_masque}"
+        nature = self.nom if self.type_compte == "credit" else LIBELLES_TYPES.get(self.type_compte, self.type_compte)
+        return f"{self.titulaire} · {nature} {self.banque} {self.numero_masque}"

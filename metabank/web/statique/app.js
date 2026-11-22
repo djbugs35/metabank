@@ -2,7 +2,7 @@
 import { afficherComptes } from "./comptes.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
-  epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
+  creditsDeVue, creditsHtml, epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
   tableAnneesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
@@ -37,6 +37,7 @@ async function charger() {
   afficherComptes(etat);
   afficherReleves();
   afficherCorrections();
+  afficherBiens();
   preparerSimulation();
   preparerAssistant();
 }
@@ -89,6 +90,9 @@ function afficherTableau() {
   const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
   $("bloc-livrets").classList.toggle("cache", !livrets.length);
   if (livrets.length) $("livrets").innerHTML = livretsHtml(livrets);
+  const credits = vue.niveau === "contrat" ? [] : creditsDeVue(etat, vue);
+  $("bloc-credits").classList.toggle("cache", !credits.length);
+  if (credits.length) $("credits").innerHTML = creditsHtml(credits, etat.synthese_credits, patrimoine?.part_credits);
   const epargne = etat.epargne?.[vue.id];
   $("epargne").innerHTML = epargne && livrets.length ? epargneHtml(epargne) : "";
   afficherTuiles(vue);
@@ -248,6 +252,17 @@ function afficherCorrections() {
     .join("");
 }
 
+function afficherBiens() {
+  const biens = etat.corrections.biens ?? {};
+  const defaut = (c) => (/locatif/i.test(c.nom) ? "Bien locatif" : "Résidence principale");
+  $("liste-biens").innerHTML = (etat.credits ?? []).map((c) => `<div class="carte"><strong>${echapper(c.nom)}</strong>
+    <div class="champs"><label class="champ">Bien financé
+      <input data-bien-nom="${echapper(c.cle)}" maxlength="60" value="${echapper(biens[c.cle]?.nom ?? defaut(c))}"></label>
+    <label class="champ">Valeur estimée aujourd'hui (€)
+      <input type="number" min="0" step="1000" data-bien-valeur="${echapper(c.cle)}" value="${biens[c.cle]?.valeur ?? ""}"></label></div></div>`).join("")
+    || `<p class="discret">Aucun crédit.</p>`;
+}
+
 $("enregistrer-corrections").addEventListener("click", async () => {
   const ouvertures = Object.fromEntries([...document.querySelectorAll("[data-ouverture]")].map((i) => [i.dataset.ouverture, i.value]));
   const verifies = {};
@@ -257,7 +272,12 @@ $("enregistrer-corrections").addEventListener("click", async () => {
   });
   const etatCorrections = $("etat-corrections");
   try {
-    await envoyerJson("/api/corrections", { ouvertures, versements_verifies: verifies });
+    const biens = {};
+    document.querySelectorAll("[data-bien-valeur]").forEach((i) => {
+      const cle = i.dataset.bienValeur;
+      biens[cle] = { nom: document.querySelector(`[data-bien-nom="${cle}"]`).value, valeur: i.value === "" ? null : Number(i.value) };
+    });
+    await envoyerJson("/api/corrections", { ouvertures, versements_verifies: verifies, biens });
     etatCorrections.className = "ok";
     etatCorrections.textContent = "Enregistré ; chiffres recalculés.";
     await charger();

@@ -14,6 +14,7 @@ from metabank.rapport import nom_contrat
 from metabank.releves import lire_dossier
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
+from metabank.web.credits_vues import etat_credits
 from metabank.web.epargne import syntheses_epargne
 from metabank.web.patrimoine import patrimoines
 
@@ -29,7 +30,8 @@ def etat(dossier) -> dict:
     analyses = analyser_frais(releves)
     foyer = synthetiser("Foyer", bilans, historiques)
     banque, erreurs_banque, comptes = etat_banque(dossier)
-    patrimoine = patrimoines(bilans, comptes)
+    corrections = lire_corrections(dossier)
+    patrimoine = patrimoines(bilans, comptes, corrections["biens"])
     vues = [_vue("foyer", "foyer", None, foyer, foyer)]
     for titulaire in sorted({b.titulaire for b in bilans} | {c.titulaire for c in comptes}):
         des_siens = [b for b in bilans if b.titulaire == titulaire]
@@ -47,7 +49,8 @@ def etat(dossier) -> dict:
         "banque": banque,
         "patrimoine": patrimoine,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
-        "corrections": lire_corrections(dossier),
+        "corrections": corrections,
+        **_credits(comptes, banque, corrections["biens"]),
         "titulaires": sorted({p.name for p in dossier.iterdir() if p.is_dir() and not p.name.startswith(".")})
         if dossier.exists()
         else [],
@@ -150,3 +153,12 @@ def _points(bilans: list[BilanContrat]) -> list[str]:
     points += [f"{b.titulaire} · {b.produit} : relevé de situation seul, frais et historique inconnus"
                for b in bilans if not b.annees]  # fmt: skip
     return points
+
+
+def _credits(comptes, banque: list[dict], biens: dict) -> dict:
+    """Rendre « credits » et « synthese_credits » ; revenus du foyer pris dans la vue Budget « Foyer », sinon le
+    compte courant unique."""
+    courants = [b for b in banque if b["type"] in ("courant", "locatif")]
+    foyer = next((b for b in courants if b["id"] == "b:foyer"), courants[0] if len(courants) == 1 else None)
+    resultat = etat_credits(comptes, foyer["revenus_mois"] if foyer else None, biens)
+    return {"credits": resultat["credits"], "synthese_credits": resultat["synthese"]}

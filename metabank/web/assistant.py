@@ -77,6 +77,13 @@ def contexte(etat: dict) -> str:
         lignes.extend(
             f"    dépenses {c['nom']} : {_e(c['montant'])} ({_p(c['part'])})" for c in compte["categories"][:8]
         )
+    lignes.extend(
+        f"- Crédit {credit['nom'].split(' · ', 1)[-1].split(' BNP')[0]} : capital restant dû "
+        f"{_e(credit['capital_restant'])}, mensualité {_e(credit['mensualite_prelevee'] or credit['mensualite'])} "
+        f"({_p(credit['part_revenus'])} des revenus), taux estimé {_p(credit['taux_annuel'])}, "
+        f"fin estimée {credit['fin_estimee']}, intérêts restant à payer {_e(credit['interets_restants'])}"
+        for credit in etat.get("credits", [])
+    )
     if etat["points"]:
         lignes.append("Points d'attention : " + " ; ".join(etat["points"]))
     lignes.append("Gagné = valeur moins versé, tous frais déjà déduits. Frais des fonds : estimés.")
