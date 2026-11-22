@@ -13,13 +13,12 @@ const tuile = ([etiquette, valeur, part, note]) =>
    <div class="pct">${echapper(part)}</div><div class="note">${echapper(note)}</div></div>`;
 
 export function afficherComptes(etat) {
-  const comptes = (etat.banque ?? []).filter((c) => c.type === "courant");
+  const comptes = (etat.banque ?? []).filter((c) => c.type === "courant" || c.type === "locatif");
   $("comptes-vide").classList.toggle("cache", comptes.length > 0);
   $("comptes-contenu").classList.toggle("cache", !comptes.length);
   if (!comptes.length) return;
   if (!comptes.some((c) => c.id === choisi)) choisi = comptes[0].id;
-  const total = comptes.reduce((t, c) => t + c.solde, 0);
-  $("comptes-total").textContent = comptes.length > 1 ? `Comptes courants : ${euros(total)} au total` : "";
+  $("comptes-total").textContent = "";
   $("choix-compte").replaceChildren(...comptes.map((c) => {
     const b = document.createElement("button");
     b.className = "puce";
@@ -35,12 +34,17 @@ export function afficherComptes(etat) {
 }
 
 function afficherCourant(c) {
+  // Compte commun ou locatif : rempli par vos virements, ses « revenus » propres sont faibles et les parts n'ont pas de sens.
+  const alimente = c.interne_mois < 0 && c.revenus_mois < c.depenses_mois / 2;
   $("compte-tuiles").innerHTML = [
     ["Solde", euros(c.solde), pct(c.part_liquidites), `des liquidités (comptes et livrets) ; solde moyen ${euros(c.solde_moyen)}`],
-    ["Revenus par mois", euros(c.revenus_mois), "100,0 %", "salaires, remboursements et autres entrées"],
-    ["Dépenses par mois", euros(c.depenses_mois), pct(c.part_depenses), "des revenus (hors virements entre vos comptes)"],
-    ["Épargne placée par mois", euros(c.epargne_mois), pct(c.part_epargne), "des revenus (assurance vie, PER, livrets…)"],
-    ["Frais bancaires par an", euros(c.frais_an), pct(c.part_frais), "des revenus"],
+    ["Revenus par mois", euros(c.revenus_mois), alimente ? "—" : "100,0 %", alimente
+      ? `compte alimenté surtout par vos autres comptes : ${euros(-c.interne_mois)} par mois`
+      : "salaires, remboursements et autres entrées"],
+    ["Dépenses par mois", euros(c.depenses_mois), alimente ? "—" : pct(c.part_depenses), alimente
+      ? "hors virements entre vos comptes" : "des revenus (hors virements entre vos comptes)"],
+    ["Épargne placée par mois", euros(c.epargne_mois), alimente ? "—" : pct(c.part_epargne), "des revenus (assurance vie, PER, livrets…)"],
+    ["Frais bancaires par an", euros(c.frais_an), alimente ? "—" : pct(c.part_frais), "des revenus"],
     ["Argent qui dort", euros(c.argent_qui_dort), pct(c.part_qui_dort),
       `du solde moyen, au-delà de 2 mois de dépenses (${euros(c.coussin)}) ; ${euros(c.manque_a_gagner)} par an au taux du Livret A (${pct(c.taux_livret_a)})`],
   ].map(tuile).join("");

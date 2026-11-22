@@ -33,7 +33,7 @@ REGLES_PAR_DEFAUT: list[tuple[str, str]] = [
         "Épargne et placements",
     ),
     (
-        r"^COMMISSIONS|COTISATION A UNE OFFRE|\bAGIOS\b|FRAIS (DE )?TENUE|COMMISSION D.INTERVENTION|INTERETS DEBITEURS",
+        r"^COMMISSIONS|^FRAIS\b|COTISATION A UNE OFFRE|\bAGIOS\b|FRAIS (DE )?TENUE|COMMISSION D.INTERVENTION|INTERETS DEBITEURS",
         "Frais bancaires",
     ),
     (r"CPAM|PRESTATIONS SANTE|MUTUELLE|\bMGEN\b|HARMONIE MUT", "Remboursements santé"),

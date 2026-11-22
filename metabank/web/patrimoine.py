@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from metabank.banque.modele import Compte
+from metabank.banque.modele import TYPES_COURANTS, Compte
 from metabank.bilan import BilanContrat
 from metabank.rapport import nom_contrat
 
@@ -20,7 +20,13 @@ def patrimoines(bilans: list[BilanContrat], comptes: list[Compte]) -> dict[str, 
     """Rendre le patrimoine du foyer (clé « foyer ») et de chaque personne (clé « p:<prénom> »)."""
     lignes = [(b.titulaire, PLACEMENTS, nom_contrat(b), b.valeur, b.date_valeur.isoformat()) for b in bilans]
     lignes += [
-        (c.titulaire, COURANTS if c.type_compte == "courant" else EPARGNE, c.libelle, c.solde, c.date_solde.isoformat())
+        (
+            c.titulaire,
+            COURANTS if c.type_compte in TYPES_COURANTS else EPARGNE,
+            c.libelle,
+            c.solde,
+            c.date_solde.isoformat(),
+        )
         for c in comptes
     ]
     resultat = {"foyer": _patrimoine(lignes)}

@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from metabank.banque.categories import DEPENSE, EPARGNE, INTERNE, REVENU, OperationClassee, classer
-from metabank.banque.modele import Compte
+from metabank.banque.modele import TYPES_LIVRETS, Compte
 
 ZERO = Decimal(0)
 # Taux du Livret A, identique pour le LDDS : (date d'effet, taux annuel net). Sources : economie.gouv.fr,
@@ -217,7 +217,7 @@ def _interets(compte: Compte, debut: date) -> list[InteretsAnnee]:
     l'année passée crédités en janvier), il est supposé égal au solde de la veille du versement : c'est exact
     sans mouvement dans l'année, à vérifier sinon.
     """
-    if compte.type_compte == "courant":
+    if compte.type_compte not in TYPES_LIVRETS:
         return []
     versements: dict[int, Decimal] = defaultdict(lambda: ZERO)
     veille: dict[int, date] = {}

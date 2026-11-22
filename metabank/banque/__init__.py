@@ -1,6 +1,7 @@
 """Comptes bancaires rangés dans data/<titulaire>/<CC|LA|LDD - banque - compte>/…/*.csv. MODELE § 7."""
 
 from collections import Counter
+from decimal import Decimal
 from pathlib import Path
 
 from metabank.banque.bnp import ExportIllisible, decoder, lire_export_bnp
@@ -54,3 +55,16 @@ def fusionner(titulaire: str, banque: str, type_compte: str, exports: list[Expor
             anomalies.append(f"solde de {export.fichier} : {export.solde} € annoncé, {attendu} € recalculé")
     return Compte(titulaire, banque, type_compte, reference.nom, reference.numero_masque, reference.date_solde,
                   reference.solde, tuple(operations), tuple(anomalies))  # fmt: skip
+
+
+def regrouper(nom: str, comptes: list[Compte]) -> Compte:
+    """Rendre un compte fictif qui additionne plusieurs comptes courants : le budget du foyer. MODELE § 7.7.
+
+    Les opérations sont mises bout à bout sans fusion (deux comptes peuvent avoir la même opération, chacune réelle) ;
+    le solde est la somme des soldes, à la date la plus récente. Les virements entre ces comptes, classés
+    « interne », ne comptent ni en revenus ni en dépenses.
+    """
+    operations = tuple(sorted((o for c in comptes for o in c.operations), key=lambda o: o.jour))
+    return Compte(nom, ", ".join(sorted({c.banque for c in comptes})), "courant", nom, "",
+                  max(c.date_solde for c in comptes), sum((c.solde for c in comptes), start=Decimal(0)),
+                  operations)  # fmt: skip

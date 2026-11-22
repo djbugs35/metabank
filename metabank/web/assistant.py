@@ -59,7 +59,7 @@ def contexte(etat: dict) -> str:
         for f in etat["fonds"]
     )
     for compte in etat.get("banque", []):
-        if compte["type"] != "courant":
+        if compte["type"] in ("livret_a", "ldd"):
             lignes.append(f"- {compte['court']} : solde {_e(compte['solde'])}, plafond {_e(compte['plafond'])}")
             lignes.extend(
                 f"    intérêts {i['annee']} : {_e(i['interets'])} (taux obtenu {_p(i['taux'])}, taux réglementé moyen "

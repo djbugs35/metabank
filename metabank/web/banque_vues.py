@@ -3,10 +3,10 @@
 from decimal import Decimal
 from pathlib import Path
 
-from metabank.banque import lire_comptes
+from metabank.banque import lire_comptes, regrouper
 from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
 from metabank.banque.categories import lire_regles
-from metabank.banque.modele import LIBELLES_TYPES, Compte
+from metabank.banque.modele import LIBELLES_TYPES, TYPES_COURANTS, Compte
 
 ZERO = Decimal(0)
 DOUZE = Decimal(12)
@@ -30,7 +30,13 @@ def etat_banque(dossier: Path) -> tuple[list[dict], list[str], list[Compte]]:
     regles = lire_regles(dossier)
     analyses = [analyser(compte, regles) for compte in comptes]
     total = sum((a.compte.solde for a in analyses), ZERO)
-    return [_vue(a, total) for a in analyses], erreurs, comptes
+    vues = [_vue(a, total) for a in analyses]
+    courants = [c for c in comptes if c.type_compte in TYPES_COURANTS]
+    if len(courants) > 1:
+        foyer = _vue(analyser(regrouper("Foyer", courants), regles), total)
+        vues.insert(0, {**foyer, "id": "b:foyer", "nom": "Foyer · tous les comptes courants",
+                        "court": "Foyer · tous les comptes courants", "consolide": True})  # fmt: skip
+    return vues, erreurs, comptes
 
 
 def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:

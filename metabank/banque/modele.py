@@ -5,8 +5,11 @@ from datetime import date
 from decimal import Decimal
 
 # Préfixe du nom de dossier (« CC - BNP - … ») -> type de compte.
-TYPES_PAR_PREFIXE = {"CC": "courant", "LA": "livret_a", "LDD": "ldd"}
-LIBELLES_TYPES = {"courant": "Compte courant", "livret_a": "Livret A", "ldd": "LDD"}
+TYPES_PAR_PREFIXE = {"CC": "courant", "LOCATIF": "locatif", "LA": "livret_a", "LDD": "ldd"}
+LIBELLES_TYPES = {"courant": "Compte courant", "locatif": "Compte locatif", "livret_a": "Livret A", "ldd": "LDD"}
+# Comptes de flux (budget) d'un côté, livrets (épargne disponible) de l'autre.
+TYPES_COURANTS = ("courant", "locatif")
+TYPES_LIVRETS = ("livret_a", "ldd")
 
 
 @dataclass(frozen=True)

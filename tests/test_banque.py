@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from metabank.banque import fusionner, lire_comptes
+from metabank.banque import fusionner, lire_comptes, regrouper
 from metabank.banque.analyse import TAUX_LIVRET_A, analyser, taux_moyen_annee
 from metabank.banque.bnp import ExportIllisible, decoder, lire_export_bnp
 from metabank.banque.categories import DEPENSE, INTERNE, REVENU, classer
@@ -158,3 +158,24 @@ def test_contexte_de_l_assistant_sans_numero_de_compte(tmp_path):
     texte = contexte({"vues": [], "fonds": [], "points": [], "banque": vues})
     assert "Alice · Compte courant BNP" in texte
     assert "1234" not in texte
+
+
+def test_budget_du_foyer_additionne_les_comptes_sans_compter_les_virements_entre_eux():
+    alice = _compte()
+    commun = fusionner("Joint", "BNP", "courant", [lire_export_bnp(
+        "Compte Commun;Compte Commun;****9999;31/03/2026;;500,00\n"
+        "16/12/2025;VIREMENT;VIR CPTE A CPTE RECU;VIR CPTE A CPTE RECU /MOTIF VERS COMMUN;1 000,00\n"
+        "20/12/2025;PAIEMENT CB;FACTURE CARTE;FACTURE CARTE DU 191225 LECLERC CARTE 4974;-500,00\n", "commun.csv")])  # fmt: skip
+    foyer = analyser(regrouper("Foyer", [alice, commun]), [])
+    assert foyer.compte.solde == Decimal("10500.00")
+    assert foyer.revenus == analyser(alice, []).revenus
+    assert foyer.depenses == analyser(alice, []).depenses + Decimal(500)
+
+
+def test_compte_locatif_reconnu_par_son_dossier(tmp_path):
+    dossier = tmp_path / "Joint" / "Locatif - BNP - 1234"
+    dossier.mkdir(parents=True)
+    (dossier / "export.csv").write_bytes((EXEMPLES / "bnp_courant.csv").read_bytes())
+    comptes, _ = lire_comptes(tmp_path)
+    assert comptes[0].type_compte == "locatif"
+    assert comptes[0].libelle == "Joint · Compte locatif BNP ****1234"

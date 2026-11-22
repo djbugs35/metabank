@@ -169,6 +169,11 @@ Taux réglementé moyen de Y = moyenne des taux du Livret A (identique pour le L
 mois. Intérêts attendus de l'année en cours ≈ solde actuel × taux réglementé moyen de l'année.
 Plafond des versements : 22 950 € (Livret A), 12 000 € (LDDS) ; les intérêts peuvent le dépasser.
 
+### 7.7 Budget du foyer
+Avec plusieurs comptes courants (personnels, commun, locatif), un compte fictif les additionne : opérations mises
+bout à bout, solde = Σ soldes. Les virements entre ces comptes sont « interne » (7.2) et s'annulent : seuls
+restent les revenus et dépenses du foyer avec l'extérieur.
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : total = Σ valeurs des placements (assurance vie, PER, PERP, au dernier
