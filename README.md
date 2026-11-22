@@ -1,8 +1,9 @@
 # metabank
 
-Vision globale et analyse du patrimoine financier d'un foyer — assurance vie, PER, PERP — **en local, sans
-abonnement**. metabank lit les relevés PDF des assureurs, calcule ce que chaque contrat a réellement rapporté et
-coûté, en euros et en pourcentage, et l'affiche dans une application web qui tourne sur votre Mac.
+Vision globale et analyse du patrimoine financier d'un foyer — assurance vie, PER, PERP, livrets, comptes
+courants, crédits immobiliers — **en local, sans abonnement**. metabank lit les relevés PDF des assureurs et les
+exports CSV de la banque, calcule ce que chaque contrat a réellement rapporté et coûté, ce que coûte le budget du
+foyer et ce qui reste dû sur les crédits, et l'affiche dans une application web qui tourne sur votre Mac.
 
 **Lecture seule : aucun virement, ordre ni arbitrage n'est jamais passé.** Les données restent sur la machine.
 
@@ -14,13 +15,18 @@ coûté, en euros et en pourcentage, et l'affiche dans une application web qui t
 
 - **Tableau de bord** par foyer, par personne et par contrat : versé, valeur, gagné (frais déduits) et frais
   payés, chacun en euros et en pourcentage ; gagné et frais année par année, avec le choix des années.
-- **Relevés** : on dépose les PDF dans la page ; ils sont lus, contrôlés et rangés dans `data/`.
-- **Corrections** : dates d'ouverture des contrats, versements vérifiés sur ses virements.
+- **Patrimoine** : actifs par famille, crédits, patrimoine net (avec la valeur des biens saisie) ; épargne
+  disponible des livrets, intérêts attendus et plafonds.
+- **Crédits immobiliers** : capital restant dû, taux, mensualité, date de fin et intérêts restants estimés.
+- **Budget** : ce qui entre et sort des comptes courants, dépenses par catégorie, frais bancaires, argent qui dort.
+- **Relevés** : on dépose les PDF et les exports CSV dans la page ; ils sont lus, contrôlés et rangés dans `data/`.
+- **Corrections** : dates d'ouverture des contrats, versements vérifiés sur ses virements, valeur des biens.
 - **Simulation des frais** : valeur dans N ans avec les frais actuels et avec des frais plus bas.
 - **Export PDF** : tout ou partie des synthèses, une page A4 par vue, prénoms masquables.
 - **Assistant** : questions en français à Claude Code installé sur le Mac, sur les chiffres déjà calculés.
 
-Assureurs reconnus : relevés annuels **Suravenir** (assurance vie, PER), relevés de situation **Cardif** (PERP).
+Sources reconnues : relevés annuels **Suravenir** (assurance vie, PER), relevés de situation **Cardif** (PERP),
+exports d'opérations **BNP Paribas** en CSV (comptes courants, compte locatif, Livret A, LDD, prêts).
 Toutes les formules sont écrites dans [docs/MODELE.md](docs/MODELE.md).
 
 ## Installer et lancer
@@ -45,22 +51,32 @@ fermer la fenêtre du Terminal l'arrête. Commande équivalente : `uv run python
 ### Tableau de bord
 
 Les puces choisissent le foyer, une personne, puis un de ses contrats. Le survol du graphique détaille l'année ;
-le tableau dessous reprend versé, gagné, frais et sommes placées. Thème clair ou sombre selon le Mac.
+le tableau dessous reprend versé, gagné, frais et sommes placées. Au-dessus des placements : patrimoine net,
+épargne disponible des livrets et crédits immobiliers. Thème clair ou sombre selon le Mac.
 
 ![Tableau de bord d'une personne, thème sombre](docs/captures/tableau-sombre.png)
 
+### Budget
+
+Les comptes courants un par un : solde au fil du temps, entrées et sorties par mois, dépenses par catégorie,
+frais bancaires et dépenses non classées. Les virements entre ses propres comptes et vers ses placements ne
+comptent pas comme des dépenses. Pour classer une dépense, ajouter une règle dans `data/categories.json`, par
+exemple `{"regles": [{"motif": "BOULANGERIE", "categorie": "Alimentation"}]}`.
+
 ### Relevés
 
-Déposer les PDF dans la zone : chacun est lu, puis rangé dans `data/<titulaire>/<contrat>/<année>/`. Un PDF non
-reconnu est refusé ; un PDF déjà présent n'est pas copié deux fois.
+Déposer les PDF et les exports CSV dans la zone : chacun est lu, puis rangé dans
+`data/<titulaire>/<contrat>/<année>/` (relevés d'assureur) ou dans le dossier du compte (exports BNP, obtenus par
+« Télécharger mes opérations »). Un fichier non reconnu est refusé ; un fichier déjà présent n'est pas copié deux
+fois.
 
 ![Dépôt des relevés](docs/captures/releves.png)
 
 ### Corrections
 
-Ce que les relevés ne disent pas : la date d'ouverture d'un contrat (pour le rendement de la première année) et
+Ce que les relevés ne disent pas : la date d'ouverture d'un contrat (pour le rendement de la première année),
 les années dont on a vérifié les versements sur ses virements, quand deux tableaux d'un même relevé se
-contredisent. Enregistré dans `data/corrections.json`.
+contredisent, et la valeur estimée d'un bien financé par un crédit (pour le patrimoine net). Enregistré dans `data/corrections.json`.
 
 ![Corrections](docs/captures/corrections.png)
 
@@ -99,6 +115,15 @@ data/<titulaire>/<type> - <assureur> - <contrat> <numéro>/<année>/<relevé>.pd
 
 Types reconnus par le préfixe du dossier : `AV`, `PER`, `PERP`, `PEA`, `CTO`.
 
+Les exports CSV de la banque se rangent dans le dossier du compte, qui finit par les derniers chiffres du numéro :
+
+```
+data/<titulaire>/<type> - BNP - <chiffres>/<export>.csv
+data/Crédits/<nom> - BNP - <chiffres>/<export>.csv
+```
+
+Types de comptes : `CC` (courant), `LOCATIF`, `LA` (Livret A), `LDD`. Les prêts vont dans un dossier `Crédits`.
+
 ## Ligne de commande
 
 ```sh
@@ -122,11 +147,11 @@ Ancien tableau de bord en une page HTML autonome, `data/tableau.html`.
 
 ## Données et confidentialité
 
-- Tout est dans `data/` : relevés, corrections, sorties. Ce dossier n'est **jamais versionné** ; c'est lui qu'il
+- Tout est dans `data/` : relevés, exports bancaires, corrections, sorties. Ce dossier n'est **jamais versionné** ; c'est lui qu'il
   faut sauvegarder.
 - Le serveur n'écoute que sur 127.0.0.1 et refuse les requêtes venues d'une autre page du navigateur.
 - Aucune ressource n'est chargée depuis Internet ; seules les questions à l'assistant sortent du Mac, sans
-  numéro de contrat.
+  numéro de contrat ni de compte.
 - Les chiffres viennent du code testé (`uv run pytest`) ; l'assistant les commente, il n'en calcule pas.
 - Éléments d'aide à la décision, pas un conseil financier.
 
@@ -139,9 +164,13 @@ Desktop, puis `./outils/lancer_wealthfolio.command`. Sur le NAS : `./outils/prep
 ## Développement
 
 ```sh
-uv run pytest -q
 uv run ruff check
 uv run ruff format
+uv run mypy
+uv run pytest -q --cov
 ```
+
+Couverture minimale : 80 %. Les mêmes contrôles tournent sur GitHub à chaque envoi. Documentation des modules :
+`uv run pdoc metabank`.
 
 Plan et jalons : [docs/PLAN.md](docs/PLAN.md). Consignes du projet : [CLAUDE.md](CLAUDE.md).
