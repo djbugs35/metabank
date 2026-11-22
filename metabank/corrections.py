@@ -55,7 +55,7 @@ def ecrire_corrections(dossier: Path, corrections: dict) -> dict:
     Raises:
         CorrectionInvalide: clé de contrat, date ou année hors format ; rien n'est écrit.
     """
-    propres = {"ouvertures": {}, "versements_verifies": {}, "biens": {}}
+    propres: dict[str, dict] = {"ouvertures": {}, "versements_verifies": {}, "biens": {}}
     for rubrique in propres:
         if not isinstance(corrections.get(rubrique) or {}, dict):
             raise CorrectionInvalide(f"{rubrique} : objet attendu")

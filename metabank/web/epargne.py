@@ -35,7 +35,7 @@ def _synthese(analyses: list[AnalyseCompte], total_patrimoine: float | None) -> 
     versees = [i for a in analyses for i in a.interets_par_an if i.interets is not None]
     annee = max((i.annee for i in versees), default=None)
     de_l_annee = [i for i in versees if i.annee == annee]
-    interets = sum((i.interets for i in de_l_annee), ZERO)
+    interets = sum((i.interets for i in de_l_annee if i.interets is not None), ZERO)
     solde_moyen = sum((i.solde_moyen for i in de_l_annee), ZERO)
     attendus = [i for a in analyses for i in a.interets_par_an if i.estimation is not None]
     plafond = sum((PLAFONDS.get(a.compte.type_compte, ZERO) for a in analyses), ZERO)
@@ -49,7 +49,7 @@ def _synthese(analyses: list[AnalyseCompte], total_patrimoine: float | None) -> 
         "taux_obtenu": _t(interets, solde_moyen) if annee else None,
         "taux_reglemente": _t(de_l_annee[0].taux_reglemente_moyen, Decimal(1)) if de_l_annee else None,
         "annee_attendue": attendus[0].annee if attendus else None,
-        "attendus": _n(sum((i.estimation for i in attendus), ZERO)) if attendus else None,
+        "attendus": _n(sum((i.estimation for i in attendus if i.estimation is not None), ZERO)) if attendus else None,
         "taux_attendu": _t(attendus[0].taux_reglemente_moyen, Decimal(1)) if attendus else None,
         "plafond": _n(plafond),
         "part_plafond": _t(rempli, plafond),

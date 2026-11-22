@@ -66,6 +66,10 @@ Plan, architecture et jalons : docs/PLAN.md.
 
 ## Vérifications avant commit
 - `sh -n` sur les scripts touchés ; `docker compose config -q` si `compose.yml` change.
-- Dès qu'il y a du Python : `uv run pytest -q`, `uv run ruff check` et `uv run ruff format`.
+- Dès qu'il y a du Python : `uv run ruff check`, `uv run ruff format`, `uv run mypy` (aucune erreur tolérée) et
+  `uv run pytest -q --cov` (couverture minimale 80 %, comme metascrap).
+- Dès qu'il y a du JavaScript : `node --check` sur chaque fichier de `metabank/web/statique/`.
+- Documentation des modules : `uv run pdoc metabank` (serveur local) ou `uv run pdoc metabank -o docs/api`.
+- Les mêmes contrôles tournent sur GitHub à chaque push (`.github/workflows/tests.yml`).
 - Conventional commits en français (`feat:`, `fix:`, `docs:`, `chore:`), une branche par fonctionnalité,
   PR avec description et liste de contrôle.

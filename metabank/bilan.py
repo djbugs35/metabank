@@ -76,14 +76,16 @@ def faire_bilans(releves: list[ReleveRange], ouvertures: dict[str, date] | None 
 def calculer_annee(releve: Releve, valeur_debut: Decimal, ouverture: date | None = None) -> Annee:
     """Rendre le résultat de l'année d'un relevé annuel. MODELE § 1."""
     mouvements = releve.mouvements
+    if mouvements is None:
+        raise ValueError(f"{releve.fichier} : relevé sans synthèse des mouvements, pas un relevé annuel")
     apports, rachats = mouvements.versements_bruts, mouvements.rachats
     gain = releve.valeur - valeur_debut - apports + rachats
     frais = releve.frais.total if releve.frais else None
     poids, estime = _poids_versements(releve.date_arrete, valeur_debut, ouverture)
     # Année d'ouverture : rendement réel sur la période (gain / versé), pas ramené à une année entière.
     ouverture_annee = valeur_debut == ZERO
-    base = (apports - rachats) if ouverture_annee else valeur_debut + (apports - rachats) * poids
-    base = base if base > ZERO else None
+    capital = (apports - rachats) if ouverture_annee else valeur_debut + (apports - rachats) * poids
+    base = capital if capital > ZERO else None
     encours_moyen = (valeur_debut + releve.valeur) / 2 if valeur_debut > ZERO else releve.valeur * poids
     return Annee(
         annee=releve.date_arrete.year,
@@ -124,6 +126,9 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
     anomalies = [anomalie for releve in releves for anomalie in releve.anomalies]
     annees = _annees(releves, anomalies, ouverture)
     dernier = releves[-1]
+    apports: Decimal | None
+    gain: Decimal | None
+    frais: Decimal | None
     if annees:
         apports = sum((a.apports for a in annees), ZERO)
         rachats = sum((a.rachats for a in annees), ZERO)

@@ -104,7 +104,7 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
     fixe = debut + flux_ouverture
     rendement_min = rendement_max = None
     if debut > 0 and abs(flux_courant) > debut * SEUIL_VERSEMENTS:
-        bornes = sorted(_division(gain, base) for base in (fixe + flux_courant, fixe) if base > 0)
+        bornes = sorted(gain / base for base in (fixe + flux_courant, fixe) if base > 0)
         rendement_min, rendement_max = bornes[0], bornes[-1]
     durees = {a.duree_mois for _, a in lignes}
     return AnneeSynthese(
@@ -132,7 +132,7 @@ def _rendement_annualise(bilans: list[BilanContrat]) -> Decimal | None:
     for bilan in bilans:
         if bilan.annees:
             flux += _flux_annuels(bilan)
-        elif _situation_datee(bilan):
+        elif bilan.date_ouverture is not None and bilan.apports_cumules is not None and not bilan.annees:
             # Relevé de situation : seul le total versé est connu ; supposé versé à l'ouverture (taux minimal).
             flux += [(bilan.date_ouverture, -float(bilan.apports_cumules)), (bilan.date_valeur, float(bilan.valeur))]
     if not flux:

@@ -7,7 +7,31 @@ requires-python = ">=3.12"
 dependencies = []
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = [
+    "mypy>=2.4.1",
+    "pdoc>=16.0.0",
+    "pytest>=8",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.6",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["metabank"]
+# Contrôle des fonctions annotées et des appels ; pas de mode strict : les dict JSON de l'API restent des dict.
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["metabank"]
+
+[tool.coverage.report]
+# Plancher de metascrap (CLAUDE.md : couverture minimale 80 %).
+fail_under = 80
+show_missing = true
+skip_covered = true

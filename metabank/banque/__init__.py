@@ -11,7 +11,8 @@ from metabank.banque.modele import TYPES_PAR_PREFIXE, Compte, Export, Operation
 
 def lire_comptes(dossier: Path) -> tuple[list[Compte], list[str]]:
     """Rendre les comptes bancaires de dossier/, chacun fusionné depuis tous ses exports, et les erreurs de lecture."""
-    comptes, erreurs = [], []
+    comptes: list[Compte] = []
+    erreurs: list[str] = []
     if not dossier.exists():
         return comptes, erreurs
     for dossier_compte in sorted(dossier.glob("*/*")):

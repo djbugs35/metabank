@@ -115,7 +115,8 @@ def taux_au(jour: date) -> Decimal | None:
 def taux_moyen_annee(annee: int) -> Decimal | None:
     """Rendre la moyenne des taux en vigueur le 1er de chaque mois de l'année (les changements tombent le 1er)."""
     taux = [taux_au(date(annee, mois, 1)) for mois in range(1, 13)]
-    return None if None in taux else sum(taux, ZERO) / 12
+    connus = [t for t in taux if t is not None]
+    return sum(connus, ZERO) / 12 if len(connus) == len(taux) else None
 
 
 def analyser(compte: Compte, regles_perso: list[tuple[str, str]]) -> AnalyseCompte:

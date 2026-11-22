@@ -1,4 +1,5 @@
-# Regles reprises de cap-prepa et metascrap (docs/CONVENTIONS.md § 10) : strict par defaut.
+# Regles reprises de cap-prepa, egide et metascrap (metascrap/docs/CONVENTIONS.md § 10) : strict par defaut.
+# Longueur 120 et guillemets doubles comme cap-prepa et egide ; metascrap garde 100 et guillemets simples (historique).
 line-length = 120
 target-version = "py312"
 

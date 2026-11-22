@@ -4,6 +4,10 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+docs/api/
 .serena/
 _to_delete/
 # Base Wealthfolio, secrets chiffrés, exports et relevés : données personnelles, jamais dans le dépôt.

@@ -42,6 +42,7 @@ def etat_credits(comptes: list[Compte], revenus_mois_foyer: float | None, biens:
 
 def _credit(a: AnalyseCredit, revenus: Decimal | None, biens: dict) -> dict:
     c = a.compte
+    mensualite = a.mensualite_prelevee or a.mensualite
     bien = biens.get(c.numero_masque.lstrip("*")) or {}
     valeur = Decimal(str(bien["valeur"])) if bien.get("valeur") else None
     return {
@@ -55,9 +56,7 @@ def _credit(a: AnalyseCredit, revenus: Decimal | None, biens: dict) -> dict:
         "taux_annuel": _t(a.taux_annuel),
         "mensualite": _n(a.mensualite),
         "mensualite_prelevee": _n(a.mensualite_prelevee),
-        "part_revenus": _t((a.mensualite_prelevee or a.mensualite) / revenus)
-        if revenus and (a.mensualite_prelevee or a.mensualite)
-        else None,
+        "part_revenus": _t(mensualite / revenus) if revenus and mensualite else None,
         "mois_restants": a.mois_restants,
         "fin_estimee": a.fin_estimee.isoformat() if a.fin_estimee else None,
         "interets_restants": _n(a.interets_restants),
