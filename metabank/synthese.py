@@ -43,6 +43,8 @@ class Synthese:
     rendement_annualise: Decimal | None
     annees: tuple[AnneeSynthese, ...]
     sans_historique: tuple[str, ...]
+    situations_dans_rendement: tuple[str, ...] = ()
+    versements_incertains: bool = False
 
 
 def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[HistoriqueFrais]) -> Synthese:
@@ -56,9 +58,11 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         verse=sum((b.apports_cumules or ZERO for b in bilans), ZERO),
         gain=sum((b.gain_cumule or ZERO for b in bilans), ZERO),
         frais_cumules=sum((a.frais for a in annees), ZERO),
-        rendement_annualise=_rendement_annualise(suivis),
+        rendement_annualise=_rendement_annualise(bilans),
         annees=annees,
         sans_historique=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if not b.annees),
+        situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
+        versements_incertains=any("versements de l'année" in a for b in bilans for a in b.anomalies),
     )
 
 
@@ -66,9 +70,8 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
     """Rendre l'année sommée ; rendement de Dietz sur les sommes, versements en milieu d'année. MODELE § 6.1."""
     lignes = [(b, a) for b in bilans for a in b.annees if a.annee == annee]
     debut = sum((a.valeur_debut for _, a in lignes), ZERO)
-    flux = sum((a.apports - a.rachats for _, a in lignes), ZERO)
     gain = sum((a.gain for _, a in lignes), ZERO)
-    base = debut + flux / 2
+    base = debut + sum(((a.apports - a.rachats) * a.poids_versements for _, a in lignes), ZERO)
     return AnneeSynthese(
         annee=annee,
         verse=sum((a.apports for _, a in lignes), ZERO),
@@ -76,26 +79,41 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
         frais_releve=sum((a.frais or ZERO for _, a in lignes), ZERO),
         frais_fonds=sum((frais_fonds.get((b.titulaire, b.numero, annee), ZERO) for b, _ in lignes), ZERO),
         rendement=gain / base if base > 0 else None,
-        ouverture_dans_l_annee=any(a.valeur_debut == 0 for _, a in lignes),
+        ouverture_dans_l_annee=any(a.poids_estime for _, a in lignes),
     )
 
 
 def _rendement_annualise(bilans: list[BilanContrat]) -> Decimal | None:
     """Rendre le taux de rendement interne annualisé depuis l'ouverture. MODELE § 6.2."""
     flux: list[tuple[date, float]] = []
-    fin = None
     for bilan in bilans:
-        premiere = bilan.annees[0]
-        if premiere.valeur_debut > 0:
-            flux.append((date(premiere.annee - 1, 12, 31), -float(premiere.valeur_debut)))
-        flux.extend((date(a.annee, 7, 1), -float(a.apports - a.rachats)) for a in bilan.annees)
-        derniere = bilan.annees[-1]
-        flux.append((date(derniere.annee, 12, 31), float(derniere.valeur_fin)))
-        fin = max(fin or date.min, date(derniere.annee, 12, 31))
-    if not flux or fin is None:
+        if bilan.annees:
+            flux += _flux_annuels(bilan)
+        elif _situation_datee(bilan):
+            # Relevé de situation : seul le total versé est connu ; supposé versé à l'ouverture (taux minimal).
+            flux += [(bilan.date_ouverture, -float(bilan.apports_cumules)), (bilan.date_valeur, float(bilan.valeur))]
+    if not flux:
         return None
     taux = taux_rendement_interne(flux)
     return None if taux is None else Decimal(str(round(taux, 6)))
+
+
+def _flux_annuels(bilan: BilanContrat) -> list[tuple[date, float]]:
+    """Rendre les flux d'un contrat à relevés annuels : versements datés, valeur finale positive."""
+    premiere, derniere = bilan.annees[0], bilan.annees[-1]
+    flux = []
+    if premiere.valeur_debut > 0:
+        flux.append((date(premiere.annee - 1, 12, 31), -float(premiere.valeur_debut)))
+    for annee in bilan.annees:
+        ouverture = bilan.date_ouverture
+        jour = ouverture if annee.valeur_debut == 0 and ouverture and ouverture.year == annee.annee else None
+        flux.append((jour or date(annee.annee, 7, 1), -float(annee.apports - annee.rachats)))
+    flux.append((date(derniere.annee, 12, 31), float(derniere.valeur_fin)))
+    return flux
+
+
+def _situation_datee(bilan: BilanContrat) -> bool:
+    return not bilan.annees and bilan.date_ouverture is not None and bilan.apports_cumules is not None
 
 
 def taux_rendement_interne(flux: list[tuple[date, float]]) -> float | None:

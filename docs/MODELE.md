@@ -26,7 +26,9 @@ r = G / (V₀ + (A − R) / 2)
 
 Les relevés annuels ne datent pas les versements : on les suppose en moyenne au milieu de l'année. L'erreur est
 faible quand les versements sont petits devant V₀, plus forte l'année d'un gros versement.
-**Non calculé l'année d'ouverture** (V₀ = 0) : la durée de placement est inconnue.
+L'année d'ouverture (V₀ = 0), les versements sont placés à la **date d'ouverture** si elle est saisie dans
+`data/corrections.json` : r = G / ((A − R) × p), p = jours de l'ouverture au 31/12 / 365. Sans date, p = 0,5
+(milieu d'année) et l'année est marquée « * ».
 
 ### 1.3 Rendement avant frais
 r_avant = (G + F) / (V₀ + (A − R) / 2)
@@ -108,6 +110,11 @@ valeur, le versé et le gain.
 
 ### 6.2 Rentabilité annualisée depuis l'ouverture
 Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :
-versements nets de rachats au 1er juillet de chaque année (négatifs), valeur au premier 31/12 connu si le contrat
+versements nets de rachats au 1er juillet de chaque année, ou à la date d'ouverture l'année d'ouverture (négatifs), valeur au premier 31/12 connu si le contrat
 est antérieur aux relevés (négative), valeur au dernier 31/12 (positive). Résolu par dichotomie entre −99 % et
 +1 000 %. Elle est nette de tous les frais.
+
+### 6.3 Contrats à relevé de situation seul (PERP Cardif)
+Avec une date d'ouverture saisie, ils entrent dans la rentabilité annualisée : tout le versé depuis l'origine est
+supposé placé à l'ouverture (seule date connue), valeur de rachat à la date du relevé. Si des versements ont eu lieu
+plus tard, la rentabilité réelle est plus élevée : c'est un minimum.

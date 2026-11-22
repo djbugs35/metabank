@@ -40,6 +40,15 @@ Génère `data/tableau.html` (jamais versionné) et l'ouvre dans le navigateur :
 versements par contrat, évolution, frais visibles et cachés, supports du plus coûteux au moins coûteux, points
 d'attention. Page autonome : aucune ressource chargée depuis Internet.
 
+### Corrections saisies à la main
+
+Les relevés ne datent pas tout. Les dates d'ouverture des contrats se notent dans `data/corrections.json`
+(jamais versionné), clé = numéro du contrat :
+
+```json
+{"ouvertures": {"270272854": "2023-03-30", "50025784": "2019-12-08"}}
+```
+
 ## Bilan des assurances vie et contrats retraite
 
 Ranger les relevés PDF dans `data/<titulaire>/<type> - <assureur> - <contrat>/<année>/` (type : AV, PER, PERP),

@@ -37,3 +37,17 @@ def test_annee_d_ouverture_marquee_et_rentabilite_annualisee():
     assert s.annees[0].ouverture_dans_l_annee
     assert s.rendement_annualise is not None
     assert Decimal("0.03") < s.rendement_annualise < Decimal("0.05")
+
+
+def test_situation_datee_entre_dans_la_rentabilite_annualisee():
+    """PERP sans relevé annuel : 10 000 € versés à l'ouverture, 12 100 € deux ans plus tard : 10 % par an."""
+    from pathlib import Path  # noqa: PLC0415
+
+    from metabank.releves import lire_releve  # noqa: PLC0415
+
+    texte = (Path(__file__).parent / "exemples" / "cardif_situation.txt").read_text(encoding="utf-8")
+    texte = texte.replace("18 000,00", "10 000,00").replace("20 300,00", "12 100,00")
+    releves = [ReleveRange("B", lire_releve(texte, "", "perp"))]
+    s = synthetiser("B", faire_bilans(releves, {"12345678": date(2024, 11, 18)}), [])
+    assert round(s.rendement_annualise, 2) == Decimal("0.10")
+    assert s.situations_dans_rendement

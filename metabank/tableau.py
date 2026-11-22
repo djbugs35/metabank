@@ -70,7 +70,11 @@ def _tuiles(s: Synthese) -> str:
         ("Valeur", euros(s.valeur), ""),
         ("Versé", euros(s.verse), ""),
         ("Gain", euros(s.gain), f"{pourcent(gain_pct)} du versé" if gain_pct is not None else ""),
-        ("Rentabilité annualisée", pourcent(s.rendement_annualise), "par an depuis l'ouverture"),
+        (
+            "Rentabilité annualisée",
+            pourcent(s.rendement_annualise),
+            "⚠ versements incertains" if s.versements_incertains else "par an depuis l'ouverture",
+        ),
         (
             ("Frais payés", euros(s.frais_cumules), "depuis l'ouverture, fonds compris")
             if s.annees
@@ -120,7 +124,19 @@ def _notes(s: Synthese) -> str:
         notes.append(
             "Valeur, versé et gain incluent "
             + ", ".join(s.sans_historique)
-            + " (relevé de situation seul) ; graphiques, rentabilité et frais non."
+            + " (relevé de situation seul) ; graphiques et frais non."
+        )
+    if s.situations_dans_rendement:
+        notes.append(
+            "Rentabilité annualisée : pour "
+            + ", ".join(s.situations_dans_rendement)
+            + ", tout le versé est supposé placé à l'ouverture (les dates des versements sont inconnues) ;"
+            " c'est la rentabilité la plus basse possible."
+        )
+    if s.versements_incertains:
+        notes.append(
+            "⚠ Les relevés donnent deux montants différents pour les versements PER d'une année (voir points "
+            "d'attention) : la rentabilité affichée retient le plus petit et peut donc être surestimée."
         )
     return "".join(f"<p class='note'>{escape(n)}</p>" for n in notes)
 

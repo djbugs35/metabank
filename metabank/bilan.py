@@ -4,10 +4,12 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
+from metabank.corrections import date_ouverture
 from metabank.releves import ReleveRange
 from metabank.releves.modele import Releve
 
 ZERO = Decimal(0)
+MILIEU = Decimal("0.5")
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,9 @@ class Annee:
     rendement: Decimal | None
     rendement_avant_frais: Decimal | None
     frais_sur_encours: Decimal | None
+    # Part de l'année où les versements ont travaillé (0,5 = milieu d'année) ; estimée si l'ouverture est inconnue.
+    poids_versements: Decimal = Decimal("0.5")
+    poids_estime: bool = False
 
 
 @dataclass(frozen=True)
@@ -43,6 +48,7 @@ class BilanContrat:
     gain_cumule: Decimal | None
     frais_cumules: Decimal | None
     anomalies: tuple[str, ...] = field(default=())
+    date_ouverture: date | None = None
 
     @property
     def numero_masque(self) -> str:
@@ -50,26 +56,31 @@ class BilanContrat:
         return "…" + self.numero.replace(" ", "")[-4:]
 
 
-def faire_bilans(releves: list[ReleveRange]) -> list[BilanContrat]:
-    """Rendre un bilan par contrat (titulaire, numéro), à partir de tous ses relevés."""
+def faire_bilans(releves: list[ReleveRange], ouvertures: dict[str, date] | None = None) -> list[BilanContrat]:
+    """Rendre un bilan par contrat (titulaire, numéro), à partir de tous ses relevés.
+
+    Args:
+        ouvertures: dates d'ouverture par numéro de contrat (data/corrections.json), pour l'année d'ouverture.
+    """
     par_contrat: dict[tuple[str, str], list[Releve]] = {}
     for range_ in releves:
         par_contrat.setdefault((range_.titulaire, range_.releve.numero), []).append(range_.releve)
     return [
-        _bilan_contrat(titulaire, sorted(liste, key=lambda r: r.date_arrete))
-        for (titulaire, _), liste in sorted(par_contrat.items())
+        _bilan_contrat(titulaire, sorted(liste, key=lambda r: r.date_arrete), date_ouverture(numero, ouvertures or {}))
+        for (titulaire, numero), liste in sorted(par_contrat.items())
     ]
 
 
-def calculer_annee(releve: Releve, valeur_debut: Decimal) -> Annee:
+def calculer_annee(releve: Releve, valeur_debut: Decimal, ouverture: date | None = None) -> Annee:
     """Rendre le résultat de l'année d'un relevé annuel. MODELE § 1."""
     mouvements = releve.mouvements
     apports, rachats = mouvements.versements_bruts, mouvements.rachats
     gain = releve.valeur - valeur_debut - apports + rachats
     frais = releve.frais.total if releve.frais else None
-    # Date d'ouverture inconnue la première année : un rendement sur une durée inconnue ne voudrait rien dire.
-    base = valeur_debut + (apports - rachats) / 2 if valeur_debut > ZERO else None
-    encours_moyen = (valeur_debut + releve.valeur) / 2 if valeur_debut > ZERO else None
+    poids, estime = _poids_versements(releve.date_arrete, valeur_debut, ouverture)
+    base = valeur_debut + (apports - rachats) * poids
+    base = base if base > ZERO else None
+    encours_moyen = (valeur_debut + releve.valeur) / 2 if valeur_debut > ZERO else releve.valeur * poids
     return Annee(
         annee=releve.date_arrete.year,
         valeur_debut=valeur_debut,
@@ -81,12 +92,27 @@ def calculer_annee(releve: Releve, valeur_debut: Decimal) -> Annee:
         rendement=gain / base if base else None,
         rendement_avant_frais=(gain + frais) / base if base and frais is not None else None,
         frais_sur_encours=frais / encours_moyen if encours_moyen and frais is not None else None,
+        poids_versements=poids,
+        poids_estime=estime,
     )
 
 
-def _bilan_contrat(titulaire: str, releves: list[Releve]) -> BilanContrat:
+def _poids_versements(fin_annee: date, valeur_debut: Decimal, ouverture: date | None) -> tuple[Decimal, bool]:
+    """Rendre la part de l'année où les versements ont travaillé, et si elle est supposée. MODELE § 1.2.
+
+    L'année d'ouverture, les versements datent au plus tôt de l'ouverture : on les place à cette date.
+    Sinon, faute de dates dans les relevés, au milieu de l'année.
+    """
+    if valeur_debut > ZERO:
+        return MILIEU, False
+    if ouverture is not None and ouverture.year == fin_annee.year:
+        return Decimal((fin_annee - ouverture).days) / Decimal(365), False
+    return MILIEU, True
+
+
+def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None) -> BilanContrat:
     anomalies = [anomalie for releve in releves for anomalie in releve.anomalies]
-    annees = _annees(releves, anomalies)
+    annees = _annees(releves, anomalies, ouverture)
     dernier = releves[-1]
     if annees:
         apports = sum((a.apports for a in annees), ZERO)
@@ -116,10 +142,11 @@ def _bilan_contrat(titulaire: str, releves: list[Releve]) -> BilanContrat:
         gain_cumule=gain,
         frais_cumules=frais,
         anomalies=tuple(anomalies),
+        date_ouverture=ouverture,
     )
 
 
-def _annees(releves: list[Releve], anomalies: list[str]) -> list[Annee]:
+def _annees(releves: list[Releve], anomalies: list[str], ouverture: date | None) -> list[Annee]:
     annees: list[Annee] = []
     for releve in (r for r in releves if r.est_annuel):
         precedente = annees[-1].valeur_fin if annees else None
@@ -135,5 +162,5 @@ def _annees(releves: list[Releve], anomalies: list[str]) -> list[Annee]:
                 f"≠ valeur de fin du relevé précédent {precedente} €"
             )
         debut = releve.valeur_precedente if releve.valeur_precedente is not None else (precedente or ZERO)
-        annees.append(calculer_annee(releve, debut))
+        annees.append(calculer_annee(releve, debut, ouverture))
     return annees
