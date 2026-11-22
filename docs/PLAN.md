@@ -52,9 +52,10 @@ sans abonnement (hors le compte Claude déjà payé). **Lecture seule : aucun or
 
 | Suggestion | Jalon | État |
 |---|---|---|
-| Frais annuels en euros par enveloppe comme indicateur principal | 7 | à faire |
+| Frais annuels en euros par enveloppe comme indicateur principal | 7 | fait (`metabank bilan`, `metabank frais`) |
 | Alerte quand une enveloppe dérive de l'allocation cible au-delà d'un seuil | 7 | à faire |
 | Compteurs fiscaux : date des 5 ans du PEA, des 8 ans de l'assurance vie | 7 | à faire |
 | Rééquilibrage par les versements (sans vente) plutôt que par arbitrage | 7 | à faire |
 | Projection retraite : capital à l'échéance selon plusieurs hypothèses de rendement | 7 | à faire |
 | Sauvegarde automatique de `data/` (base Wealthfolio) sur le NAS | 9 | à faire |
+| Frais cachés des supports et rétrocessions, simulation de supports moins chers | 7 | fait (`metabank frais`) |

@@ -2,10 +2,13 @@
 
 import argparse
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 from metabank.bilan import faire_bilans
+from metabank.frais import analyser_frais
 from metabank.rapport import en_json, formater_texte
+from metabank.rapport_frais import formater_frais
 from metabank.releves import lire_dossier
 
 RACINE = Path(__file__).resolve().parent.parent
@@ -17,8 +20,25 @@ def main(arguments: list[str] | None = None) -> int:
     commandes = analyseur.add_subparsers(dest="commande", required=True)
     bilan = commandes.add_parser("bilan", help="lire les relevés PDF de data/ et afficher le bilan par contrat")
     bilan.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/<titulaire>/<contrat>/")
+    frais = commandes.add_parser("frais", help="frais support par support et simulation de supports moins chers")
+    frais.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/<titulaire>/<contrat>/")
+    frais.add_argument("--cible", type=Decimal, default=Decimal("0.20"), help="frais d'un support peu cher, en %%")
+    frais.add_argument("--rendement", type=Decimal, default=Decimal(5), help="rendement brut supposé, en %% par an")
+    frais.add_argument("--horizon", type=int, default=15, help="durée de la projection, en années")
     options = analyseur.parse_args(arguments)
+    if options.commande == "frais":
+        return _frais(options)
     return _bilan(options.donnees)
+
+
+def _frais(options) -> int:
+    releves, erreurs = lire_dossier(options.donnees)
+    analyses = analyser_frais(releves, options.cible, options.rendement, options.horizon)
+    print(formater_frais(analyses))
+    anomalies = [a for r in releves for a in r.releve.anomalies if "frais du support" in a]
+    for message in erreurs + anomalies:
+        print(f"  ⚠ {message}")
+    return 1 if erreurs else 0
 
 
 def _bilan(dossier: Path) -> int:

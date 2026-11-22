@@ -47,6 +47,15 @@ Pour chaque contrat : versements, valeur, gain, rendement et frais par année et
 incohérences relevées dans les documents de l'assureur. Formules : [docs/MODELE.md](docs/MODELE.md).
 Le détail est écrit dans `data/bilan.json` (jamais versionné).
 
+Frais support par support (y compris ceux déjà déduits des cours) et simulation de supports moins chers :
+
+```sh
+uv run python -m metabank frais
+```
+
+Options : `--cible 0.20` (frais d'un support peu cher, en %), `--rendement 5` (rendement brut supposé),
+`--horizon 15` (années).
+
 ## Où sont les données
 
 Dans `data/` : la base Wealthfolio (`wealthfolio.db`) et ses secrets chiffrés. Ce dossier n'est jamais versionné :

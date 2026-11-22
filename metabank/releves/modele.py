@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
+from metabank.releves.frais_supports import FraisSupport
+
 
 @dataclass(frozen=True)
 class Support:
@@ -66,6 +68,8 @@ class Releve:
     versements_volontaires_annee: Decimal | None = None
     versements_bruts_depuis_origine: Decimal | None = None
     rachats_depuis_origine: Decimal | None = None
+    frais_supports: tuple[FraisSupport, ...] = field(default=())
+    taux_frais_fonds_euros: Decimal | None = None
     anomalies: tuple[str, ...] = field(default=())
     fichier: str = ""
 

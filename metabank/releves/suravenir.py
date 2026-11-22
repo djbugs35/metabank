@@ -7,6 +7,7 @@ import re
 from dataclasses import replace
 from decimal import Decimal
 
+from metabank.releves.frais_supports import lire_frais_supports, taux_frais_fonds_euros
 from metabank.releves.modele import Frais, Mouvements, Releve, Support
 from metabank.releves.texte import (
     MOTIF_ISIN,
@@ -60,6 +61,8 @@ def lire_releve_suravenir(texte: str, fichier: str = "", type_indique: str | Non
     supports = _lire_supports(lignes, anomalies)
     mouvements = _lire_mouvements(lignes, anomalies)
     frais = _lire_frais(plat)
+    frais_supports, anomalies_frais = lire_frais_supports(texte)
+    anomalies += anomalies_frais
     releve = Releve(
         assureur="Suravenir",
         produit=_produit(lignes),
@@ -73,6 +76,8 @@ def lire_releve_suravenir(texte: str, fichier: str = "", type_indique: str | Non
         ),
         mouvements=mouvements,
         frais=frais,
+        frais_supports=tuple(frais_supports),
+        taux_frais_fonds_euros=taux_frais_fonds_euros(texte),
         versements_volontaires_annee=_versements_volontaires(plat, r"EVOLUTION DE VOTRE PLAN EN \d{4}")
         if est_per
         else None,

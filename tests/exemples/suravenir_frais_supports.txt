@@ -1,0 +1,19 @@
+                                   INFORMATIONS RÉGLEMENTAIRES SUR LES SUPPORTS D'INVESTISSEMENT
+                                        FONDS                                                                          1,40%                                     2,48%
+           FR0000000001                 ACTIONS        GESTION A        3       6,10%      6,05%      dont      4,70%      4,65%      1,08%      108,00      dont      3,62%      3,57%
+                                        EXEMPLE C                                                                      0,70%                                     0,70%
+
+                                        FONDS                                                                          0,20%                                     1,28%
+           LU0000000002                 OBLIGATIONS    GESTION B        2       3,00%      2,50%      dont      2,80%      2,30%      1,08%      108,00      dont      1,72%      1,22%
+                                                                                                                       0,00%                                     0,00%
+
+                                        FONDS                                                                          1,00%                                     2,08%
+           FR0000000009                 FAUX           GESTION C        2       3,00%      2,50%      dont      2,50%      2,30%      1,08%       10,00      dont      1,42%      1,22%
+                                                                                                                       0,50%                                     0,50%
+
+                                        FONDS                                                                          2,00%                                     3,00%
+                                                                     121,74      119,74
+           FR0000000005                 OR             GESTION D        5       22,59%      dont      20,59%      1,00%      10,41      dont      118,74%      19,59%
+                                                                     %           %
+                                        EXEMPLE                                                                        0,93%                                     0,93%
+                                        Taux de frais annuels de gestion                                        0,80%            0,80%
