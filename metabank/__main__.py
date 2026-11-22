@@ -10,6 +10,7 @@ from pathlib import Path
 
 from metabank.bilan import faire_bilans
 from metabank.frais import analyser_frais
+from metabank.frais_historique import historiques_frais
 from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
 from metabank.releves import lire_dossier
@@ -52,7 +53,14 @@ def _frais(options) -> int:
 
 def _tableau(dossier: Path, ouvrir: bool) -> int:
     releves, erreurs = lire_dossier(dossier)
-    page = generer_html(Tableau(faire_bilans(releves), analyser_frais(releves), datetime.now().astimezone().date()))
+    page = generer_html(
+        Tableau(
+            faire_bilans(releves),
+            analyser_frais(releves),
+            datetime.now().astimezone().date(),
+            historiques_frais(releves),
+        )
+    )
     sortie = dossier / "tableau.html"
     _ecrire(sortie, page)
     print(f"Tableau de bord : {sortie}")

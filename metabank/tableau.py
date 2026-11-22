@@ -4,13 +4,14 @@ Graphiques en SVG écrits ici même : pas de bibliothèque à télécharger, la 
 Palette : catégorielle de référence (skill dataviz), une version claire et une sombre.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from html import escape
 
 from metabank.bilan import BilanContrat
 from metabank.frais import AnalyseFrais
+from metabank.frais_historique import HistoriqueFrais
 from metabank.rapport import LIBELLES_TYPES, euros
 from metabank.rapport_frais import points
 
@@ -29,6 +30,7 @@ class Tableau:
     bilans: list[BilanContrat]
     analyses: list[AnalyseFrais]
     genere_le: date
+    historiques: list[HistoriqueFrais] = field(default_factory=list)
 
     def analyse_de(self, bilan: BilanContrat) -> AnalyseFrais | None:
         """Rendre l'analyse des frais du même contrat, ou None (contrat sans détail des supports)."""
@@ -45,6 +47,7 @@ def generer_html(tableau: Tableau) -> str:
         _section("Valeur et versements par contrat", _barres_valeur(tableau.bilans)),
         _section("Évolution des contrats suivis depuis l'ouverture", _evolution(tableau.bilans)),
         _section("Frais annuels par contrat, au rythme actuel", _barres_frais(tableau)),
+        _section("Frais payés depuis l'ouverture", _table_historique(tableau.historiques)),
         _section("Les supports, du plus coûteux au moins coûteux", _table_supports(tableau.analyses)),
         _section("Points d'attention", _points_attention(tableau)),
     ]
@@ -61,11 +64,13 @@ def _tuiles(tableau: Tableau) -> str:
     frais = sum((a.cout_total for a in tableau.analyses), ZERO)
     caches = sum((a.frais_dans_supports for a in tableau.analyses), ZERO)
     retro = sum((a.retrocessions for a in tableau.analyses), ZERO)
+    cumul = sum((h.cumul for h in tableau.historiques), ZERO)
+    depuis = min((a.annee for h in tableau.historiques for a in h.annees), default=None)
     tuiles = [
         ("Patrimoine suivi", euros(valeur), f"{len(tableau.bilans)} contrats"),
         ("Versé", euros(verse), f"gain {euros(valeur - verse)}"),
-        ("Frais par an, tout compris", euros(frais), "contrats au détail connu"),
-        ("dont frais cachés dans les fonds", euros(caches), f"dont {euros(retro)} reversés au distributeur"),
+        ("Frais par an, tout compris", euros(frais), f"dont {euros(caches)} cachés dans les fonds"),
+        (f"Frais payés depuis {depuis or '?'}", euros(cumul), f"dont {euros(retro)} par an reversés au distributeur"),
     ]
     contenu = "".join(
         f'<div class="tuile"><div class="etiquette">{escape(e)}</div><div class="valeur">{escape(v)}</div>'
@@ -174,6 +179,37 @@ def _table_supports(analyses: list[AnalyseFrais]) -> str:
     return f'<div class="defile"><table><thead>{entete}</thead><tbody>{corps}</tbody></table></div>'
 
 
+def _table_historique(historiques: list[HistoriqueFrais]) -> str:
+    """Rendre une ligne par contrat et par année, puis le total de chaque contrat et du foyer."""
+    if not historiques:
+        return "<p>Aucun contrat à relevés annuels.</p>"
+    lignes = []
+    for h in historiques:
+        for a in h.annees:
+            estime = f" ({a.supports_taux_estime} fonds au taux moyen)" if a.supports_taux_estime else ""
+            lignes.append(
+                f"<tr><td>{escape(h.titulaire)} · {escape(h.produit)}</td><td>{a.annee}</td>"
+                f'<td class="n">{euros(a.frais_releve)}</td><td class="n">{euros(a.frais_fonds)}{escape(estime)}</td>'
+                f'<td class="n">{euros(a.total)}</td></tr>'
+            )
+        lignes.append(
+            f'<tr class="total"><td>{escape(h.titulaire)} · {escape(h.produit)}</td><td>depuis l\'ouverture</td>'
+            f'<td class="n">{euros(h.cumul_releve)}</td><td class="n">{euros(h.cumul_fonds)}</td>'
+            f'<td class="n">{euros(h.cumul)}</td></tr>'
+        )
+    releve = sum((h.cumul_releve for h in historiques), ZERO)
+    fonds = sum((h.cumul_fonds for h in historiques), ZERO)
+    lignes.append(
+        f'<tr class="total"><td>Foyer</td><td></td><td class="n">{euros(releve)}</td>'
+        f'<td class="n">{euros(fonds)}</td><td class="n">{euros(releve + fonds)}</td></tr>'
+    )
+    entete = ("<tr><th>Contrat</th><th>Année</th><th>Frais du relevé (exacts)</th><th>Frais des fonds (estimés)</th>"
+              "<th>Total</th></tr>")  # fmt: skip
+    note = ("<p class='note'>Frais des fonds : encours moyen de chaque fonds (31/12 précédent et 31/12 de l'année) "
+            "multiplié par ses frais de gestion ; un fonds acheté et revendu dans l'année n'est pas compté. MODELE § 5.</p>")  # fmt: skip
+    return f'<div class="defile"><table><thead>{entete}</thead><tbody>{"".join(lignes)}</tbody></table></div>{note}'
+
+
 def _points_attention(tableau: Tableau) -> str:
     points_ = [f"{b.titulaire} · {b.produit} : {a.split(' : ', 1)[-1]}" for b in tableau.bilans for a in b.anomalies]
     points_ += [
@@ -249,6 +285,7 @@ i.serie-1 {{ background:var(--serie-1); }} i.serie-2 {{ background:var(--serie-2
 .defile {{ overflow-x:auto; }} table {{ border-collapse:collapse; width:100%; font-size:13px; }}
 th, td {{ padding:6px 8px; border-bottom:1px solid var(--trait); text-align:left; white-space:nowrap; }}
 th {{ color:var(--texte-2); font-weight:600; }} td.n {{ text-align:right; font-variant-numeric:tabular-nums; }}
+tr.total td {{ font-weight:650; }}
 ul {{ margin:0; padding-left:20px; }} li {{ margin:4px 0; }}
 </style></head>
 <body><main>

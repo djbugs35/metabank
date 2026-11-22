@@ -84,3 +84,16 @@ Frais de support cible b (0,20 point par défaut, ordre de grandeur d'un ETF) :
 Sans nouveau versement, sur H années, à rendement brut r (avant tous frais) et taux de frais moyen t :
 V_H = V × (1 + (r − t) / 100)^H. L'écart affiché compare t actuel et t après simulation.
 r = 5 % et H = 15 ans par défaut : hypothèses, pas des prévisions.
+
+## 5. Frais depuis l'ouverture (`metabank tableau`, section « Frais payés depuis l'ouverture »)
+
+### 5.1 Taux des fonds
+Frais de gestion B de chaque fonds (en points) pris dans le tableau « frais sur les supports » le plus récent qui le
+cite. Un fonds vendu avant ce tableau reçoit le taux moyen, pondéré par la valeur, des fonds au taux connu de l'année ;
+le nombre de fonds ainsi estimés est affiché. Une année sans aucun fonds au taux connu prend le taux moyen pondéré du
+dernier relevé.
+
+### 5.2 Frais d'une année
+Frais du relevé (exacts) + Σ sur les fonds de ((V au 31/12 précédent + V au 31/12 de l'année) / 2) × B / 100.
+L'année d'ouverture, V au 31/12 précédent vaut 0 (versements supposés en milieu d'année).
+Un fonds acheté et revendu dans la même année n'apparaît à aucun 31/12 : ses frais ne sont pas comptés (sous-estimation).
