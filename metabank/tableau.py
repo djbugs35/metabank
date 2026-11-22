@@ -13,7 +13,7 @@ from metabank.bilan import BilanContrat
 from metabank.frais import AnalyseFrais
 from metabank.frais_historique import HistoriqueFrais
 from metabank.graphiques import Serie, barres_groupees
-from metabank.rapport import LIBELLES_TYPES, euros, pourcent
+from metabank.rapport import LIBELLES_TYPES, euros
 from metabank.rapport_frais import points
 from metabank.synthese import Synthese, synthetiser
 
@@ -33,14 +33,15 @@ class Tableau:
 def generer_html(tableau: Tableau) -> str:
     """Rendre la page HTML complète : foyer, puis chaque personne, puis chaque contrat, puis le détail."""
     b, h = tableau.bilans, tableau.historiques
-    blocs = [_bloc(synthetiser("Foyer", b, h), "h2")]
+    foyer = synthetiser("Foyer", b, h)
+    blocs = [_bloc(foyer, "h2", foyer)]
     blocs.extend(
-        _bloc(synthetiser(titulaire, [x for x in b if x.titulaire == titulaire], h), "h2")
+        _bloc(synthetiser(titulaire, [x for x in b if x.titulaire == titulaire], h), "h2", foyer)
         for titulaire in sorted({bilan.titulaire for bilan in b})
     )
     contrats = "".join(
         f'<details class="contrat"><summary>{escape(_nom(bilan))} — {euros(bilan.valeur)}</summary>'
-        f"{_bloc(synthetiser(_nom(bilan), [bilan], h), None)}</details>"
+        f"{_bloc(synthetiser(_nom(bilan), [bilan], h), None, foyer)}</details>"
         for bilan in sorted(b, key=lambda x: (x.titulaire, -x.valeur))
     )
     blocs.append(f'<div class="bloc"><h2>Par contrat</h2>{contrats}</div>')
@@ -61,34 +62,42 @@ def _section(titre: str, contenu: str) -> str:
     return f"<section><h2>{escape(titre)}</h2>{contenu}</section>"
 
 
-def _bloc(s: Synthese, niveau_titre: str | None) -> str:
-    """Rendre les tuiles et les trois graphiques d'un ensemble de contrats."""
+def _bloc(s: Synthese, niveau_titre: str | None, foyer: Synthese) -> str:
+    """Rendre les tuiles et le graphique d'un ensemble de contrats."""
     titre = f"<{niveau_titre}>{escape(s.nom)}</{niveau_titre}>" if niveau_titre else ""
-    return f'<div class="bloc">{titre}{_tuiles(s)}{_graphiques(s)}{_notes(s)}</div>'
+    return f'<div class="bloc">{titre}{_tuiles(s, foyer)}{_graphiques(s)}{_notes(s)}</div>'
 
 
-def _tuiles(s: Synthese) -> str:
-    """Rendre les quatre chiffres de la période : versé, valeur, gagné, frais."""
-    gagne_note = ""
+def _part(montant: Decimal, total: Decimal) -> str:
+    return f"{_signe(montant / total * 100, False)} %" if total else "—"
+
+
+def _tuiles(s: Synthese, foyer: Synthese) -> str:
+    """Rendre les quatre chiffres de la période, chacun en euros et en pourcentage."""
+    gagne_pct, gagne_note = "—", ""
     if s.verse:
-        gagne_note = f"{_signe(s.gain / s.verse * 100)} % sur la période"
+        gagne_pct = f"{_signe(s.gain / s.verse * 100)} %"
+        gagne_note = "du versé, sur toute la période"
         if s.rendement_annualise is not None:
-            gagne_note += f", soit {pourcent(s.rendement_annualise)} par an"
-    frais = (
-        (euros(s.frais_cumules), f"{_signe(s.frais_cumules / s.verse * 100, False)} % du versé")
-        if s.annees and s.verse
-        else ("—", "inconnus (relevé de situation seul)")
-    )
+            gagne_note += f" ; soit {_signe(s.rendement_annualise * 100)} % par an"
+    verse_suivi = sum((a.verse for a in s.annees), ZERO)
+    if s.annees and verse_suivi:
+        note = "du versé des contrats à relevés annuels" if s.sans_historique else "du versé, sur toute la période"
+        if s.frais_par_an is not None:
+            note += f" ; soit {_signe(s.frais_par_an * 100, False)} % par an des sommes placées"
+        frais = (euros(s.frais_cumules), _part(s.frais_cumules, verse_suivi), note)
+    else:
+        frais = ("—", "—", "inconnus (relevé de situation seul)")
     tuiles = [
-        ("Versé", euros(s.verse), "votre argent placé"),
-        ("Valeur aujourd'hui", euros(s.valeur), ""),
-        ("Gagné, frais déduits", f"{'+' if s.gain >= 0 else ''}{euros(s.gain)}", gagne_note),
-        ("Frais payés", frais[0], frais[1]),
+        ("Versé", euros(s.verse), _part(s.verse, foyer.verse), "du versé du foyer"),
+        ("Valeur aujourd'hui", euros(s.valeur), _part(s.valeur, foyer.valeur), "du patrimoine du foyer"),
+        ("Gagné, frais déduits", f"{'+' if s.gain >= 0 else ''}{euros(s.gain)}", gagne_pct, gagne_note),
+        ("Frais payés", *frais),
     ]
     contenu = "".join(
         f'<div class="tuile"><div class="etiquette">{escape(e)}</div><div class="valeur">{escape(v)}</div>'
-        f'<div class="note">{escape(n)}</div></div>'
-        for e, v, n in tuiles
+        f'<div class="pct">{escape(p)}</div><div class="note">{escape(n)}</div></div>'
+        for e, v, p, n in tuiles
     )
     return f'<div class="tuiles">{contenu}</div>'
 
@@ -103,14 +112,25 @@ def _graphiques(s: Synthese) -> str:
         return ""
     annees = [a.annee for a in s.annees]
     return barres_groupees(
-        "Ce que vous avez gagné et payé en frais, chaque année",
+        "Gagné et frais payés chaque année (en % des sommes placées dans l'année)",
         annees,
         [
-            Serie("serie-3", "Gagné (frais déduits)", [a.gain for a in s.annees]),
-            Serie("serie-2", "Frais payés", [a.frais for a in s.annees]),
+            Serie(
+                "serie-3", "Gagné (frais déduits)", [a.gain for a in s.annees], [_pct(a.rendement) for a in s.annees]
+            ),
+            Serie(
+                "serie-2",
+                "Frais payés",
+                [a.frais for a in s.annees],
+                [_pct(a.rendement_frais, False) for a in s.annees],
+            ),
         ],
         euros,
     )
+
+
+def _pct(taux: Decimal | None, avec_plus: bool = True) -> str:
+    return "" if taux is None else f"{_signe(taux * 100, avec_plus)} %"
 
 
 def _notes(s: Synthese) -> str:
@@ -186,7 +206,8 @@ tr.total td {{ font-weight:650; }}
 figure.graphique {{ margin:0; background:var(--surface); border:1px solid var(--trait); border-radius:12px; padding:12px 14px; }}
 figcaption {{ font-weight:600; font-size:14px; margin-bottom:6px; }}
 .serie-3 {{ fill:var(--serie-3); }} i.serie-3 {{ background:var(--serie-3); }}
-.tuiles .tuile .valeur {{ font-size:22px; }}
+.tuiles .tuile .valeur {{ font-size:22px; }} .pct {{ font-size:17px; font-weight:600; }}
+.valeur-barre .sous {{ fill:var(--texte-2); font-size:11px; }}
 details.contrat {{ background:var(--surface); border:1px solid var(--trait); border-radius:12px; padding:12px 16px; margin-top:10px; }}
 details.contrat summary {{ cursor:pointer; font-weight:600; }}
 ul {{ margin:0; padding-left:20px; }} li {{ margin:4px 0; }}
@@ -196,7 +217,7 @@ ul {{ margin:0; padding-left:20px; }} li {{ margin:4px 0; }}
 <div class="sous-titre">Généré le {date} par metabank, à partir des relevés de data/. Données locales, rien n'est envoyé.
 Gagné : valeur aujourd'hui moins versé, tous frais déjà déduits.</div>
 {corps}
-<p class="note">Frais : ceux du relevé (exacts) et ceux des fonds, déjà déduits de leur cours (estimés). Rentabilité par an :
-moyenne annuelle depuis l'ouverture. Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
+<p class="note">Frais : ceux du relevé (exacts) et ceux des fonds, déjà déduits de leur cours (estimés). Pourcentages par an : moyenne annuelle
+depuis l'ouverture ; pour l'année d'ouverture, sur la durée réellement placée. Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
 </main></body></html>
 """

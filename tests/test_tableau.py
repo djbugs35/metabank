@@ -32,7 +32,8 @@ def test_page_contient_les_contrats_et_le_total():
     assert "Patrimoine du foyer" in page
     assert "B · PERP Cardif Essentiel Retraite (Cardif)" in page
     assert "41\u202f400 €" in page  # 21 100 + 20 300
-    assert "gagné et payé en frais" in page
+    assert "Gagné et frais payés chaque année" in page
+    assert "du patrimoine du foyer" in page
 
 
 def test_situation_seule_signalee_dans_les_points_d_attention():

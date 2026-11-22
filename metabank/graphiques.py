@@ -20,6 +20,7 @@ class Serie:
     classe: str
     nom: str
     valeurs: list[Decimal | None]
+    sous_etiquettes: list[str] | None = None
 
 
 def histogramme(
@@ -112,7 +113,7 @@ def _legende(series: list[Serie]) -> str:
 
 def barres_groupees(titre: str, annees: list[int], series: list[Serie], formater: Callable[[Decimal], str]) -> str:
     """Rendre un histogramme par année où les séries sont côte à côte, chaque barre avec sa valeur au-dessus."""
-    largeur, hauteur, haut, bas = 600, 230, 24, 26
+    largeur, hauteur, haut, bas = 600, 250, 40, 26
     valeurs = [v for s in series for v in s.valeurs if v is not None] or [ZERO]
     bas_echelle, haut_echelle = min(*valeurs, ZERO), max(*valeurs, ZERO)
     etendue = (haut_echelle - bas_echelle) or Decimal(1)
@@ -137,10 +138,12 @@ def barres_groupees(titre: str, annees: list[int], series: list[Serie], formater
                 f'<rect x="{x:.1f}" y="{y(dessus):.1f}" width="{barre:.1f}" height="{max(y(dessous) - y(dessus), 1):.1f}" '
                 f'rx="4" class="{serie.classe}"><title>{escape(serie.nom)} {annee} : {escape(texte)}</title></rect>'
             )
-            y_texte = y(dessus) - 6 if valeur >= 0 else y(dessous) + 14
+            sous = serie.sous_etiquettes[rang] if serie.sous_etiquettes else ""
+            y_texte = y(dessus) - 6 - (HAUTEUR_LIGNE if sous else 0) if valeur >= 0 else y(dessous) + 14
+            ligne2 = f'<tspan x="{x + barre / 2:.1f}" dy="{HAUTEUR_LIGNE}" class="sous">{escape(sous)}</tspan>'
             contenu.append(
                 f'<text x="{x + barre / 2:.1f}" y="{y_texte:.1f}" class="valeur-barre" text-anchor="middle">'
-                f"{escape(texte)}</text>"
+                f"{escape(texte)}{ligne2 if sous else ''}</text>"
             )
         contenu.append(
             f'<text x="{centre:.1f}" y="{hauteur - 6}" class="graduation" text-anchor="middle">{annee}</text>'

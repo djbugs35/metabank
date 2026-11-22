@@ -30,6 +30,12 @@ class AnneeSynthese:
     rendement_min: Decimal | None = None
     rendement_max: Decimal | None = None
     duree_mois: int | None = None
+    capital: Decimal | None = None
+
+    @property
+    def rendement_frais(self) -> Decimal | None:
+        """Rendre les frais de l'année rapportés au même capital que le gain."""
+        return self.frais / self.capital if self.capital else None
 
     @property
     def approximatif(self) -> bool:
@@ -56,6 +62,12 @@ class Synthese:
     sans_historique: tuple[str, ...]
     situations_dans_rendement: tuple[str, ...] = ()
     versements_incertains: bool = False
+
+    @property
+    def frais_par_an(self) -> Decimal | None:
+        """Rendre les frais cumulés rapportés aux sommes placées chaque année (taux moyen annuel)."""
+        capital = sum((a.capital for a in self.annees if a.capital), ZERO)
+        return self.frais_cumules / capital if capital else None
 
 
 def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[HistoriqueFrais]) -> Synthese:
@@ -102,6 +114,7 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
         frais_releve=sum((a.frais or ZERO for _, a in lignes), ZERO),
         frais_fonds=sum((frais_fonds.get((b.titulaire, b.numero, annee), ZERO) for b, _ in lignes), ZERO),
         rendement=_division(gain, fixe + flux_courant / 2),
+        capital=fixe + flux_courant / 2 if fixe + flux_courant / 2 > 0 else None,
         ouverture_dans_l_annee=any(a.poids_estime for _, a in lignes),
         rendement_min=rendement_min,
         rendement_max=rendement_max,
