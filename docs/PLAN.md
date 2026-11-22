@@ -68,3 +68,4 @@ et ne code lui-même que ce qu'aucun ne fait (lecture des relevés d'assureurs, 
 | Sauvegarde automatique de `data/` (base Wealthfolio) sur le NAS | 9 | à faire |
 | Frais cachés des supports et rétrocessions, simulation de supports moins chers | 7 | fait (`metabank frais`) |
 | Application web locale : tableau de bord, dépôt de relevés, corrections, simulation, assistant Claude | 7 bis | fait (`metabank web`) |
+| Export PDF de tout ou partie des synthèses (une page A4 par vue, prénoms masquables) | 7 bis | fait (`metabank web`, bouton « Exporter en PDF ») |

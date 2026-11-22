@@ -24,7 +24,21 @@
   <p id="chargement" class="discret">Lecture des relevés…</p>
 
   <section id="tableau" data-panneau>
-    <div class="puces" id="choix-niveau"></div>
+    <div class="entete-vue">
+      <div class="puces" id="choix-niveau"></div>
+      <button class="action secondaire" id="exporter">Exporter en PDF</button>
+    </div>
+    <div class="carte cache" id="panneau-export">
+      <h2>Exporter en PDF</h2>
+      <p class="discret">Cochez ce que vous voulez envoyer : une page par vue. Aucun numéro de contrat n'y figure.</p>
+      <div class="export-vues" id="export-vues"></div>
+      <div class="puces">
+        <label><input type="checkbox" id="export-fonds"> Détail des fonds</label>
+        <label><input type="checkbox" id="export-points" checked> Points d'attention</label>
+        <label><input type="checkbox" id="export-noms" checked> Prénoms des titulaires</label>
+      </div>
+      <p><button class="action" id="creer-pdf">Créer le PDF</button> <span class="discret" id="etat-export"></span></p>
+    </div>
     <div class="puces" id="choix-contrat"></div>
     <h1 id="titre-vue"></h1>
     <div class="tuiles" id="tuiles"></div>

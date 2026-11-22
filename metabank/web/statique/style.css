@@ -83,3 +83,8 @@ button.action:disabled { opacity: .5; cursor: default; }
 textarea { width: 100%; min-height: 70px; resize: vertical; }
 .cache { display: none !important; }
 #sim-valeur { width: 130px; }
+.entete-vue { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+button.action.secondaire { background: var(--surface); color: var(--texte); border-color: var(--trait); }
+.export-vues { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.export-vues .personne { margin-left: 16px; } .export-vues .contrat { margin-left: 32px; }
+.carte h2:first-child { margin-top: 0; }

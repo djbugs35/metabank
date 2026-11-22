@@ -186,6 +186,13 @@ def test_serveur_local_sert_la_page_et_l_etat(serveur):
     assert json.loads(corps)["vues"][0]["nom"] == "Foyer"
 
 
+def test_rapport_pdf_servi_avec_ses_vues_en_parametre(serveur):
+    statut, page = _requete(serveur + "/rapport?vues=foyer,p:Alice&fonds=1")
+    assert statut == 200
+    assert b"rapport.js" in page
+    assert _requete(serveur + "/rendu.js")[0] == 200
+
+
 def test_serveur_refuse_un_envoi_venu_d_une_autre_page(serveur):
     """Une page web quelconque ouverte dans le navigateur ne doit pas pouvoir écrire dans data/."""
     simulation = {"valeur": 1, "rendement_brut": 5, "frais_actuels": 1, "frais_vises": 1, "horizon": 1}

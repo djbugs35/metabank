@@ -12,7 +12,7 @@ import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
@@ -28,6 +28,10 @@ FICHIERS = {
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/graphiques.js": ("graphiques.js", "text/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
+    "/rendu.js": ("rendu.js", "text/javascript; charset=utf-8"),
+    "/rapport": ("rapport.html", "text/html; charset=utf-8"),
+    "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
+    "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
 }
 CORPS_MAX = 25 * 1024 * 1024
 
@@ -76,15 +80,16 @@ class _Gestionnaire(BaseHTTPRequestHandler):
         """Ne rien journaliser : les URL et réponses peuvent contenir des montants."""
 
     def do_GET(self) -> None:
-        """Servir la page, l'état ou le texte envoyé à Claude."""
+        """Servir la page, le rapport à enregistrer en PDF, l'état ou le texte envoyé à Claude."""
         if not self._requete_sure():
             return
-        if self.path in FICHIERS:
-            nom, type_ = FICHIERS[self.path]
+        chemin = urlsplit(self.path).path
+        if chemin in FICHIERS:
+            nom, type_ = FICHIERS[chemin]
             self._envoyer(HTTPStatus.OK, (STATIQUE / nom).read_bytes(), type_)
-        elif self.path == "/api/etat":
+        elif chemin == "/api/etat":
             self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": trouver_claude() is not None})
-        elif self.path == "/api/assistant/contexte":
+        elif chemin == "/api/assistant/contexte":
             self._envoyer(HTTPStatus.OK, contexte(self.cache.lire()).encode(), "text/plain; charset=utf-8")
         else:
             self._json(HTTPStatus.NOT_FOUND, {"erreur": "introuvable"})
