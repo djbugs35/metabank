@@ -1,0 +1,85 @@
+/* metabank : palette catégorielle de référence (skill dataviz), une version claire et une sombre. */
+:root {
+  color-scheme: light;
+  --fond: #f6f5f2; --surface: #fcfcfb; --surface-2: #efeee9; --texte: #0b0b0b; --texte-2: #52514e; --trait: #dcdad3;
+  --accent: #2a78d6; --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --alerte: #b45309; --erreur: #c0362c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fond: #121211; --surface: #1a1a19; --surface-2: #242422; --texte: #f0efec; --texte-2: #c3c2b7; --trait: #3a3936;
+    --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --alerte: #f59e0b; --erreur: #ef6b5f;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fond: #121211; --surface: #1a1a19; --surface-2: #242422; --texte: #f0efec; --texte-2: #c3c2b7; --trait: #3a3936;
+  --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --alerte: #f59e0b; --erreur: #ef6b5f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--texte); font: 15px/1.5 -apple-system, "Segoe UI", sans-serif; }
+header { position: sticky; top: 0; z-index: 2; background: var(--fond); border-bottom: 1px solid var(--trait); }
+.barre { max-width: 1040px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.marque { font-weight: 700; font-size: 18px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; }
+nav button, .puce { border: 1px solid var(--trait); background: var(--surface); color: var(--texte); border-radius: 999px;
+  padding: 5px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+nav button[aria-selected="true"], .puce[aria-pressed="true"] { background: var(--texte); color: var(--fond); border-color: var(--texte); }
+main { max-width: 1040px; margin: 0 auto; padding: 16px 16px 64px; }
+h1 { font-size: 24px; margin: 8px 0 4px; } h2 { font-size: 17px; margin: 24px 0 10px; }
+.discret, .note { color: var(--texte-2); font-size: 13px; }
+.carte { background: var(--surface); border: 1px solid var(--trait); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+.puces { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.puces .titre-puces { color: var(--texte-2); font-size: 13px; align-self: center; margin-right: 4px; }
+.tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+.tuile { background: var(--surface); border: 1px solid var(--trait); border-radius: 12px; padding: 14px 16px; }
+.tuile .etiquette { color: var(--texte-2); font-size: 13px; }
+.tuile .valeur { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.tuile .pct { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.selection { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+figure { margin: 0; }
+figcaption { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+svg { width: 100%; height: auto; display: block; }
+.axe { stroke: var(--trait); } .grille { stroke: var(--trait); stroke-dasharray: 2 4; }
+.graduation { fill: var(--texte-2); font-size: 12px; }
+.valeur-barre { fill: var(--texte); font-size: 12px; } .valeur-barre .sous { fill: var(--texte-2); font-size: 11px; }
+rect.serie-1, i.serie-1 { fill: var(--serie-1); background: var(--serie-1); }
+rect.serie-2, i.serie-2 { fill: var(--serie-2); background: var(--serie-2); }
+rect.serie-3, i.serie-3 { fill: var(--serie-3); background: var(--serie-3); }
+path.serie-1 { stroke: var(--serie-1); } path.serie-2 { stroke: var(--serie-2); } path.serie-3 { stroke: var(--serie-3); }
+path.courbe { fill: none; stroke-width: 2; }
+circle.serie-1 { fill: var(--serie-1); } circle.serie-2 { fill: var(--serie-2); } circle.serie-3 { fill: var(--serie-3); }
+circle.repere { stroke: var(--surface); stroke-width: 2; }
+.curseur { stroke: var(--texte-2); stroke-width: 1; }
+rect.cible { fill: transparent; }
+.legende { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 12px; color: var(--texte-2); margin-bottom: 8px; }
+.pastille { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.infobulle { min-height: 20px; font-size: 13px; color: var(--texte-2); font-variant-numeric: tabular-nums; }
+.defile { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--trait); text-align: left; white-space: nowrap; }
+th { color: var(--texte-2); font-weight: 600; } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+details summary { cursor: pointer; font-weight: 600; }
+ul { margin: 0; padding-left: 20px; } li { margin: 4px 0; }
+.depot { border: 2px dashed var(--trait); border-radius: 12px; padding: 28px 16px; text-align: center; }
+.depot.survol { border-color: var(--accent); background: var(--surface-2); }
+label { font-size: 14px; }
+input, select, textarea, button.action { font: inherit; color: var(--texte); background: var(--surface);
+  border: 1px solid var(--trait); border-radius: 8px; padding: 6px 10px; }
+button.action { cursor: pointer; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+button.action:disabled { opacity: .5; cursor: default; }
+.ok { color: var(--serie-3); } .ko { color: var(--erreur); } .alerte { color: var(--alerte); }
+.champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 20px; }
+.champ { display: flex; flex-direction: column; gap: 4px; }
+.champ .ligne { display: flex; gap: 8px; align-items: center; }
+.champ input[type="range"] { flex: 1; }
+.champ input[type="number"] { width: 80px; }
+.champ .ligne span { white-space: nowrap; color: var(--texte-2); font-size: 13px; }
+#sim-curseurs { margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.carte > h2:first-child { margin-top: 0; }
+.annees-verifiees { display: flex; gap: 12px; flex-wrap: wrap; }
+.message { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--trait); white-space: pre-wrap; }
+.message.vous { background: var(--surface-2); }
+textarea { width: 100%; min-height: 70px; resize: vertical; }
+.cache { display: none !important; }
+#sim-valeur { width: 130px; }

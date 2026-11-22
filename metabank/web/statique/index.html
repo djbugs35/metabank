@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>metabank</title>
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<header>
+  <div class="barre">
+    <span class="marque">metabank</span>
+    <nav role="tablist">
+      <button role="tab" data-onglet="tableau" aria-selected="true">Tableau de bord</button>
+      <button role="tab" data-onglet="releves" aria-selected="false">Relevés</button>
+      <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
+      <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
+      <button role="tab" data-onglet="assistant" aria-selected="false">Assistant</button>
+    </nav>
+  </div>
+</header>
+<main>
+  <p id="chargement" class="discret">Lecture des relevés…</p>
+
+  <section id="tableau" data-panneau>
+    <div class="puces" id="choix-niveau"></div>
+    <div class="puces" id="choix-contrat"></div>
+    <h1 id="titre-vue"></h1>
+    <div class="tuiles" id="tuiles"></div>
+    <div class="carte" id="bloc-annees">
+      <div class="puces" id="choix-annees"><span class="titre-puces">Années :</span></div>
+      <div class="selection" id="selection"></div>
+      <figure id="graphique-annees"></figure>
+      <div class="infobulle" id="infobulle-annees"></div>
+      <div class="defile"><table id="table-annees"></table></div>
+    </div>
+    <div id="notes"></div>
+    <details class="carte"><summary>Fonds de cette vue, du plus coûteux au moins coûteux</summary>
+      <div class="defile"><table id="table-fonds"></table></div></details>
+    <div class="carte"><h2>Points d'attention</h2><div id="points"></div></div>
+    <p class="note">Gagné : valeur aujourd'hui moins versé, tous frais déjà déduits. Pourcentages de l'année : par
+      rapport aux sommes placées dans l'année. Par an : moyenne annuelle depuis l'ouverture. Frais des fonds : estimés.
+      Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
+  </section>
+
+  <section id="releves" data-panneau class="cache">
+    <h1>Ajouter des relevés</h1>
+    <p class="discret">Les PDF restent sur ce Mac : ils sont lus puis rangés dans data/&lt;titulaire&gt;/&lt;contrat&gt;/&lt;année&gt;/.</p>
+    <div class="carte">
+      <div class="champs">
+        <label class="champ">Titulaire
+          <select id="depot-titulaire"></select></label>
+        <label class="champ cache" id="champ-nouveau">Prénom du nouveau titulaire
+          <input id="depot-nouveau" maxlength="40"></label>
+      </div>
+      <div class="depot" id="zone-depot" tabindex="0">
+        <p><strong>Déposez vos relevés PDF ici</strong> ou <label class="lien"><u>choisissez-les</u>
+          <input type="file" id="depot-fichiers" accept="application/pdf" multiple class="cache"></label></p>
+        <p class="discret">Relevés annuels Suravenir, relevés de situation Cardif.</p>
+      </div>
+      <ul id="depot-resultats"></ul>
+    </div>
+    <div class="carte"><h2>Contrats connus</h2><div class="defile"><table id="table-contrats"></table></div></div>
+    <div class="carte" id="bloc-erreurs"></div>
+  </section>
+
+  <section id="corrections" data-panneau class="cache">
+    <h1>Corrections</h1>
+    <p class="discret">Ce que les relevés ne disent pas. Enregistré dans data/corrections.json, sur ce Mac.</p>
+    <div id="liste-corrections"></div>
+    <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
+  </section>
+
+  <section id="simulation" data-panneau class="cache">
+    <h1>Simulation des frais</h1>
+    <p class="discret">Combien vaudrait le contrat dans N ans, avec ses frais actuels et avec des frais plus bas.
+      Sans nouveau versement ; le rendement est une hypothèse, pas une prévision.</p>
+    <div class="carte">
+      <div class="champs">
+        <label class="champ">Contrat <select id="sim-contrat"></select></label>
+        <div class="champ"><span>Montant placé</span><div class="ligne">
+          <input type="number" id="sim-valeur" min="0" step="1000"> <span>€</span></div></div>
+      </div>
+      <div class="champs" id="sim-curseurs"></div>
+    </div>
+    <div class="tuiles" id="sim-tuiles"></div>
+    <div class="carte"><figure id="sim-graphique"></figure><div class="infobulle" id="sim-infobulle"></div></div>
+  </section>
+
+  <section id="assistant" data-panneau class="cache">
+    <h1>Assistant</h1>
+    <p class="discret">Posez une question sur vos chiffres. Claude Code, installé sur ce Mac, reçoit les chiffres
+      calculés par metabank (montants, taux, fonds, prénoms) : ni numéro de contrat ni relevé. Il commente, il ne
+      calcule pas. Ce n'est pas un conseil financier.</p>
+    <p id="assistant-absent" class="alerte cache">Claude Code n'est pas trouvé sur ce Mac : installez-le
+      (claude.ai/code), puis relancez metabank.</p>
+    <div class="puces" id="suggestions"></div>
+    <div id="conversation"></div>
+    <div class="carte">
+      <textarea id="question" maxlength="2000" placeholder="Ex. : quel contrat me coûte le plus en frais ?"></textarea>
+      <p><button class="action" id="envoyer">Envoyer</button> <span id="etat-assistant" class="discret"></span></p>
+    </div>
+    <details class="carte"><summary>Ce qui est envoyé à Claude avec chaque question</summary>
+      <pre class="defile note" id="contexte"></pre></details>
+  </section>
+</main>
+</body>
+</html>

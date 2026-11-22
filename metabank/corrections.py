@@ -9,6 +9,7 @@ mouvements (celui que metabank retient) ; l'écart avec le tableau « évolution
 """
 
 import json
+import re
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
@@ -16,14 +17,71 @@ from pathlib import Path
 from metabank.releves import ReleveRange
 
 FICHIER = "corrections.json"
-
-
 ANOMALIE_VERSEMENTS = "versements de l'année"
+CLE_VALIDE = re.compile(r"^[0-9A-Za-z]{4,20}$")
+ANNEE_MIN, ANNEE_MAX = 1980, 2100
+
+
+class CorrectionInvalide(ValueError):
+    """Correction refusée : le message dit laquelle et pourquoi."""
+
+
+def cle_contrat(numero: str) -> str:
+    """Rendre la clé de corrections d'un contrat : le dernier groupe de son numéro (« 270549974 »)."""
+    return numero.rsplit(maxsplit=1)[-1] if numero.strip() else numero
 
 
 def _lire(dossier: Path) -> dict:
     chemin = dossier / FICHIER
     return json.loads(chemin.read_text(encoding="utf-8")) if chemin.exists() else {}
+
+
+def lire_corrections(dossier: Path) -> dict:
+    """Rendre les corrections telles qu'enregistrées, avec les deux rubriques toujours présentes."""
+    contenu = _lire(dossier)
+    return {
+        "ouvertures": dict(contenu.get("ouvertures", {})),
+        "versements_verifies": {cle: sorted(annees) for cle, annees in contenu.get("versements_verifies", {}).items()},
+    }
+
+
+def ecrire_corrections(dossier: Path, corrections: dict) -> dict:
+    """Rendre les corrections validées après les avoir enregistrées (écriture atomique).
+
+    Raises:
+        CorrectionInvalide: clé de contrat, date ou année hors format ; rien n'est écrit.
+    """
+    propres = {"ouvertures": {}, "versements_verifies": {}}
+    for rubrique in propres:
+        if not isinstance(corrections.get(rubrique) or {}, dict):
+            raise CorrectionInvalide(f"{rubrique} : objet attendu")
+    for cle, jour in (corrections.get("ouvertures") or {}).items():
+        if not jour:
+            continue
+        _verifier_cle(cle)
+        try:
+            date.fromisoformat(jour)
+        except (TypeError, ValueError) as erreur:
+            raise CorrectionInvalide(f"date d'ouverture invalide pour {cle} : {jour}") from erreur
+        propres["ouvertures"][cle] = jour
+    for cle, annees in (corrections.get("versements_verifies") or {}).items():
+        _verifier_cle(cle)
+        if not isinstance(annees, list) or not all(isinstance(a, int) and ANNEE_MIN <= a <= ANNEE_MAX for a in annees):
+            raise CorrectionInvalide(f"années invalides pour {cle} : {annees}")
+        if annees:
+            propres["versements_verifies"][cle] = sorted(set(annees))
+    # Les autres rubriques éventuelles du fichier sont gardées telles quelles.
+    contenu = {**_lire(dossier), **propres}
+    chemin = dossier / FICHIER
+    temporaire = chemin.with_suffix(".json.tmp")
+    temporaire.write_text(json.dumps(contenu, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporaire.replace(chemin)
+    return lire_corrections(dossier)
+
+
+def _verifier_cle(cle: str) -> None:
+    if not isinstance(cle, str) or not CLE_VALIDE.match(cle):
+        raise CorrectionInvalide(f"numéro de contrat invalide : {cle!r}")
 
 
 def lire_ouvertures(dossier: Path) -> dict[str, date]:

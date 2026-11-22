@@ -1,20 +1,15 @@
 #!/bin/sh
-# Lance Wealthfolio (Docker) et ouvre le navigateur : double-clic dans le Finder, ou ./lancer.command.
-#   ./lancer.command arreter      # arrête le conteneur (les données restent dans data/)
+# Lance l'application metabank et l'ouvre dans le navigateur : double-clic dans le Finder, ou ./lancer.command.
+# Elle tourne sur ce Mac seulement (http://127.0.0.1:8770) ; fermer cette fenêtre l'arrête.
 cd "$(dirname "$0")" || exit 1
-PATH="/opt/homebrew/bin:/usr/local/bin:/Applications/Docker.app/Contents/Resources/bin:$PATH"
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-  echo "Docker n'est pas lancé (ou pas installé). Ouvrir Docker Desktop, puis relancer."
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv n'est pas installé : brew install uv, puis relancer."
   exit 1
 fi
-if [ "$1" = arreter ]; then
-  exec docker compose down
+if ! command -v pdftotext >/dev/null 2>&1; then
+  echo "pdftotext n'est pas installé : brew install poppler, puis relancer."
+  exit 1
 fi
-[ -f .env ] || ./outils/preparer_env.sh || exit 1
-mkdir -p data
-docker compose up -d || exit 1
-
-ORIGINE=$(sed -n 's/^WF_CORS_ALLOW_ORIGINS=//p' .env)
-echo "Wealthfolio : $ORIGINE"
-(sleep 2 && open "$ORIGINE") &
+exec uv run python -m metabank web

@@ -67,3 +67,4 @@ et ne code lui-même que ce qu'aucun ne fait (lecture des relevés d'assureurs, 
 | Projection retraite : capital à l'échéance selon plusieurs hypothèses de rendement | 7 | à faire |
 | Sauvegarde automatique de `data/` (base Wealthfolio) sur le NAS | 9 | à faire |
 | Frais cachés des supports et rétrocessions, simulation de supports moins chers | 7 | fait (`metabank frais`) |
+| Application web locale : tableau de bord, dépôt de relevés, corrections, simulation, assistant Claude | 7 bis | fait (`metabank web`) |

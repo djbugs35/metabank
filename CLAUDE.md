@@ -2,8 +2,11 @@
 
 ## Objet
 Vision globale et analyse de mon patrimoine financier (comptes courants, assurance vie, PER, PEA), **en local**.
-Le stockage, le tableau de bord et la performance sont confiés à **Wealthfolio**, déployé par `compose.yml` ;
-metabank l'alimente (convertisseurs vers son import CSV) et ajoute l'analyse française et le rapport IA.
+metabank est une **application web locale** (`./lancer.command` ou `uv run python -m metabank web`) :
+serveur Python standard lié à 127.0.0.1 (metabank/web/serveur.py), page en JavaScript sans dépendance ni
+ressource en ligne (metabank/web/statique/). Les chiffres viennent de l'API (code testé) ; la page les affiche.
+L'assistant passe par Claude Code installé sur le Mac (`claude -p`, sans outil, dans un dossier vide).
+Wealthfolio (`compose.yml`, `outils/lancer_wealthfolio.command`) reste disponible mais n'est plus le cœur.
 Plan, architecture et jalons : docs/PLAN.md.
 - **Lecture seule** : aucun virement, ordre de bourse ni arbitrage, jamais, même « pour tester ».
 - **metabank est l'application chapeau** : avant de coder une fonction, chercher si un projet open source la fait déjà

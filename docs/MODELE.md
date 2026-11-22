@@ -87,6 +87,12 @@ Sans nouveau versement, sur H années, à rendement brut r (avant tous frais) et
 V_H = V × (1 + (r − t) / 100)^H. L'écart affiché compare t actuel et t après simulation.
 r = 5 % et H = 15 ans par défaut : hypothèses, pas des prévisions.
 
+### 4.4 Simulation de l'application web (onglet « Simulation des frais »)
+Deux projections de 4.3 côte à côte, avec le taux de frais actuel t₁ et un taux visé t₂ choisis à la main, année
+par année de 0 à H. Écart = V_H(t₂) − V_H(t₁), en euros et en % de V_H(t₁).
+Frais payés sur la durée = Σ (k = 0 … H − 1) V_k(t) × t / 100 : le taux appliqué à la valeur en début d'année.
+Par défaut, t₁ = taux moyen du contrat (4.1) et t₂ = taux après simulation des supports à 0,20 point (4.2).
+
 ## 5. Frais depuis l'ouverture (`metabank tableau`, section « Frais payés depuis l'ouverture »)
 
 ### 5.1 Taux des fonds

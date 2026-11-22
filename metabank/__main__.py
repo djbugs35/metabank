@@ -1,4 +1,4 @@
-"""Ligne de commande : « uv run python -m metabank bilan | frais | tableau »."""
+"""Ligne de commande : « uv run python -m metabank web | bilan | frais | tableau »."""
 
 import argparse
 import shutil
@@ -16,6 +16,7 @@ from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
 from metabank.releves import lire_dossier
 from metabank.tableau import Tableau, generer_html
+from metabank.web.serveur import PORT_DEFAUT, creer_serveur
 
 RACINE = Path(__file__).resolve().parent.parent
 
@@ -34,9 +35,15 @@ def main(arguments: list[str] | None = None) -> int:
     tableau = commandes.add_parser("tableau", help="générer le tableau de bord data/tableau.html et l'ouvrir")
     tableau.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/<titulaire>/<contrat>/")
     tableau.add_argument("--sans-ouvrir", action="store_true", help="générer la page sans ouvrir le navigateur")
+    web = commandes.add_parser("web", help="lancer l'application web locale et l'ouvrir dans le navigateur")
+    web.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/<titulaire>/<contrat>/")
+    web.add_argument("--port", type=int, default=PORT_DEFAUT, help="port local (127.0.0.1 seulement)")
+    web.add_argument("--sans-ouvrir", action="store_true", help="ne pas ouvrir le navigateur")
     options = analyseur.parse_args(arguments)
     if options.commande == "frais":
         return _frais(options)
+    if options.commande == "web":
+        return _web(options.donnees, options.port, ouvrir=not options.sans_ouvrir)
     if options.commande == "tableau":
         return _tableau(options.donnees, ouvrir=not options.sans_ouvrir)
     return _bilan(options.donnees)
@@ -72,6 +79,22 @@ def _tableau(dossier: Path, ouvrir: bool) -> int:
     if ouvrir and shutil.which("open"):
         subprocess.run(["open", str(sortie)], check=False)
     return 1 if erreurs else 0
+
+
+def _web(dossier: Path, port: int, ouvrir: bool) -> int:
+    dossier.mkdir(exist_ok=True)
+    serveur = creer_serveur(dossier, port)
+    adresse = f"http://127.0.0.1:{serveur.server_port}"
+    print(f"metabank : {adresse} (ce Mac seulement). Ctrl-C ou fermer la fenêtre pour arrêter.")
+    if ouvrir and shutil.which("open"):
+        subprocess.run(["open", adresse], check=False)
+    try:
+        serveur.serve_forever()
+    except KeyboardInterrupt:
+        print("\nmetabank arrêté.")
+    finally:
+        serveur.server_close()
+    return 0
 
 
 def _ecrire(sortie: Path, contenu: str) -> None:
