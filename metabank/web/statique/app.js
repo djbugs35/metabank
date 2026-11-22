@@ -1,4 +1,5 @@
 // metabank : page unique. Les chiffres viennent tous de l'API (code Python testé) ; ici, on ne fait que les montrer.
+import { afficherComptes } from "./comptes.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
   euros, eurosSignes, fondsDeVue, noteSansHistorique, pct, seriesAnnees, tableAnneesHtml, tableFondsHtml, tuilesHtml,
@@ -32,6 +33,7 @@ async function charger() {
   if (!etat.vues.some((v) => v.id === vueChoisie)) vueChoisie = "foyer";
   afficherTableau();
   if ($("export-vues").children.length) preparerExport();
+  afficherComptes(etat);
   afficherReleves();
   afficherCorrections();
   preparerSimulation();

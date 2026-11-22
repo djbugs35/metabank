@@ -54,6 +54,16 @@ def contexte(etat: dict) -> str:
         f"{_p(f['performance_nette'])}"
         for f in etat["fonds"]
     )
+    for compte in etat.get("banque", []):
+        lignes.append(
+            f"- {compte['court']} : solde {_e(compte['solde'])}, solde moyen {_e(compte['solde_moyen'])}, "
+            f"par mois : revenus {_e(compte['revenus_mois'])}, dépenses {_e(compte['depenses_mois'])} "
+            f"({_p(compte['part_depenses'])} des revenus), épargne placée {_e(compte['epargne_mois'])} ; "
+            f"frais bancaires {_e(compte['frais_an'])} par an ; argent qui dort {_e(compte['argent_qui_dort'])}"
+        )
+        lignes.extend(
+            f"    dépenses {c['nom']} : {_e(c['montant'])} ({_p(c['part'])})" for c in compte["categories"][:8]
+        )
     if etat["points"]:
         lignes.append("Points d'attention : " + " ; ".join(etat["points"]))
     lignes.append("Gagné = valeur moins versé, tous frais déjà déduits. Frais des fonds : estimés.")

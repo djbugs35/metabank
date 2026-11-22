@@ -8,6 +8,8 @@ import re
 import tempfile
 from pathlib import Path
 
+from metabank.banque.bnp import ExportIllisible, decoder, est_export_bnp, lire_export_bnp
+from metabank.banque.modele import TYPES_PAR_PREFIXE as TYPES_BANQUE
 from metabank.corrections import cle_contrat
 from metabank.releves import TYPES_PAR_PREFIXE, lire_releve
 from metabank.releves.modele import Releve
@@ -35,7 +37,7 @@ def deposer_releve(dossier: Path, titulaire: str, nom_fichier: str, contenu: byt
     if not contenu or len(contenu) > TAILLE_MAX:
         raise DepotRefuse("fichier vide ou de plus de 20 Mo")
     if not contenu.startswith(b"%PDF"):
-        raise DepotRefuse("ce fichier n'est pas un PDF")
+        return _deposer_export(dossier, titulaire, nom_fichier, contenu)
     releve = _lire(contenu, nom_fichier)
     dossier_contrat = _dossier_contrat(dossier / titulaire, releve)
     cible = dossier_contrat / str(releve.date_arrete.year) if releve.est_annuel else dossier_contrat
@@ -92,3 +94,41 @@ def _reponse(dossier: Path, chemin: Path, releve: Releve, deja_present: bool) ->
         "annuel": releve.est_annuel,
         "deja_present": deja_present,
     }
+
+
+def _deposer_export(dossier: Path, titulaire: str, nom_fichier: str, contenu: bytes) -> dict:
+    """Rendre où l'export bancaire (CSV BNP) a été rangé : dans le dossier du compte qui finit par ses chiffres."""
+    try:
+        texte = decoder(contenu)
+    except UnicodeDecodeError as erreur:
+        raise DepotRefuse("ni un PDF ni un export CSV lisible") from erreur
+    if not est_export_bnp(texte):
+        raise DepotRefuse("ni un relevé PDF reconnu ni un export d'opérations BNP")
+    try:
+        export = lire_export_bnp(texte, nom_fichier)
+    except ExportIllisible as erreur:
+        raise DepotRefuse(str(erreur)) from erreur
+    chiffres = export.numero_masque.lstrip("*")
+    dossier_titulaire = dossier / titulaire
+    existants = [
+        d for d in (dossier_titulaire.iterdir() if dossier_titulaire.exists() else [])
+        if d.is_dir() and d.name.split(" - ")[0].strip().upper() in TYPES_BANQUE and d.name.strip().endswith(chiffres)
+    ]  # fmt: skip
+    nom_compte = export.nom.upper()
+    prefixe = "LA" if "LIVRET A" in nom_compte else "LDD" if "LDD" in nom_compte else "CC"
+    cible = existants[0] if existants else dossier_titulaire / f"{prefixe} - BNP - {chiffres}"
+    nom = _nom_propre(nom_fichier, extension=".csv")
+    chemin = cible / nom
+    if chemin.exists() and chemin.read_bytes() == contenu:
+        deja = True
+    else:
+        deja, rang = False, 2
+        while chemin.exists():
+            chemin = cible / f"{Path(nom).stem} ({rang}).csv"
+            rang += 1
+        cible.mkdir(parents=True, exist_ok=True)
+        temporaire = chemin.with_suffix(".csv.tmp")
+        temporaire.write_bytes(contenu)
+        temporaire.replace(chemin)
+    return {"chemin": str(chemin.relative_to(dossier)), "assureur": "BNP", "produit": export.nom,
+            "date": export.date_solde.isoformat(), "annuel": False, "deja_present": deja}  # fmt: skip

@@ -13,6 +13,7 @@
     <span class="marque">metabank</span>
     <nav role="tablist">
       <button role="tab" data-onglet="tableau" aria-selected="true">Tableau de bord</button>
+      <button role="tab" data-onglet="comptes" aria-selected="false">Comptes</button>
       <button role="tab" data-onglet="releves" aria-selected="false">Relevés</button>
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
@@ -58,6 +59,41 @@
       Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
   </section>
 
+  <section id="comptes" data-panneau class="cache">
+    <h1>Comptes bancaires</h1>
+    <div id="comptes-vide" class="carte">
+      <p>Aucun compte bancaire pour l'instant. Déposez l'export CSV des opérations (BNP : « Télécharger mes
+        opérations ») dans l'onglet Relevés, ou rangez-le dans data/&lt;titulaire&gt;/CC - BNP - &lt;numéro&gt;/
+        (LA pour le Livret A, LDD pour le LDD).</p>
+    </div>
+    <div id="comptes-contenu" class="cache">
+      <p class="discret" id="comptes-total"></p>
+      <div class="puces" id="choix-compte"></div>
+      <p class="discret" id="compte-periode"></p>
+      <div class="tuiles" id="compte-tuiles"></div>
+      <div id="compte-anomalies"></div>
+      <div class="carte"><figure id="compte-solde"></figure><div class="infobulle" id="compte-solde-infobulle"></div></div>
+      <div id="bloc-courant">
+        <div class="carte"><figure id="compte-flux"></figure><div class="infobulle" id="compte-infobulle"></div></div>
+        <div class="carte"><figure id="compte-categories"></figure>
+          <p class="note">Les virements entre vos comptes et les versements vers vos placements ne sont pas des dépenses :
+            ils sont comptés à part. Ce qui est payé depuis un autre compte (compte commun…) n'apparaît qu'une fois son
+            export ajouté.</p></div>
+        <details class="carte"><summary>Frais bancaires</summary><div class="defile"><table id="compte-frais"></table></div></details>
+        <details class="carte"><summary>Dépenses non classées, de la plus coûteuse à la moins coûteuse</summary>
+          <p class="note">Pour les classer, ajoutez une règle dans data/categories.json, par exemple
+            {"regles": [{"motif": "TY VORN", "categorie": "Restaurants"}]}.</p>
+          <div class="defile"><table id="compte-non-classees"></table></div></details>
+      </div>
+      <div id="bloc-livret" class="cache">
+        <div class="carte"><h2>Intérêts par année</h2><div class="defile"><table id="livret-interets"></table></div>
+          <p class="note">Taux obtenu : intérêts crédités / solde moyen de l'année. Le taux réglementé s'applique par
+            quinzaine : un versement en cours de quinzaine ne rapporte qu'à partir de la suivante.</p></div>
+      </div>
+      <p class="note">Formules : docs/MODELE.md § 7. Éléments d'aide à la décision, pas un conseil financier.</p>
+    </div>
+  </section>
+
   <section id="releves" data-panneau class="cache">
     <h1>Ajouter des relevés</h1>
     <p class="discret">Les PDF restent sur ce Mac : ils sont lus puis rangés dans data/&lt;titulaire&gt;/&lt;contrat&gt;/&lt;année&gt;/.</p>
@@ -69,9 +105,9 @@
           <input id="depot-nouveau" maxlength="40"></label>
       </div>
       <div class="depot" id="zone-depot" tabindex="0">
-        <p><strong>Déposez vos relevés PDF ici</strong> ou <label class="lien"><u>choisissez-les</u>
-          <input type="file" id="depot-fichiers" accept="application/pdf" multiple class="cache"></label></p>
-        <p class="discret">Relevés annuels Suravenir, relevés de situation Cardif.</p>
+        <p><strong>Déposez vos relevés PDF ou exports CSV ici</strong> ou <label class="lien"><u>choisissez-les</u>
+          <input type="file" id="depot-fichiers" accept="application/pdf,.csv,text/csv" multiple class="cache"></label></p>
+        <p class="discret">Relevés annuels Suravenir, relevés de situation Cardif, exports d'opérations BNP (CSV).</p>
       </div>
       <ul id="depot-resultats"></ul>
     </div>

@@ -29,6 +29,7 @@ FICHIERS = {
     "/graphiques.js": ("graphiques.js", "text/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
     "/rendu.js": ("rendu.js", "text/javascript; charset=utf-8"),
+    "/comptes.js": ("comptes.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -55,7 +56,12 @@ class EtatEnCache:
             return self._etat
 
     def _signature_fichiers(self) -> tuple:
-        fichiers = [*self.dossier.glob("*/*/**/*.pdf"), self.dossier / "corrections.json"]
+        fichiers = [
+            *self.dossier.glob("*/*/**/*.pdf"),
+            *self.dossier.glob("*/*/**/*.csv"),
+            self.dossier / "corrections.json",
+            self.dossier / "categories.json",
+        ]
         return tuple(sorted((str(f), f.stat().st_mtime_ns) for f in fichiers if f.exists()))
 
 

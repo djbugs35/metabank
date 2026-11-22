@@ -10,8 +10,8 @@ const legende = (series) =>
 
 // Barres côte à côte par année ; chaque barre porte sa valeur et, dessous, une seconde étiquette (le %).
 // series : [{classe, nom, valeurs: [nombre|null], sous: [texte]}] ; survol(rang) appelé au survol d'une année.
-export function barresGroupees(figure, { titre, annees, series, formater, survol }) {
-  const L = 640, H = 260, HAUT = 44, BAS = 26, ECART = 2, LIGNE = 13;
+export function barresGroupees(figure, { titre, annees, series, formater, survol, etiquettes = true }) {
+  const L = 640, H = 260, HAUT = etiquettes ? 44 : 12, BAS = 26, ECART = 2, LIGNE = 13;
   const valeurs = series.flatMap((s) => s.valeurs.filter((v) => v !== null));
   const bas = Math.min(0, ...valeurs), haut = Math.max(0, ...valeurs);
   const etendue = haut - bas || 1;
@@ -29,11 +29,15 @@ export function barresGroupees(figure, { titre, annees, series, formater, survol
       const dessus = Math.max(v, 0), dessous = Math.min(v, 0);
       const sous = s.sous?.[rang] ?? "";
       parties.push(`<rect x="${x}" y="${y(dessus)}" width="${barre}" height="${Math.max(y(dessous) - y(dessus), 1)}" rx="4" class="${s.classe}"/>`);
+      if (!etiquettes) return;
       const yTexte = v >= 0 ? y(dessus) - 6 - (sous ? LIGNE : 0) : y(dessous) + 14;
       const ligne2 = sous ? `<tspan x="${x + barre / 2}" dy="${LIGNE}" class="sous">${echapper(sous)}</tspan>` : "";
       parties.push(`<text x="${x + barre / 2}" y="${yTexte}" class="valeur-barre" text-anchor="middle">${echapper(formater(v))}${ligne2}</text>`);
     });
-    parties.push(`<text x="${centre}" y="${H - 6}" class="graduation" text-anchor="middle">${annee}</text>`);
+    const pasEtiquette = Math.ceil(annees.length / 12);
+    if (rang % pasEtiquette === 0) {
+      parties.push(`<text x="${centre}" y="${H - 6}" class="graduation" text-anchor="middle">${echapper(annee)}</text>`);
+    }
     parties.push(`<rect x="${pas * rang}" y="0" width="${pas}" height="${H}" class="cible" data-rang="${rang}"/>`);
   });
   figure.innerHTML = `<figcaption>${echapper(titre)}</figcaption>${legende(series)}
@@ -66,7 +70,8 @@ export function courbes(figure, { titre, abscisses, series, formater, legendeX, 
     // Le dernier libellé remplace le précédent s'il en est trop proche (« 14 ans » et « 15 ans » se chevauchaient).
     const garde = rang === dernier || (rang % etape === 0 && dernier - rang >= Math.max(etape / 2, 1) * 1.5);
     if (garde) {
-      parties.push(`<text x="${x(rang)}" y="${H - 8}" class="graduation" text-anchor="middle">${echapper(legendeX(a))}</text>`);
+      const ancre = rang === dernier ? "end" : rang === 0 ? "start" : "middle";
+      parties.push(`<text x="${x(rang)}" y="${H - 8}" class="graduation" text-anchor="${ancre}">${echapper(legendeX(a))}</text>`);
     }
   });
   series.forEach((s) => {
@@ -102,4 +107,20 @@ export function courbes(figure, { titre, abscisses, series, formater, legendeX, 
     reperes.forEach((c) => c.classList.add("cache"));
     survol?.(null);
   });
+}
+
+// Barres horizontales triées : une ligne par catégorie, montant et part écrits à droite de la barre.
+export function barresHorizontales(figure, { titre, lignes, formater }) {
+  const L = 640, LIGNE = 26, G = 190, D = 150;
+  const H = LIGNE * lignes.length + 8;
+  const max = Math.max(...lignes.map((l) => l.valeur), 1);
+  const parties = lignes.map((l, rang) => {
+    const y = 4 + rang * LIGNE;
+    const largeur = Math.max(((L - G - D) * l.valeur) / max, 1);
+    return `<text x="${G - 8}" y="${y + 16}" class="graduation" text-anchor="end">${echapper(l.nom)}</text>
+      <rect x="${G}" y="${y + 4}" width="${largeur}" height="${LIGNE - 8}" rx="4" class="serie-1"/>
+      <text x="${G + largeur + 6}" y="${y + 16}" class="valeur-barre">${echapper(formater(l.valeur))}<tspan class="sous" dx="6">${echapper(l.sous ?? "")}</tspan></text>`;
+  });
+  figure.innerHTML = `<figcaption>${echapper(titre)}</figcaption>
+    <svg viewBox="0 0 ${L} ${H}" role="img" aria-label="${echapper(titre)}">${parties.join("")}</svg>`;
 }

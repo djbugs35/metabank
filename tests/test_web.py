@@ -61,7 +61,7 @@ def test_releve_va_dans_le_dossier_existant_du_contrat(tmp_path):
 
 @pytest.mark.parametrize(
     ("titulaire", "contenu", "motif"),
-    [("../hors", PDF, "titulaire"), ("Alice", b"pas un pdf", "pas un PDF"), ("Alice", b"", "vide")],
+    [("../hors", PDF, "titulaire"), ("Alice", b"pas un pdf", "ni un relevé"), ("Alice", b"", "vide")],
 )
 def test_depot_refuse_sans_rien_ecrire(tmp_path, titulaire, contenu, motif):
     with pytest.raises(DepotRefuse, match=motif):

@@ -126,3 +126,40 @@ est antérieur aux relevés (négative), valeur au dernier 31/12 (positive). Ré
 Avec une date d'ouverture saisie, ils entrent dans la rentabilité annualisée : tout le versé depuis l'origine est
 supposé placé à l'ouverture (seule date connue), valeur de rachat à la date du relevé. Si des versements ont eu lieu
 plus tard, la rentabilité réelle est plus élevée : c'est un minimum.
+
+## 7. Comptes bancaires (onglet « Comptes »)
+
+Source : export des opérations BNP (CSV). La première ligne donne le solde S à la date D ; chaque ligne suivante,
+une opération (jour, libellé, montant m, positif pour une entrée).
+
+### 7.1 Fusion de plusieurs exports
+Une opération est identifiée par (jour, libellé, montant). Présente n fois dans un export, elle compte n fois ;
+présente dans deux exports, elle n'est pas doublée (on garde le plus grand n). S et D viennent de l'export le plus
+récent. Contrôle : pour chaque autre export (S', D'), S − Σ m (D' < jour ≤ D) doit valoir S'.
+
+### 7.2 Classement
+Chaque opération reçoit une catégorie par règles sur « type sous-type libellé » (règles personnelles de
+data/categories.json d'abord, puis celles du code), et une nature :
+- revenu : salaires (émetteur d'au moins 4 virements reçus ≥ 1 000 € sur 4 mois différents), remboursements
+  santé, autres entrées ;
+- interne : virements entre ses propres comptes ;
+- épargne : versements vers des placements (assurance vie, PER, livrets, PEA) ;
+- dépense : tout le reste. Un montant positif dans une catégorie de dépense (achat remboursé) diminue la dépense.
+
+### 7.3 Soldes
+Solde en fin de journée j : S − Σ m (jour > j). Solde moyen : moyenne de ces soldes sur chaque jour de la période,
+du premier jour de l'export à D.
+
+### 7.4 Budget
+Sur la période (N mois = jours / 30,44) : R = Σ revenus, Dp = Σ dépenses (en positif), E = Σ épargne placée.
+Par mois : montant / N. Parts : Dp / R, E / R. Taux d'épargne : (R − Dp) / R. Frais bancaires par an :
+Σ frais / N × 12.
+
+### 7.5 Argent qui dort
+Coussin = 2 mois de dépenses moyennes (Dp / N × 2). Argent qui dort = max(solde moyen − coussin, 0), sur un
+compte courant seulement. Manque à gagner par an = argent qui dort × taux du Livret A (1,7 % depuis le
+1er août 2026). Repère, pas une prévision : le taux change le 1er février et le 1er août.
+
+### 7.6 Livrets
+Intérêts de l'année = Σ des entrées dont le libellé contient « INTERET » ou « REMUNERATION ». Taux obtenu =
+intérêts / solde moyen de l'année (7.3). Il est un peu inférieur au taux réglementé, calculé par quinzaine.
