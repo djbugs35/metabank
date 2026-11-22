@@ -8,7 +8,8 @@ jour arrivent par fichiers déposés ou, quand la banque le permet, par connexio
 
 Contraintes permanentes :
 - **Lecture seule** : aucun virement, ordre ni arbitrage n'est jamais passé par metabank.
-- **En local, sans abonnement** (hors le compte Claude déjà payé) ; `data/` ne quitte pas la machine. Tout ce qui
+- **En local, sans abonnement** (hors le compte Claude déjà payé) ; `data/` ne quitte pas la maison : le Mac, ou le
+  NAS QNAP qui fera tourner metabank comme metascrap. Tout ce qui
   sort (connexion bancaire, cours publics, questions à Claude) est visible dans l'onglet Synoptique.
 - **Chiffres calculés par du code testé**, formules écrites d'abord dans docs/MODELE.md ; l'IA commente, ne calcule pas.
 - **Pas de recommandation personnalisée d'investissement** : metabank donne les faits (répartition, frais, fiscalité,
@@ -131,6 +132,35 @@ Les repères annuels sont publics et datés : ils vivent dans le dépôt (`metab
 mis à jour une fois par an ; les valeurs liquidatives passent par le connecteur « référence », en option.
 Formules dans docs/MODELE.md avant le code.
 
+## Exécution sur le NAS QNAP, comme metascrap
+
+metabank doit tourner sur le NAS QNAP, de la même façon que metascrap (`/share/…/metascrap`, environnement Python
+dédié `run_qnap`, tâches planifiées par la crontab du QNAP), en plus du Mac.
+- **Même code, deux machines** : ce qui change passe par la configuration (dossier `data/`, adresse et port d'écoute),
+  jamais par le code. Le cœur reste en Python standard, sans dépendance propre au Mac.
+- **Installation sans git** : le QNAP n'a pas `git` (constaté pour metascrap) ; le dépôt est copié depuis le Mac par
+  un script d'installation, l'environnement Python est recréé sur place, `data/` n'est jamais écrasé.
+- **À vérifier sur le QNAP** avant d'y basculer : version de Python (≥ 3.12), `pdftotext` (poppler) pour les relevés
+  PDF, sinon lecture des PDF sur le Mac et dépôt du résultat.
+- **Secrets** : pas de trousseau macOS sur le NAS. Les connecteurs demandent leurs secrets à un coffre abstrait :
+  trousseau sur le Mac, fichier chiffré ou à droits 600 hors du dépôt sur le NAS (choix à faire à l'étape 4).
+- **Accès** : écoute sur 127.0.0.1 par défaut ; l'ouverture au réseau local est un choix explicite, avec
+  authentification, jamais exposée sur Internet.
+- **Assistant** : `claude -p` reste sur le Mac ; sur le NAS, l'assistant est désactivé ou délégué au Mac.
+
+## Mise à jour automatique des connexions directes
+
+Quand un compte a une connexion directe (Enable Banking, pytr), metabank se met à jour **sans intervention** :
+- **synchronisation planifiée** (chaque nuit par la crontab du QNAP, ou au lancement sur le Mac), compte par compte,
+  par l'accès principal puis l'accès de secours ; chaque essai entre au journal et au synoptique ;
+- **respect des limites DSP2** : sans le titulaire, une banque n'accepte que quelques consultations par jour (4 en
+  général) ; une synchronisation par nuit suffit ;
+- **accord bancaire de 180 jours** : il ne se renouvelle qu'avec le titulaire ; rappel avant l'échéance, et le compte
+  passe en orange dans le synoptique s'il n'est plus à jour ;
+- **après chaque synchronisation** : réponses archivées, base mise à jour, calculs refaits (crédits, instantané du
+  patrimoine) ;
+- toujours en **lecture seule**.
+
 ## Déjà en place (novembre 2026)
 
 | Domaine | Contenu |
@@ -180,6 +210,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
 | Connecteur Enable Banking | application en mode restreint au nom du titulaire, réglée depuis l'onglet Configuration ; comptes BNP (et Revolut si couvert) ; l'export CSV reste en secours | les comptes courants se mettent à jour d'un clic | à faire |
+| Mise à jour automatique | synchronisation planifiée des comptes en connexion directe (nuit sur le NAS, lancement sur le Mac), accès de secours, journal, calculs refaits ensuite ; dans les limites DSP2 | les comptes en connexion directe sont à jour chaque matin sans rien faire | à faire |
 | Renouvellement | rappel avant l'échéance de l'accord bancaire (180 jours), visible dans le synoptique | rappel affiché à temps | à faire |
 | Livrets | vérifier si la BNP les expose en DSP2 (a priori non : ce ne sont pas des comptes de paiement) ; sinon export annuel | décision notée ci-dessous | à faire |
 | Connecteur « référence » | valeurs liquidatives par ISIN et indices, depuis une source publique, en option ; cache en base | assurance vie, PER et PEA affichent une valeur estimée datée | à faire |
@@ -204,7 +235,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Serveur MCP local | metabank expose en lecture seule ses chiffres et ses simulations ; Claude les interroge au lieu de recevoir un résumé figé | une question obtient une réponse chiffrée par metabank | à faire |
 | Revue mensuelle | PDF et courte liste d'actions (fichiers à déposer, échéances, alertes) | revue produite chaque mois | à faire |
 | Sauvegarde | copie chiffrée de `data/` sur le NAS, depuis l'onglet Configuration | restauration testée | à faire |
-| Accès à la maison | application servie par le NAS sur le réseau local, avec authentification | accessible depuis le téléphone à la maison | à évaluer |
+| Exécution sur le NAS QNAP | comme metascrap : dépôt copié sans git, environnement Python dédié, crontab, `data/` sur le NAS, secrets hors trousseau ; application servie sur le réseau local avec authentification | metabank tourne sur le QNAP et s'ouvre depuis le téléphone à la maison | à faire |
 | Autres comptes | Revolut, compte-titres d'entreprise, relevés annuels Cardif | chacun a son connecteur | à faire |
 
 ## Jalons passés
@@ -228,6 +259,9 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
   compris (la date d'un import est celle de son archive). Archives rangées par provenance,
   `data/archives/<titulaire>/<dossier du compte>/<fichier>`, rejouées dans l'ordre de leur date de modification ;
   un fichier non reconnu n'est pas archivé.
+- **2026-11-22 — metabank tourne aussi sur le NAS QNAP**, comme metascrap, et met à jour seul les comptes en
+  connexion directe. Conséquence dès maintenant : cœur en Python standard sans dépendance au Mac, secrets demandés
+  à un coffre abstrait (trousseau sur le Mac, autre coffre sur le NAS).
 - **2026-11-22 — Imports par connecteurs (plug-ins)**, sur le modèle de metascrap : un contrat, quatre familles
   (fichier, direct, calcul, référence), un registre avec accès principal et de secours, un journal.
 - **2026-11-22 — Onglets Configuration et Synoptique** ; le synoptique montre aussi ce qui sort de la machine.
@@ -276,6 +310,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Règles de classement des dépenses modifiables depuis la page | 2 | à faire |
 | PEA Trade Republic : positions, plafond, compteur des 5 ans | 3 | à faire |
 | Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | à faire |
+| Mise à jour automatique des comptes en connexion directe (synchronisation planifiée) | 4 | à faire |
 | Valeur au jour des contrats par les valeurs liquidatives publiques (option) | 4 | à faire |
 | Allocation globale, alertes de concentration, simulateur d'arbitrage, répartition cible | 5 | à faire |
 | Alerte quand une enveloppe dérive de l'allocation cible au-delà d'un seuil | 5 | à faire |
@@ -287,6 +322,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Serveur MCP local en lecture seule pour l'assistant | 6 | à faire |
 | Revue mensuelle automatique (PDF et liste d'actions) | 6 | à faire |
 | Sauvegarde chiffrée de `data/` sur le NAS | 6 | à faire |
+| Exécution sur le NAS QNAP comme metascrap (crontab, sans git, réseau local authentifié) | 6 | à faire |
 
 ## Sources consultées (2026-11-22)
 - [GoCardless : nouvelles inscriptions fermées](https://bankaccountdata.gocardless.com/new-signups-disabled)
