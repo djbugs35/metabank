@@ -38,7 +38,7 @@ et ne code lui-même que ce qu'aucun ne fait (lecture des relevés d'assureurs, 
 | 5 | Revolut | convertisseur de l'export CSV Revolut | à faire |
 | 6 | Assurances vie et retraite (priorité) | lecteur des relevés annuels Suravenir et des situations Cardif, bilan par contrat (gain, rendement, frais), contrôles de cohérence, frais support par support | fait |
 | 7 | Analyse et arbitrage | frais annuels en euros par enveloppe, comparaison AV / PER / PEA, destination du prochain versement, compteurs fiscaux | à faire |
-| 7 bis | Tableau de bord | page locale générée par metabank : vue d'ensemble du foyer, évolution, frais visibles et cachés, répartition, pistes d'arbitrage | à faire |
+| 7 bis | Tableau de bord | page locale générée par metabank (`metabank tableau`) : vue d'ensemble du foyer, évolution, frais visibles et cachés, supports, points d'attention : fait ; à venir : répartition par classe d'actifs, pistes d'arbitrage, PEA et Revolut | en cours |
 | 8 | Rapport IA | synthèse mensuelle via `claude -p` sur un extrait chiffré (sans identifiant) | à faire |
 | 9 | NAS | même `compose.yml` sur le QNAP (Container Station), accès réseau local, sauvegarde de `data/` | à faire |
 

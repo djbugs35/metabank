@@ -30,6 +30,16 @@ Arrêter :
 ./lancer.command arreter
 ```
 
+## Tableau de bord
+
+```sh
+uv run python -m metabank tableau
+```
+
+Génère `data/tableau.html` (jamais versionné) et l'ouvre dans le navigateur : patrimoine du foyer, valeur et
+versements par contrat, évolution, frais visibles et cachés, supports du plus coûteux au moins coûteux, points
+d'attention. Page autonome : aucune ressource chargée depuis Internet.
+
 ## Bilan des assurances vie et contrats retraite
 
 Ranger les relevés PDF dans `data/<titulaire>/<type> - <assureur> - <contrat>/<année>/` (type : AV, PER, PERP),
