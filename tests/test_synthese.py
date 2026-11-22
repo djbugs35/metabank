@@ -51,3 +51,17 @@ def test_situation_datee_entre_dans_la_rentabilite_annualisee():
     s = synthetiser("B", faire_bilans(releves, {"12345678": date(2024, 11, 18)}), [])
     assert round(s.rendement_annualise, 2) == Decimal("0.10")
     assert s.situations_dans_rendement
+
+
+def test_gros_versements_rendement_approximatif_avec_fourchette():
+    """Cas réel (PER 2024) : 6 000 € au départ, 34 000 € versés, 1 900 € gagnés : 4,75 % à 31,7 % selon les dates."""
+    releves = [_annee(2024, "41900", "34000", "6000", "A")]
+    annee = synthetiser("A", faire_bilans(releves), []).annees[0]
+    assert annee.approximatif
+    assert annee.rendement_min == Decimal("0.0475")
+    assert round(annee.rendement_max, 3) == Decimal("0.317")
+
+
+def test_petits_versements_rendement_sans_fourchette():
+    releves = [_annee(2024, "10600", "1000", "10000", "A")]
+    assert not synthetiser("A", faire_bilans(releves), []).annees[0].approximatif

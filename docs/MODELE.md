@@ -26,9 +26,9 @@ r = G / (V₀ + (A − R) / 2)
 
 Les relevés annuels ne datent pas les versements : on les suppose en moyenne au milieu de l'année. L'erreur est
 faible quand les versements sont petits devant V₀, plus forte l'année d'un gros versement.
-L'année d'ouverture (V₀ = 0), les versements sont placés à la **date d'ouverture** si elle est saisie dans
-`data/corrections.json` : r = G / ((A − R) × p), p = jours de l'ouverture au 31/12 / 365. Sans date, p = 0,5
-(milieu d'année) et l'année est marquée « * ».
+L'année d'ouverture (V₀ = 0), le rendement est le **rendement réel sur la durée de placement** :
+r = G / (A − R), affiché avec cette durée en mois si la date d'ouverture est saisie (`data/corrections.json`).
+Il n'est pas ramené à une année entière : 98 € gagnés sur 2 994 € en 5 mois font 3,3 %, pas 7,8 %.
 
 ### 1.3 Rendement avant frais
 r_avant = (G + F) / (V₀ + (A − R) / 2)
@@ -103,10 +103,12 @@ Un fonds acheté et revendu dans la même année n'apparaît à aucun 31/12 : se
 ## 6. Synthèse par foyer, personne et contrat (`metabank tableau`)
 
 ### 6.1 Année d'un ensemble de contrats
-Sommes, sur les contrats à relevés annuels, de V₀, A, R, V₁, gain et frais ; rendement de l'année par Dietz sur les
-sommes : G / (V₀ + (A − R) / 2). L'année d'ouverture d'un contrat (V₀ = 0) est calculée avec la même hypothèse de
-versements en milieu d'année et marquée « * ». Les relevés de situation (sans historique) n'entrent que dans la
-valeur, le versé et le gain.
+Sommes, sur les contrats à relevés annuels, de V₀, versements, gain et frais. Rendement réel de l'année :
+r = G / (V₀ + F_ouverture + F_courant / 2), où F_ouverture sont les versements des contrats ouverts dans l'année
+(comptés en entier, § 1.2) et F_courant ceux des autres, supposés en milieu d'année.
+Si |F_courant| > 25 % de V₀, la date inconnue des versements pèse : l'année est marquée « ≈ » et la fourchette est
+donnée, de G / (V₀ + F_ouverture + F_courant) (tout versé en janvier) à G / (V₀ + F_ouverture) (tout en décembre).
+Le gain G, lui, est exact. Les relevés de situation n'entrent que dans la valeur, le versé et le gain.
 
 ### 6.2 Rentabilité annualisée depuis l'ouverture
 Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :

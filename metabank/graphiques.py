@@ -7,9 +7,10 @@ from html import escape
 
 ZERO = Decimal(0)
 LARGEUR, HAUTEUR = 300, 200
-HAUT, BAS = 24, 24
+HAUT, BAS = 36, 24
 LARGEUR_BARRE_MAX = 46
 ECART_EMPILEMENT = 2
+HAUTEUR_LIGNE = 13
 
 
 @dataclass(frozen=True)
@@ -26,12 +27,15 @@ def histogramme(
     annees: list[int],
     series: list[Serie],
     formater: Callable[[Decimal], str],
-    marques: list[bool] | None = None,
+    *,
+    etiquettes: list[list[str]] | None = None,
+    infos: list[str] | None = None,
 ) -> str:
     """Rendre un histogramme par année ; plusieurs séries sont empilées, le total est écrit au-dessus.
 
     Args:
-        marques: une par année ; vrai ajoute « * » à l'étiquette (valeur estimée, expliquée sous le graphique).
+        etiquettes: une liste de lignes par année, à la place de la valeur formatée (ex. « 3,3 % », « +98 € »).
+        infos: un texte de survol par année, à la place de « série année : valeur ».
     """
     totaux = [_somme(serie.valeurs[rang] for serie in series) for rang in range(len(annees))]
     connus = [t for t in totaux if t is not None] or [ZERO]
@@ -46,13 +50,11 @@ def histogramme(
     contenu = [f'<line x1="0" y1="{y(ZERO):.1f}" x2="{LARGEUR}" y2="{y(ZERO):.1f}" class="axe"/>']
     for rang, annee in enumerate(annees):
         centre = pas * (rang + 0.5)
-        contenu += _barres(series, rang, (centre, largeur_barre), y, f"{annee}", formater)
+        info = infos[rang] if infos else None
+        contenu += _barres(series, rang, (centre, largeur_barre), y, (f"{annee}", info), formater)
         total = totaux[rang]
-        etoile = "*" if marques and marques[rang] else ""
-        texte = "—" if total is None else formater(total) + etoile
-        y_texte = y(max(total or ZERO, ZERO)) - 6 if (total or ZERO) >= 0 else y(total) + 14
-        contenu.append(f'<text x="{centre:.1f}" y="{y_texte:.1f}" class="valeur-barre" text-anchor="middle">'
-                       f"{escape(texte)}</text>")  # fmt: skip
+        lignes = etiquettes[rang] if etiquettes else ["—" if total is None else formater(total)]
+        contenu.append(_etiquette(centre, total, y, lignes))
         contenu.append(
             f'<text x="{centre:.1f}" y="{HAUTEUR - 6}" class="graduation" text-anchor="middle">{annee}</text>'
         )
@@ -62,9 +64,25 @@ def histogramme(
             "</figure>")  # fmt: skip
 
 
-def _barres(series: list[Serie], rang: int, position: tuple[float, float], y, annee: str, formater) -> list[str]:
+def _etiquette(centre: float, total: Decimal | None, y, lignes: list[str]) -> str:
+    """Rendre les lignes de texte au-dessus d'une barre positive, au-dessous d'une barre négative."""
+    if (total or ZERO) >= 0:
+        premiere = y(max(total or ZERO, ZERO)) - 6 - (len(lignes) - 1) * HAUTEUR_LIGNE
+    else:
+        premiere = y(total) + 14
+    tspans = "".join(
+        f'<tspan x="{centre:.1f}" dy="{0 if rang == 0 else HAUTEUR_LIGNE}">{escape(ligne)}</tspan>'
+        for rang, ligne in enumerate(lignes)
+    )
+    return f'<text y="{premiere:.1f}" class="valeur-barre" text-anchor="middle">{tspans}</text>'
+
+
+def _barres(
+    series: list[Serie], rang: int, position: tuple[float, float], y, textes: tuple[str, str | None], formater
+) -> list[str]:
     """Rendre les segments empilés d'une année, du bas vers le haut, séparés de 2 px."""
     centre, largeur = position
+    annee, info = textes
     segments, cumul = [], ZERO
     for serie in series:
         valeur = serie.valeurs[rang]
@@ -74,7 +92,8 @@ def _barres(series: list[Serie], rang: int, position: tuple[float, float], y, an
         hauteur = max(y(bas) - y(haut) - (ECART_EMPILEMENT if cumul else 0), 1)
         segments.append(
             f'<rect x="{centre - largeur / 2:.1f}" y="{y(haut):.1f}" width="{largeur:.1f}" height="{hauteur:.1f}" '
-            f'rx="3" class="{serie.classe}"><title>{escape(serie.nom)} {annee} : {escape(formater(valeur))}</title></rect>'
+            f'rx="3" class="{serie.classe}"><title>'
+            f"{escape(info or f'{serie.nom} {annee} : {formater(valeur)}')}</title></rect>"
         )
         cumul += valeur
     return segments

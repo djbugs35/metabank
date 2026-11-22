@@ -8,6 +8,8 @@ from metabank.bilan import BilanContrat
 from metabank.frais_historique import HistoriqueFrais
 
 ZERO = Decimal(0)
+# Au-delà de 25 % du capital de début, la date des versements change le rendement de plus d'un quart.
+SEUIL_VERSEMENTS = Decimal("0.25")
 # Bornes du taux annualisé cherché par dichotomie : de -99 % à +1000 % par an.
 TAUX_MIN, TAUX_MAX = -0.99, 10.0
 ITERATIONS = 200
@@ -24,6 +26,14 @@ class AnneeSynthese:
     frais_fonds: Decimal
     rendement: Decimal | None
     ouverture_dans_l_annee: bool
+    rendement_min: Decimal | None = None
+    rendement_max: Decimal | None = None
+    duree_mois: int | None = None
+
+    @property
+    def approximatif(self) -> bool:
+        """Rendre vrai si la date inconnue des versements de l'année change sensiblement le rendement."""
+        return self.rendement_min is not None
 
     @property
     def frais(self) -> Decimal:
@@ -67,20 +77,39 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
 
 
 def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSynthese:
-    """Rendre l'année sommée ; rendement de Dietz sur les sommes, versements en milieu d'année. MODELE § 6.1."""
+    """Rendre l'année sommée sur les contrats. MODELE § 6.1.
+
+    Rendement réel de l'année : gain / capital engagé. Un contrat ouvert dans l'année compte pour son versé
+    (rendement sur sa durée de placement) ; ailleurs, les versements sont supposés en milieu d'année, et si leur date
+    pèse (versements > 25 % du capital de début), la fourchette « tout en janvier / tout en décembre » est donnée.
+    """
     lignes = [(b, a) for b in bilans for a in b.annees if a.annee == annee]
     debut = sum((a.valeur_debut for _, a in lignes), ZERO)
     gain = sum((a.gain for _, a in lignes), ZERO)
-    base = debut + sum(((a.apports - a.rachats) * a.poids_versements for _, a in lignes), ZERO)
+    flux_ouverture = sum((a.apports - a.rachats for _, a in lignes if a.valeur_debut == 0), ZERO)
+    flux_courant = sum((a.apports - a.rachats for _, a in lignes if a.valeur_debut > 0), ZERO)
+    fixe = debut + flux_ouverture
+    rendement_min = rendement_max = None
+    if debut > 0 and abs(flux_courant) > debut * SEUIL_VERSEMENTS:
+        bornes = sorted(_division(gain, base) for base in (fixe + flux_courant, fixe) if base > 0)
+        rendement_min, rendement_max = bornes[0], bornes[-1]
+    durees = {a.duree_mois for _, a in lignes}
     return AnneeSynthese(
         annee=annee,
         verse=sum((a.apports for _, a in lignes), ZERO),
         gain=gain,
         frais_releve=sum((a.frais or ZERO for _, a in lignes), ZERO),
         frais_fonds=sum((frais_fonds.get((b.titulaire, b.numero, annee), ZERO) for b, _ in lignes), ZERO),
-        rendement=gain / base if base > 0 else None,
+        rendement=_division(gain, fixe + flux_courant / 2),
         ouverture_dans_l_annee=any(a.poids_estime for _, a in lignes),
+        rendement_min=rendement_min,
+        rendement_max=rendement_max,
+        duree_mois=durees.pop() if len(durees) == 1 else None,
     )
+
+
+def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:
+    return numerateur / base if base > 0 else None
 
 
 def _rendement_annualise(bilans: list[BilanContrat]) -> Decimal | None:

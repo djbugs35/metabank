@@ -38,19 +38,18 @@ def test_annee_gain_rendement_et_frais_sur_encours():
     assert round(annee.frais_sur_encours, 5) == Decimal("0.01745")
 
 
-def test_premiere_annee_versements_supposes_en_milieu_d_annee_sans_date_d_ouverture():
-    annee = faire_bilans([ReleveRange("A", _annee(2023, "10500", "10000", None))])[0].annees[0]
-    assert annee.gain == Decimal(500)
-    assert annee.rendement == Decimal("0.1")
-    assert annee.poids_estime
-
-
-def test_premiere_annee_versements_places_a_la_date_d_ouverture():
-    """Ouvert le 2 janvier : l'argent a travaillé presque toute l'année, 500 € sur 10 000 € ≈ 5 %, pas 10 %."""
-    ouvertures = {"000111": date(2023, 1, 2)}
+def test_annee_d_ouverture_rendement_reel_sur_la_periode():
+    """Cas réel (PER ouvert le 30/07) : 500 € gagnés sur 10 000 € = 5 % en 5 mois, pas 12 % « par an »."""
+    ouvertures = {"000111": date(2023, 7, 30)}
     annee = faire_bilans([ReleveRange("A", _annee(2023, "10500", "10000", None))], ouvertures)[0].annees[0]
-    assert not annee.poids_estime
-    assert round(annee.rendement, 3) == Decimal("0.050")
+    assert annee.rendement == Decimal("0.05")
+    assert annee.duree_mois == 5
+
+
+def test_annee_d_ouverture_sans_date_meme_rendement_reel_duree_inconnue():
+    annee = faire_bilans([ReleveRange("A", _annee(2023, "10500", "10000", None))])[0].annees[0]
+    assert annee.rendement == Decimal("0.05")
+    assert annee.duree_mois is None
 
 
 def test_cumul_depuis_l_origine_sur_plusieurs_annees():

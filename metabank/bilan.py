@@ -29,6 +29,8 @@ class Annee:
     # Part de l'année où les versements ont travaillé (0,5 = milieu d'année) ; estimée si l'ouverture est inconnue.
     poids_versements: Decimal = Decimal("0.5")
     poids_estime: bool = False
+    # Année d'ouverture : nombre de mois de placement (le rendement porte sur cette durée) ; None = année entière.
+    duree_mois: int | None = None
 
 
 @dataclass(frozen=True)
@@ -78,7 +80,9 @@ def calculer_annee(releve: Releve, valeur_debut: Decimal, ouverture: date | None
     gain = releve.valeur - valeur_debut - apports + rachats
     frais = releve.frais.total if releve.frais else None
     poids, estime = _poids_versements(releve.date_arrete, valeur_debut, ouverture)
-    base = valeur_debut + (apports - rachats) * poids
+    # Année d'ouverture : rendement réel sur la période (gain / versé), pas ramené à une année entière.
+    ouverture_annee = valeur_debut == ZERO
+    base = (apports - rachats) if ouverture_annee else valeur_debut + (apports - rachats) * poids
     base = base if base > ZERO else None
     encours_moyen = (valeur_debut + releve.valeur) / 2 if valeur_debut > ZERO else releve.valeur * poids
     return Annee(
@@ -94,7 +98,13 @@ def calculer_annee(releve: Releve, valeur_debut: Decimal, ouverture: date | None
         frais_sur_encours=frais / encours_moyen if encours_moyen and frais is not None else None,
         poids_versements=poids,
         poids_estime=estime,
+        duree_mois=_mois_jusqu_a(ouverture, releve.date_arrete) if ouverture_annee and ouverture else None,
     )
+
+
+def _mois_jusqu_a(debut: date, fin: date) -> int:
+    """Rendre le nombre de mois entamés entre debut et fin (30/07 -> 31/12 : 5 mois)."""
+    return max(1, round((fin - debut).days / 30.44))
 
 
 def _poids_versements(fin_annee: date, valeur_debut: Decimal, ouverture: date | None) -> tuple[Decimal, bool]:

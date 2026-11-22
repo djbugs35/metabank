@@ -15,7 +15,7 @@ from metabank.frais_historique import HistoriqueFrais
 from metabank.graphiques import Serie, histogramme
 from metabank.rapport import LIBELLES_TYPES, euros, pourcent
 from metabank.rapport_frais import points
-from metabank.synthese import Synthese, synthetiser
+from metabank.synthese import AnneeSynthese, Synthese, synthetiser
 
 ZERO = Decimal(0)
 
@@ -93,7 +93,6 @@ def _graphiques(s: Synthese) -> str:
     if not s.annees:
         return "<p class='note'>Relevé de situation seul : pas d'historique année par année.</p>"
     annees = [a.annee for a in s.annees]
-    marques = [a.ouverture_dans_l_annee for a in s.annees]
     versements = histogramme(
         "Versements par année", annees, [Serie("serie-1", "Versé", [a.verse for a in s.annees])], euros
     )
@@ -102,7 +101,8 @@ def _graphiques(s: Synthese) -> str:
         annees,
         [Serie("serie-3", "Rentabilité", [a.rendement for a in s.annees])],
         pourcent,
-        marques,
+        etiquettes=[_etiquette_rentabilite(a) for a in s.annees],
+        infos=[_info_rentabilite(a) for a in s.annees],
     )
     frais = histogramme(
         "Frais par année",
@@ -116,10 +116,35 @@ def _graphiques(s: Synthese) -> str:
     return f'<div class="graphiques">{versements}{rentabilite}{frais}</div>'
 
 
+def _etiquette_rentabilite(a: AnneeSynthese) -> list[str]:
+    """Rendre « ≈ 8,2 % » ou « 3,3 % · 5 mois », puis le gain exact en euros."""
+    prefixe = "≈ " if a.approximatif else ""
+    duree = f" · {a.duree_mois} mois" if a.duree_mois else ""
+    signe = "+" if a.gain >= 0 else ""
+    return [f"{prefixe}{pourcent(a.rendement)}{duree}", f"{signe}{euros(a.gain)}"]
+
+
+def _info_rentabilite(a: AnneeSynthese) -> str:
+    texte = f"{a.annee} : gain {euros(a.gain)}, rentabilité {pourcent(a.rendement)}"
+    if a.duree_mois:
+        texte += f" sur {a.duree_mois} mois de placement (année d'ouverture)"
+    if a.approximatif:
+        texte += (
+            f" ; entre {pourcent(a.rendement_min)} (versements en janvier) et {pourcent(a.rendement_max)} "
+            "(versements en décembre) : les relevés ne datent pas les versements"
+        )
+    return texte
+
+
 def _notes(s: Synthese) -> str:
     notes = []
-    if any(a.ouverture_dans_l_annee for a in s.annees):
-        notes.append("* année d'ouverture d'un contrat : versements supposés en milieu d'année.")
+    if any(a.approximatif for a in s.annees):
+        notes.append(
+            "≈ : les versements de l'année sont importants et les relevés ne les datent pas ; rentabilité calculée "
+            "avec des versements en milieu d'année (fourchette au survol). Le gain en euros, lui, est exact."
+        )
+    if any(a.duree_mois for a in s.annees):
+        notes.append("Année d'ouverture : rentabilité réelle sur la durée de placement indiquée, pas sur un an.")
     if s.sans_historique and s.annees:
         notes.append(
             "Valeur, versé et gain incluent "
