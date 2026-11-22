@@ -30,6 +30,23 @@ Arrêter :
 ./lancer.command arreter
 ```
 
+## Bilan des assurances vie et contrats retraite
+
+Ranger les relevés PDF dans `data/<titulaire>/<type> - <assureur> - <contrat>/<année>/` (type : AV, PER, PERP),
+puis :
+
+```sh
+brew install poppler
+```
+
+```sh
+uv run python -m metabank bilan
+```
+
+Pour chaque contrat : versements, valeur, gain, rendement et frais par année et depuis l'origine, avec les
+incohérences relevées dans les documents de l'assureur. Formules : [docs/MODELE.md](docs/MODELE.md).
+Le détail est écrit dans `data/bilan.json` (jamais versionné).
+
 ## Où sont les données
 
 Dans `data/` : la base Wealthfolio (`wealthfolio.db`) et ses secrets chiffrés. Ce dossier n'est jamais versionné :
