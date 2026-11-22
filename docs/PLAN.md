@@ -4,24 +4,28 @@
 Voir et analyser tout le patrimoine financier (comptes courants, assurance vie, PER, PEA), en local,
 sans abonnement (hors le compte Claude déjà payé). **Lecture seule : aucun ordre n'est jamais passé.**
 
-## Architecture
+## Architecture : metabank, application chapeau
+
+metabank est le point d'entrée unique. Il orchestre des projets existants quand ils font bien une partie du travail,
+et ne code lui-même que ce qu'aucun ne fait (lecture des relevés d'assureurs, frais cachés, arbitrage à la française).
 
 ```
- Sources                      Alimentation (metabank)              Wealthfolio (local)          IA
- ───────                      ───────────────────────              ───────────────────          ──
- Trade Republic (PEA, CC) ─── pytr → convertisseur CSV ─┐
- Revolut                  ─── export CSV → convertisseur ┼──► import CSV ─► base SQLite ─► rapport Claude
- BNP (courant, AV, PER)   ─── saisie 2 à 4 fois par an ─┘     tableau de bord,          (claude -p sur un
-                                                                performance, allocation   extrait chiffré)
+ Sources                    Collecte (connecteurs)            Socle metabank                 Restitution
+ ───────                    ──────────────────────            ──────────────                 ───────────
+ Suravenir, Cardif (PDF) ── lecteurs metabank ─────────┐
+ Trade Republic (PEA)    ── pytr (projet externe) ─────┼──► modèle unique ─► analyses ──┬─► tableau de bord metabank
+ Revolut                 ── export CSV ────────────────┘    contrôles        (bilan,     ├─► synthèse Claude (claude -p)
+                                                            data/ (local)    frais,      └─► exports vers outils tiers
+                                                                             arbitrage)      (Wealthfolio, Keep Your Folio…)
 ```
 
-- **Wealthfolio** ([wealthfolio/wealthfolio](https://github.com/wealthfolio/wealthfolio), AGPL-3.0) fait le stockage,
-  le tableau de bord et les calculs de performance (pondérée dans le temps et par les flux). On ne le modifie pas :
-  on le déploie (`compose.yml`) et on l'alimente.
-- **metabank** ne contient que ce que Wealthfolio n'a pas : déploiement, convertisseurs vers son import CSV,
-  analyse et arbitrage propres à la fiscalité française, rapport IA.
-- L'abonnement Wealthfolio Connect (synchronisation de courtiers) n'est pas utilisé : il ne couvre ni Trade Republic
-  ni BNP à notre connaissance.
+- **Projets externes utilisés ou envisagés** :
+  - [pytr](https://github.com/pytr-org/pytr) : historique Trade Republic ;
+  - [Wealthfolio](https://github.com/wealthfolio/wealthfolio) (AGPL-3.0, `compose.yml`) : suivi au cours du marché
+    d'un portefeuille de titres cotés (PEA, CTO), le jour où il sera garni ;
+  - [Keep Your Folio](https://keepyourfolio.fr/) (AGPL-3.0, local) : simulateurs fiscaux AV / PER / PEA, à évaluer.
+- **Règle** : on n'intègre un projet externe que s'il garde les données en local ; on ne le modifie pas, on l'alimente
+  par ses formats d'import ou on lit ses exports. Le modèle et les chiffres de référence restent ceux de metabank.
 
 ## Jalons
 
@@ -32,12 +36,16 @@ sans abonnement (hors le compte Claude déjà payé). **Lecture seule : aucun or
 | 3 | Format d'import | relever le format CSV attendu par Wealthfolio sur un export réel (colonnes, types d'opérations, devises) | à faire |
 | 4 | Trade Republic | convertisseur pytr → CSV Wealthfolio (achats, ventes, dépôts, dividendes, intérêts, frais), sans doublon d'un import à l'autre | à faire |
 | 5 | Revolut | convertisseur de l'export CSV Revolut | à faire |
-| 6 | Assurances vie et retraite (priorité) | lecteur des relevés annuels Suravenir et des situations Cardif, bilan par contrat (gain, rendement, frais), contrôles de cohérence : fait ; reste l'envoi vers Wealthfolio | en cours |
+| 6 | Assurances vie et retraite (priorité) | lecteur des relevés annuels Suravenir et des situations Cardif, bilan par contrat (gain, rendement, frais), contrôles de cohérence, frais support par support | fait |
 | 7 | Analyse et arbitrage | frais annuels en euros par enveloppe, comparaison AV / PER / PEA, destination du prochain versement, compteurs fiscaux | à faire |
+| 7 bis | Tableau de bord | page locale générée par metabank : vue d'ensemble du foyer, évolution, frais visibles et cachés, répartition, pistes d'arbitrage | à faire |
 | 8 | Rapport IA | synthèse mensuelle via `claude -p` sur un extrait chiffré (sans identifiant) | à faire |
 | 9 | NAS | même `compose.yml` sur le QNAP (Container Station), accès réseau local, sauvegarde de `data/` | à faire |
 
 ## Décisions prises
+- **2026-11-22 — metabank devient l'application chapeau.** Il réutilise les projets existants quand ils conviennent
+  (pytr, Wealthfolio, Keep Your Folio à évaluer) et garde son propre tableau de bord, seul à montrer les frais cachés
+  et les rétrocessions lus dans les relevés.
 - **2026-11-22 — Les contrats « BNP » sont en fait chez Suravenir (via Vie Plus) et Cardif.** Suravenir ne fournit
   que des relevés annuels PDF (pas de dates d'opérations) : rendement annuel estimé par Dietz modifié (docs/MODELE.md).
 - **2026-11-22 — BNP en premier.** Assurances vie et PER portent les plus gros montants et les plus longs historiques :

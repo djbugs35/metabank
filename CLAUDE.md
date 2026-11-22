@@ -6,8 +6,9 @@ Le stockage, le tableau de bord et la performance sont confiés à **Wealthfolio
 metabank l'alimente (convertisseurs vers son import CSV) et ajoute l'analyse française et le rapport IA.
 Plan, architecture et jalons : docs/PLAN.md.
 - **Lecture seule** : aucun virement, ordre de bourse ni arbitrage, jamais, même « pour tester ».
-- On ne modifie pas Wealthfolio : on le déploie et on l'alimente. Un besoin qu'il ne couvre pas devient un outil
-  metabank ou, à défaut, un add-on Wealthfolio (SDK TypeScript officiel).
+- **metabank est l'application chapeau** : avant de coder une fonction, chercher si un projet open source la fait déjà
+  (local, maintenu) et l'utiliser plutôt que la refaire. On ne modifie pas un projet externe : on l'alimente par ses
+  formats d'import ou on lit ses exports ; le modèle et les chiffres de référence restent ceux de metabank.
 - **Proposer au fil de l'eau de nouvelles fonctions** : par défaut, toute suggestion est ajoutée au tableau
   docs/PLAN.md § Suggestions retenues (jalon, état) ; passer son état à « fait » quand elle est livrée.
 
