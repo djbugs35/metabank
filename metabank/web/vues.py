@@ -9,10 +9,10 @@ from decimal import Decimal
 from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
 from metabank.bilan import BilanContrat, faire_bilans
 from metabank.corrections import appliquer_verifications, cle_contrat, lire_corrections, lire_ouvertures
+from metabank.donnees import charger
 from metabank.frais import AnalyseFrais, analyser_frais
 from metabank.frais_historique import historiques_frais
 from metabank.rapport import nom_contrat
-from metabank.releves import lire_dossier
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
 from metabank.web.credits_vues import etat_credits
@@ -24,13 +24,14 @@ ZERO = Decimal(0)
 
 def etat(dossier) -> dict:
     """Rendre tout ce qu'affiche l'application : vues, fonds, points d'attention, contrats et corrections."""
-    releves, erreurs = lire_dossier(dossier)
-    releves = appliquer_verifications(releves, dossier)
+    donnees = charger(dossier)
+    releves = appliquer_verifications(donnees.releves, dossier)
     bilans = faire_bilans(releves, lire_ouvertures(dossier))
     historiques = historiques_frais(releves)
     analyses = analyser_frais(releves)
     foyer = synthetiser("Foyer", bilans, historiques)
-    banque, erreurs_banque, comptes = etat_banque(dossier)
+    comptes = donnees.comptes
+    banque = etat_banque(dossier, comptes)
     corrections = lire_corrections(dossier)
     patrimoine = patrimoines(bilans, comptes, corrections["biens"])
     vues = [_vue("foyer", "foyer", None, foyer, foyer)]
@@ -46,7 +47,7 @@ def etat(dossier) -> dict:
         "contrats": [_contrat(b, analyses) for b in bilans],
         "fonds": _fonds(analyses),
         "points": _points(bilans),
-        "erreurs": erreurs + erreurs_banque,
+        "erreurs": donnees.erreurs,
         "banque": banque,
         "patrimoine": patrimoine,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),

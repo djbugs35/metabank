@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+import metabank.connecteurs._releves as socle_releves
 from metabank.corrections import (
     CorrectionInvalide,
     date_ouverture,
@@ -15,6 +16,7 @@ from metabank.corrections import (
     lire_corrections,
     lire_ouvertures,
 )
+from metabank.donnees import Donnees
 from metabank.frais import projeter
 from metabank.releves import ReleveRange, lire_releve
 from metabank.web import assistant, depot, vues
@@ -34,6 +36,7 @@ def _texte(nom: str) -> str:
 def lecture_av(monkeypatch):
     """Le PDF déposé est « lu » comme l'exemple d'assurance vie : pas besoin d'un vrai PDF."""
     monkeypatch.setattr(depot, "extraire_texte", lambda _: _texte("suravenir_av_2025.txt"))
+    monkeypatch.setattr(socle_releves, "extraire_texte_contenu", lambda _: _texte("suravenir_av_2025.txt"))
 
 
 def test_releve_annuel_range_par_titulaire_contrat_et_annee(tmp_path):
@@ -56,7 +59,7 @@ def test_releve_va_dans_le_dossier_existant_du_contrat(tmp_path):
     existant = tmp_path / "Alice" / f"AV - mon contrat {numero}"
     existant.mkdir(parents=True)
     resultat = deposer_releve(tmp_path, "Alice", "r.pdf", PDF)
-    assert resultat["chemin"].startswith(f"Alice/AV - mon contrat {numero}/")
+    assert resultat["chemin"].startswith(f"archives/Alice/AV - mon contrat {numero}/")
 
 
 @pytest.mark.parametrize(
@@ -114,7 +117,7 @@ def etat_exemple(tmp_path, monkeypatch):
         ReleveRange("Alice", lire_releve(_texte("suravenir_av_2025.txt"))),
         ReleveRange("Bruno", lire_releve(_texte("cardif_situation.txt"), "", "perp")),
     ]
-    monkeypatch.setattr(vues, "lire_dossier", lambda _: (releves, []))
+    monkeypatch.setattr(vues, "charger", lambda _: Donnees(releves, [], []))
     return vues.etat(tmp_path), releves
 
 

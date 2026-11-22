@@ -1,0 +1,52 @@
+"""Écrans branchés sur la base : mêmes chiffres qu'avec les anciens lecteurs, fichiers rangés à la main repris."""
+
+import pytest
+
+from metabank.banque import lire_comptes
+from metabank.base.integration import FICHIER_BASE
+from metabank.donnees import Donnees, charger
+from metabank.releves import lire_dossier
+from metabank.web import vues
+from metabank.web.depot import deposer_releve
+from tests.conftest import EXEMPLES, pdf, ranger
+
+pytestmark = pytest.mark.usefixtures("pdf_simules")
+
+
+def test_l_application_affiche_les_memes_chiffres_que_les_anciens_lecteurs(donnees, monkeypatch):
+    anciens = Donnees(lire_dossier(donnees)[0], lire_comptes(donnees)[0], [])
+    depuis_la_base = vues.etat(donnees)
+    monkeypatch.setattr(vues, "charger", lambda _: anciens)
+    assert depuis_la_base == vues.etat(donnees)
+
+
+def test_un_fichier_range_a_la_main_apparait_au_chargement_suivant(donnees):
+    avant = len(charger(donnees).releves)
+    # Même relevé de situation que celui de Bruno, mais chez Alice et d'un octet différent (empreinte distincte).
+    ranger(donnees, "Alice/PERP - Cardif - Perp 987654/situation.pdf", pdf("cardif_situation.txt") + b"\n")
+    assert len(charger(donnees).releves) == avant + 1
+
+
+def test_un_fichier_depose_dans_la_page_entre_en_base(tmp_path):
+    deposer_releve(tmp_path, "Alice", "export.csv", (EXEMPLES / "bnp_courant.csv").read_bytes())
+    assert [c.titulaire for c in charger(tmp_path).comptes] == ["Alice"]
+    assert not (tmp_path / "Alice").exists()
+
+
+def test_un_fichier_illisible_range_a_la_main_est_signale(donnees):
+    ranger(donnees, "Alice/CC - BNP - 1234/abime.csv", (EXEMPLES / "bnp_courant.csv").read_bytes() + b"x;y\n")
+    erreurs = charger(donnees).erreurs
+    assert len(erreurs) == 1 and erreurs[0].startswith("Alice/CC - BNP - 1234/abime.csv")
+
+
+def test_une_archive_illisible_est_signalee_apres_reconstruction(donnees):
+    charger(donnees)
+    abime = (EXEMPLES / "bnp_courant.csv").read_bytes() + b"x;y\n"
+    ranger(donnees, "archives/Alice/CC - BNP - 1234/abime.csv", abime)
+    (donnees / FICHIER_BASE).unlink()
+    erreurs = charger(donnees).erreurs
+    assert len(erreurs) == 1 and erreurs[0].startswith("archives/Alice/CC - BNP - 1234/abime.csv")
+
+
+def test_sans_dossier_de_donnees_rien_a_afficher(tmp_path):
+    assert charger(tmp_path / "absent") == Donnees([], [], [])

@@ -1,7 +1,8 @@
-"""Dépôt d'un relevé PDF depuis la page : il est lu, puis rangé dans data/<titulaire>/<contrat>/<année>/.
+"""Dépôt d'un relevé PDF ou d'un export CSV depuis la page : lu, puis archivé et enregistré en base.
 
-Le fichier n'est rangé que s'il a été reconnu : un PDF illisible ou d'un assureur inconnu est refusé, pour que
-data/ ne contienne que ce que metabank sait lire.
+Rangement : data/archives/<titulaire>/<contrat>/<année>/ pour un relevé, data/archives/<titulaire>/<compte>/ pour un
+export. Le fichier n'est archivé que s'il a été reconnu : un fichier illisible ou d'une source inconnue est refusé,
+pour que les archives ne contiennent que ce que metabank sait lire.
 """
 
 import re
@@ -10,6 +11,9 @@ from pathlib import Path
 
 from metabank.banque.bnp import ExportIllisible, decoder, est_export_bnp, lire_export_bnp
 from metabank.banque.modele import TYPES_PAR_PREFIXE as TYPES_BANQUE
+from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
+from metabank.base.integration import importer_fichier
+from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import cle_contrat
 from metabank.releves import TYPES_PAR_PREFIXE, lire_releve
 from metabank.releves.modele import Releve
@@ -26,7 +30,7 @@ class DepotRefuse(ValueError):
 
 
 def deposer_releve(dossier: Path, titulaire: str, nom_fichier: str, contenu: bytes) -> dict:
-    """Rendre où le relevé a été rangé, après l'avoir lu et écrit dans dossier/<titulaire>/<contrat>/.
+    """Rendre où le fichier a été archivé (chemin relatif à data/), après l'avoir lu et enregistré en base.
 
     Raises:
         DepotRefuse: fichier vide, trop gros, pas un PDF, titulaire invalide ou relevé non reconnu.
@@ -39,21 +43,27 @@ def deposer_releve(dossier: Path, titulaire: str, nom_fichier: str, contenu: byt
     if not contenu.startswith(b"%PDF"):
         return _deposer_export(dossier, titulaire, nom_fichier, contenu)
     releve = _lire(contenu, nom_fichier)
-    dossier_contrat = _dossier_contrat(dossier / titulaire, releve)
-    cible = dossier_contrat / str(releve.date_arrete.year) if releve.est_annuel else dossier_contrat
-    nom = _nom_propre(nom_fichier)
-    chemin = cible / nom
-    if chemin.exists() and chemin.read_bytes() == contenu:
-        return _reponse(dossier, chemin, releve, deja_present=True)
-    rang = 2
-    while chemin.exists():
-        chemin = cible / f"{Path(nom).stem} ({rang}).pdf"
-        rang += 1
-    cible.mkdir(parents=True, exist_ok=True)
-    temporaire = chemin.with_suffix(".pdf.tmp")
-    temporaire.write_bytes(contenu)
-    temporaire.replace(chemin)
-    return _reponse(dossier, chemin, releve, deja_present=False)
+    provenance = f"{titulaire}/{_dossier_contrat(dossier, titulaire, releve)}"
+    if releve.est_annuel:
+        provenance += f"/{releve.date_arrete.year}"
+    chemin, deja = _archiver(dossier, provenance, _nom_propre(nom_fichier), contenu)
+    return _reponse(chemin, releve, deja_present=deja)
+
+
+def _archiver(dossier: Path, provenance: str, nom: str, contenu: bytes) -> tuple[str, bool]:
+    """Rendre le chemin de l'archive, relatif à data/, et vrai si ce contenu était déjà archivé."""
+    try:
+        resultat = importer_fichier(dossier, provenance, nom, contenu, composer_lecteur(lister_connecteurs()))
+    except ValueError as erreur:
+        # Lu par le dépôt mais refusé par le connecteur (contrôle de cohérence, montant inexact) : rien n'est archivé.
+        raise DepotRefuse(str(erreur)) from erreur
+    return f"{DOSSIER_ARCHIVES}/{resultat.chemin}", resultat.deja_present
+
+
+def _sous_dossiers(dossier: Path, titulaire: str) -> list[Path]:
+    """Rendre les dossiers de comptes du titulaire, archivés d'abord, puis ceux encore rangés à la main."""
+    racines = (dossier / DOSSIER_ARCHIVES / titulaire, dossier / titulaire)
+    return [d for racine in racines if racine.is_dir() for d in sorted(racine.iterdir()) if d.is_dir()]
 
 
 def _lire(contenu: bytes, nom_fichier: str) -> Releve:
@@ -66,15 +76,14 @@ def _lire(contenu: bytes, nom_fichier: str) -> Releve:
             raise DepotRefuse(f"relevé non reconnu : {erreur}") from erreur
 
 
-def _dossier_contrat(dossier_titulaire: Path, releve: Releve) -> Path:
-    """Rendre le dossier du contrat : celui dont le nom finit par le numéro, sinon un nouveau, nommé comme les autres."""
+def _dossier_contrat(dossier: Path, titulaire: str, releve: Releve) -> str:
+    """Rendre le nom du dossier du contrat : celui qui finit par le numéro, sinon un nouveau, nommé comme les autres."""
     cle = cle_contrat(releve.numero)
-    if dossier_titulaire.exists():
-        existants = [d for d in dossier_titulaire.iterdir() if d.is_dir() and d.name.replace(" ", "").endswith(cle)]
-        if existants:
-            return existants[0]
+    existants = [d.name for d in _sous_dossiers(dossier, titulaire) if d.name.replace(" ", "").endswith(cle)]
+    if existants:
+        return existants[0]
     prefixe = PREFIXES_PAR_TYPE.get(releve.type_contrat, "AUTRE")
-    return dossier_titulaire / _nom_propre(f"{prefixe} - {releve.assureur} - {releve.produit} {cle}", extension="")
+    return _nom_propre(f"{prefixe} - {releve.assureur} - {releve.produit} {cle}", extension="")
 
 
 def _nom_propre(nom: str, extension: str = ".pdf") -> str:
@@ -85,9 +94,9 @@ def _nom_propre(nom: str, extension: str = ".pdf") -> str:
     return base[:150]
 
 
-def _reponse(dossier: Path, chemin: Path, releve: Releve, deja_present: bool) -> dict:
+def _reponse(chemin: str, releve: Releve, deja_present: bool) -> dict:
     return {
-        "chemin": str(chemin.relative_to(dossier)),
+        "chemin": chemin,
         "assureur": releve.assureur,
         "produit": releve.produit,
         "date": releve.date_arrete.isoformat(),
@@ -109,26 +118,13 @@ def _deposer_export(dossier: Path, titulaire: str, nom_fichier: str, contenu: by
     except ExportIllisible as erreur:
         raise DepotRefuse(str(erreur)) from erreur
     chiffres = export.numero_masque.lstrip("*")
-    dossier_titulaire = dossier / titulaire
     existants = [
-        d for d in (dossier_titulaire.iterdir() if dossier_titulaire.exists() else [])
-        if d.is_dir() and d.name.split(" - ")[0].strip().upper() in TYPES_BANQUE and d.name.strip().endswith(chiffres)
+        d.name for d in _sous_dossiers(dossier, titulaire)
+        if d.name.split(" - ")[0].strip().upper() in TYPES_BANQUE and d.name.strip().endswith(chiffres)
     ]  # fmt: skip
     nom_compte = export.nom.upper()
     prefixe = "LA" if "LIVRET A" in nom_compte else "LDD" if "LDD" in nom_compte else "CC"
-    cible = existants[0] if existants else dossier_titulaire / f"{prefixe} - BNP - {chiffres}"
-    nom = _nom_propre(nom_fichier, extension=".csv")
-    chemin = cible / nom
-    if chemin.exists() and chemin.read_bytes() == contenu:
-        deja = True
-    else:
-        deja, rang = False, 2
-        while chemin.exists():
-            chemin = cible / f"{Path(nom).stem} ({rang}).csv"
-            rang += 1
-        cible.mkdir(parents=True, exist_ok=True)
-        temporaire = chemin.with_suffix(".csv.tmp")
-        temporaire.write_bytes(contenu)
-        temporaire.replace(chemin)
-    return {"chemin": str(chemin.relative_to(dossier)), "assureur": "BNP", "produit": export.nom,
+    cible = existants[0] if existants else f"{prefixe} - BNP - {chiffres}"
+    chemin, deja = _archiver(dossier, f"{titulaire}/{cible}", _nom_propre(nom_fichier, extension=".csv"), contenu)
+    return {"chemin": chemin, "assureur": "BNP", "produit": export.nom,
             "date": export.date_solde.isoformat(), "annuel": False, "deja_present": deja}  # fmt: skip

@@ -18,49 +18,14 @@ from metabank.base.schema import ouvrir
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs, trouver
 from metabank.releves.serialisation import releve_depuis_json, releve_en_json
 from metabank.releves.texte import ErreurLecture
-from tests.test_credit import _export_credit
+from tests.conftest import ENTETE_PDF, EXEMPLES, ranger
 
-EXEMPLES = Path(__file__).parent / "exemples"
-ENTETE_PDF = b"%PDF-fictif\n"
 CONNECTEURS = lister_connecteurs()
-
-
-@pytest.fixture(autouse=True)
-def pdf_simules(monkeypatch):
-    """Remplacer pdftotext : le texte du faux PDF suit son en-tête."""
-
-    def texte(contenu: bytes) -> str | None:
-        return contenu.removeprefix(ENTETE_PDF).decode() if contenu.startswith(ENTETE_PDF) else None
-
-    monkeypatch.setattr(socle_releves, "extraire_texte_contenu", texte)
-    monkeypatch.setattr(releves, "extraire_texte", lambda pdf: texte(pdf.read_bytes()))
+pytestmark = pytest.mark.usefixtures("pdf_simules")
 
 
 def lire_comptes_bancaires_fichiers(dossier: Path) -> list:
     return lire_comptes(dossier)[0]
-
-
-def _pdf(nom: str) -> bytes:
-    return ENTETE_PDF + (EXEMPLES / nom).read_bytes()
-
-
-def _ranger(dossier: Path, chemin: str, contenu: bytes) -> None:
-    fichier = dossier / chemin
-    fichier.parent.mkdir(parents=True, exist_ok=True)
-    fichier.write_bytes(contenu)
-
-
-@pytest.fixture
-def donnees(tmp_path) -> Path:
-    """Rendre un data/ fictif rangé à l'ancienne : relevés, comptes, livret et crédit."""
-    _ranger(tmp_path, "Alice/AV - Suravenir - Vie Plus 270549974/2025/releve.pdf", _pdf("suravenir_av_2025.txt"))
-    _ranger(tmp_path, "Bruno/PER - Suravenir - Per 123456789/2024/releve.pdf", _pdf("suravenir_per_2024.txt"))
-    _ranger(tmp_path, "Bruno/PERP - Cardif - Perp 987654/situation.pdf", _pdf("cardif_situation.txt"))
-    _ranger(tmp_path, "Alice/CC - BNP - 1234/export.csv", (EXEMPLES / "bnp_courant.csv").read_bytes())
-    _ranger(tmp_path, "Alice/LA - BNP - 5678/export.csv", (EXEMPLES / "bnp_livret.csv").read_bytes())
-    _ranger(tmp_path, "Crédits/RP - BNP - 6783/pret.csv", _export_credit().encode())
-    (tmp_path / "corrections.json").write_text("{}")
-    return tmp_path
 
 
 def test_chaque_fichier_existant_trouve_son_connecteur(donnees):
@@ -96,7 +61,7 @@ def test_la_base_reconstruite_garde_les_memes_chiffres(donnees):
 
 def test_un_ecart_entre_fichiers_et_base_est_signale(donnees):
     archiver_donnees(donnees, CONNECTEURS)
-    _ranger(donnees, "Alice/LDD - BNP - 9999/nouveau.csv", (EXEMPLES / "bnp_livret.csv").read_bytes().replace(
+    ranger(donnees, "Alice/LDD - BNP - 9999/nouveau.csv", (EXEMPLES / "bnp_livret.csv").read_bytes().replace(
         b"****5678", b"****9999"))  # fmt: skip
     (donnees / "Alice/CC - BNP - 1234/export.csv").unlink()
     ecarts = comparer_avec_fichiers(donnees, CONNECTEURS)
@@ -165,7 +130,7 @@ def test_un_solde_d_export_incoherent_est_signale_comme_par_les_anciens_lecteurs
     decembre = [ligne for ligne in lignes[1:] if ligne[3:10] == "12/2025"]
     entete = lignes[0].split(";")
     entete[3], entete[5] = "20/12/2025", "1,00"
-    _ranger(donnees, "Alice/CC - BNP - 1234/ancien.csv", "\n".join([";".join(entete), *decembre]).encode())
+    ranger(donnees, "Alice/CC - BNP - 1234/ancien.csv", "\n".join([";".join(entete), *decembre]).encode())
     archiver_donnees(donnees, CONNECTEURS)
     connexion = ouvrir(donnees / FICHIER_BASE)
     courant = next(c for c in lire_comptes_bancaires(connexion) if c.type_compte == "courant")
