@@ -5,6 +5,7 @@ from datetime import date
 from decimal import Decimal
 
 from metabank.bilan import BilanContrat
+from metabank.corrections import ANOMALIE_VERSEMENTS
 from metabank.frais_historique import HistoriqueFrais
 
 ZERO = Decimal(0)
@@ -72,7 +73,7 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         annees=annees,
         sans_historique=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if not b.annees),
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
-        versements_incertains=any("versements de l'année" in a for b in bilans for a in b.anomalies),
+        versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
     )
 
 

@@ -9,7 +9,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from metabank.bilan import faire_bilans
-from metabank.corrections import lire_ouvertures
+from metabank.corrections import appliquer_verifications, lire_ouvertures
 from metabank.frais import analyser_frais
 from metabank.frais_historique import historiques_frais
 from metabank.rapport import en_json, formater_texte
@@ -54,6 +54,7 @@ def _frais(options) -> int:
 
 def _tableau(dossier: Path, ouvrir: bool) -> int:
     releves, erreurs = lire_dossier(dossier)
+    releves = appliquer_verifications(releves, dossier)
     page = generer_html(
         Tableau(
             faire_bilans(releves, lire_ouvertures(dossier)),
@@ -81,6 +82,7 @@ def _ecrire(sortie: Path, contenu: str) -> None:
 
 def _bilan(dossier: Path) -> int:
     releves, erreurs = lire_dossier(dossier)
+    releves = appliquer_verifications(releves, dossier)
     bilans = faire_bilans(releves, lire_ouvertures(dossier))
     print(formater_texte(bilans, erreurs))
     sortie = dossier / "bilan.json"
