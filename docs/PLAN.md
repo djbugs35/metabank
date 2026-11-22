@@ -32,12 +32,14 @@ sans abonnement (hors le compte Claude déjà payé). **Lecture seule : aucun or
 | 3 | Format d'import | relever le format CSV attendu par Wealthfolio sur un export réel (colonnes, types d'opérations, devises) | à faire |
 | 4 | Trade Republic | convertisseur pytr → CSV Wealthfolio (achats, ventes, dépôts, dividendes, intérêts, frais), sans doublon d'un import à l'autre | à faire |
 | 5 | Revolut | convertisseur de l'export CSV Revolut | à faire |
-| 6 | BNP | gabarit de saisie AV / PER (valorisation par support) ; aide à la lecture des relevés PDF | à faire |
+| 6 | BNP (priorité) | lecture des relevés et historiques AV / PER → CSV Wealthfolio (versements, arbitrages, intérêts du fonds euros, frais de gestion) ; repli saisie | en cours |
 | 7 | Analyse et arbitrage | frais annuels en euros par enveloppe, comparaison AV / PER / PEA, destination du prochain versement, compteurs fiscaux | à faire |
 | 8 | Rapport IA | synthèse mensuelle via `claude -p` sur un extrait chiffré (sans identifiant) | à faire |
 | 9 | NAS | même `compose.yml` sur le QNAP (Container Station), accès réseau local, sauvegarde de `data/` | à faire |
 
 ## Décisions prises
+- **2026-11-22 — BNP en premier.** Assurances vie et PER portent les plus gros montants et les plus longs historiques :
+  le jalon 6 passe avant Trade Republic et Revolut. On part des vrais documents BNP déposés dans `data/bnp/`.
 - **2026-11-11 — BNP via woob abandonné.** Le pare-feu Akamai de mabanque.bnpparibas refuse woob dès la première
   requête ; on ne contourne pas une protection anti-robot de sa banque. BNP passe par saisie (jalon 6).
   Le connecteur woob reste dans l'historique git (commit 37e319d) si un jour il redevient utile.
