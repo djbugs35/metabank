@@ -129,7 +129,8 @@ def _rejouer(connexion: sqlite3.Connection, dossier_data: Path, archive: Archive
 def _integrer(connexion: sqlite3.Connection, archive: Archive, lot: Lot) -> int:
     archive_id = _inserer_archive(connexion, archive)
     elements = enregistrer_lot(connexion, lot, archive_id)
-    _journaliser(connexion, archive, archive_id, (lot.connecteur, "ok", elements, ""))
+    comptes = ",".join(c.cle for c in lot.comptes)
+    _journaliser(connexion, archive, archive_id, (lot.connecteur, comptes, "ok", elements, ""))
     return elements
 
 
@@ -143,16 +144,17 @@ def _inserer_archive(connexion: sqlite3.Connection, archive: Archive) -> int:
 
 def _noter_echec(connexion: sqlite3.Connection, archive: Archive, resultat: str, message: str) -> None:
     archive_id = _inserer_archive(connexion, archive)
-    _journaliser(connexion, archive, archive_id, ("", resultat, 0, message))
+    _journaliser(connexion, archive, archive_id, ("", "", resultat, 0, message))
 
 
 def _journaliser(
-    connexion: sqlite3.Connection, archive: Archive, archive_id: int, issue: tuple[str, str, int, str]
+    connexion: sqlite3.Connection, archive: Archive, archive_id: int, issue: tuple[str, str, str, int, str]
 ) -> None:
-    """Noter au journal issue = (connecteur, résultat, éléments, message)."""
+    """Noter au journal issue = (connecteur, clés des comptes séparées par « , », résultat, éléments, message)."""
     # La date d'un import est celle de son archive, pas l'heure de la reconstruction : le journal se refait à l'identique.
     connexion.execute(
-        "INSERT INTO imports (le, archive_id, connecteur, resultat, elements, message) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO imports (le, archive_id, connecteur, compte_cle, resultat, elements, message) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (archive.archivee_le, archive_id, *issue),
     )
 

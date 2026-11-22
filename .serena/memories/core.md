@@ -14,6 +14,9 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
 - `metabank/base/` — SQLite `data/metabank.db`, rebuilt from raw files in `data/archives/` only: `schema.py`
   (migrations via PRAGMA user_version), `archives.py`, `lot.py` (what a connector returns), `integration.py`
   (`importer_fichier`, `reconstruire`, `ouvrir_base`), `montants.py` (integer cents). User input stays in JSON files.
+- `metabank/connecteurs/` — plug-ins: `contrat.py` (families fichier/direct/calcul/reference, `est_actif` = all
+  settings filled), `registre.py` (auto-discovers modules exposing `CONNECTEUR`, `composer_lecteur`,
+  `synchroniser_compte` principal then fallback). Journal: `metabank/base/journal.py`.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,
