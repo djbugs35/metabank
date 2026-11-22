@@ -97,3 +97,17 @@ dernier relevé.
 Frais du relevé (exacts) + Σ sur les fonds de ((V au 31/12 précédent + V au 31/12 de l'année) / 2) × B / 100.
 L'année d'ouverture, V au 31/12 précédent vaut 0 (versements supposés en milieu d'année).
 Un fonds acheté et revendu dans la même année n'apparaît à aucun 31/12 : ses frais ne sont pas comptés (sous-estimation).
+
+## 6. Synthèse par foyer, personne et contrat (`metabank tableau`)
+
+### 6.1 Année d'un ensemble de contrats
+Sommes, sur les contrats à relevés annuels, de V₀, A, R, V₁, gain et frais ; rendement de l'année par Dietz sur les
+sommes : G / (V₀ + (A − R) / 2). L'année d'ouverture d'un contrat (V₀ = 0) est calculée avec la même hypothèse de
+versements en milieu d'année et marquée « * ». Les relevés de situation (sans historique) n'entrent que dans la
+valeur, le versé et le gain.
+
+### 6.2 Rentabilité annualisée depuis l'ouverture
+Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :
+versements nets de rachats au 1er juillet de chaque année (négatifs), valeur au premier 31/12 connu si le contrat
+est antérieur aux relevés (négative), valeur au dernier 31/12 (positive). Résolu par dichotomie entre −99 % et
++1 000 %. Elle est nette de tous les frais.
