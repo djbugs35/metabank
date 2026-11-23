@@ -111,6 +111,7 @@
       <p class="discret" id="compte-periode"></p>
       <div class="tuiles" id="compte-tuiles"></div>
       <div id="compte-anomalies"></div>
+      <div id="compte-depassements"></div>
       <div class="carte"><figure id="compte-solde"></figure><div class="infobulle" id="compte-solde-infobulle"></div></div>
       <div id="bloc-courant">
         <div class="carte"><figure id="compte-flux"></figure><div class="infobulle" id="compte-infobulle"></div></div>
@@ -131,6 +132,14 @@
           <p><button class="action" id="regle-tester">Tester</button> <button class="action" id="regle-enregistrer">Enregistrer la règle</button>
             <span id="regle-resultat"></span></p></details>
         <details class="carte"><summary>Mes règles, dans leur ordre d'application</summary><div id="regles-liste"></div></details>
+        <details class="carte"><summary>Abonnements et dépenses régulières, sur 12 mois</summary>
+          <div class="defile"><table id="compte-abonnements"></table></div>
+          <p class="note">Un même marchand débité au moins 3 mois, pour des montants stables (docs/MODELE.md § 7.13).</p></details>
+        <details class="carte"><summary>Objectifs par catégorie</summary>
+          <p class="note">Dépense mensuelle visée ; un dépassement du dernier mois complet est signalé en haut de l'onglet.</p>
+          <div class="defile"><table id="compte-objectifs"></table></div>
+          <p><button class="action" id="enregistrer-objectifs">Enregistrer les objectifs</button> <span id="etat-objectifs"></span></p></details>
+        <details class="carte"><summary>D'une année sur l'autre</summary><div class="defile"><table id="compte-comparaison"></table></div></details>
       </div>
       <p class="note">Formules : docs/MODELE.md § 7. Éléments d'aide à la décision, pas un conseil financier.</p>
     </div>

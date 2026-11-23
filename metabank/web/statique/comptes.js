@@ -1,5 +1,6 @@
 // Onglet « Budget » : comptes courants. Les chiffres viennent de l'API (banque/analyse.py, testé).
 import { barresGroupees, barresHorizontales, courbes, echapper } from "./graphiques.js";
+import { afficherBudget } from "./budget.js";
 import { euros, eurosSignes, pct } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -34,6 +35,7 @@ export function afficherComptes(etat) {
 }
 
 function afficherCourant(c) {
+  afficherBudget(c);
   // Compte commun ou locatif : rempli par vos virements, ses « revenus » propres sont faibles et les parts n'ont pas de sens.
   const alimente = c.interne_mois < 0 && c.revenus_mois < c.depenses_mois / 2;
   $("compte-tuiles").innerHTML = [

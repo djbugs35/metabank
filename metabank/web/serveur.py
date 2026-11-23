@@ -9,12 +9,13 @@ DEUX BARRIÈRES, ET UNE SEULE EST UNE GARANTIE (comme Passerelle dans metascrap)
 
 import json
 import threading
+from collections.abc import Callable
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from metabank.configuration import lire_configuration
+from metabank.configuration import ecrire_objectifs, lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
@@ -40,6 +41,7 @@ FICHIERS = {
     "/synoptique.js": ("synoptique.js", "text/javascript; charset=utf-8"),
     "/regles.js": ("regles.js", "text/javascript; charset=utf-8"),
     "/credits.js": ("credits.js", "text/javascript; charset=utf-8"),
+    "/budget.js": ("budget.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -88,6 +90,18 @@ def creer_serveur(dossier: Path, port: int = PORT_DEFAUT) -> ThreadingHTTPServer
     serveur = ThreadingHTTPServer((ADRESSE, port), Gestionnaire)
     Gestionnaire.hotes = {f"{ADRESSE}:{serveur.server_port}", f"localhost:{serveur.server_port}"}
     return serveur
+
+
+# Envois JSON qui ne demandent que data/ et la saisie : adresse -> traitement (dossier, saisie) -> réponse.
+ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
+    "/api/corrections": ecrire_corrections,
+    "/api/simulation": lambda _dossier, saisie: simuler(saisie),
+    "/api/configuration": enregistrer_configuration,
+    "/api/credits/simulation": simuler_remboursement,
+    "/api/objectifs": lambda dossier, saisie: {"objectifs": ecrire_objectifs(dossier, saisie.get("objectifs") or {})},
+    "/api/regles": enregistrer_regles,
+    "/api/regles/test": essayer_regle,
+}
 
 
 def _assistant_actif(dossier: Path) -> bool:
@@ -148,18 +162,6 @@ class _Gestionnaire(BaseHTTPRequestHandler):
         donnees = json.loads(corps or b"{}")
         if not isinstance(donnees, dict):
             raise TypeError("objet JSON attendu")
-        if self.path == "/api/corrections":
-            return ecrire_corrections(dossier, donnees)
-        if self.path == "/api/simulation":
-            return simuler(donnees)
-        if self.path == "/api/configuration":
-            return enregistrer_configuration(dossier, donnees)
-        if self.path == "/api/credits/simulation":
-            return simuler_remboursement(dossier, donnees)
-        if self.path == "/api/regles":
-            return enregistrer_regles(dossier, donnees)
-        if self.path == "/api/regles/test":
-            return essayer_regle(dossier, donnees)
         if self.path == "/api/assistant":
             if not _assistant_actif(dossier):
                 raise AssistantIndisponible("assistant désactivé dans l'onglet Configuration")
@@ -167,7 +169,10 @@ class _Gestionnaire(BaseHTTPRequestHandler):
                 str(donnees.get("question", "")), list(donnees.get("historique") or []), self.cache.lire()
             )
             return {"reponse": reponse}
-        raise ValueError("adresse inconnue")
+        traitement = ENVOIS_JSON.get(self.path)
+        if traitement is None:
+            raise ValueError("adresse inconnue")
+        return traitement(dossier, donnees)
 
     def _requete_sure(self) -> bool:
         """Rendre vrai si la requête vient de la page servie ici ; sinon répondre 403. Voir l'en-tête du module."""

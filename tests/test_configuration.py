@@ -44,6 +44,7 @@ def test_sans_fichier_la_configuration_est_vide_et_l_assistant_actif(tmp_path):
         "reglages": {},
         "parametres": {"assistant_actif": True},
         "dossiers": {"depot": ""},
+        "objectifs": {},
     }
 
 
@@ -58,6 +59,7 @@ def test_une_configuration_valide_est_enregistree_puis_relue(tmp_path):
         "reglages": {"avec_reglages.dossier": "/Volumes/Depot"},
         "parametres": {"assistant_actif": False},
         "dossiers": {"depot": ""},
+        "objectifs": {},
     }
 
 
