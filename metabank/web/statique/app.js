@@ -87,7 +87,10 @@ function afficherTableau() {
   $("titre-vue").textContent = vue.nom;
   const patrimoine = etat.patrimoine?.[vue.id];
   $("bloc-patrimoine").classList.toggle("cache", !patrimoine);
-  if (patrimoine) $("patrimoine").innerHTML = patrimoineHtml(patrimoine);
+  if (patrimoine) {
+    $("patrimoine").innerHTML = patrimoineHtml(patrimoine);
+    afficherHistorique(etat.historique?.[vue.id] ?? { points: [], reportes: [] }, patrimoine);
+  }
   const avecPlacements = vue.verse > 0 || vue.valeur > 0;
   for (const id of ["titre-placements", "tuiles", "bloc-annees", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
   $("titre-placements").textContent = vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP";
@@ -104,6 +107,34 @@ function afficherTableau() {
   afficherNotes(vue);
   afficherFonds(vue);
   $("points").innerHTML = etat.points.length ? `<ul>${etat.points.map((p) => `<li>${echapper(p)}</li>`).join("")}</ul>` : "<p>Aucun.</p>";
+}
+
+const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const moisDe = (iso) => `${MOIS_COURTS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(2, 4)}`;
+
+// Courbe du patrimoine sur 13 mois ; le net n'est tracé que là où le tableau l'affiche (biens saisis ou aucun crédit).
+function afficherHistorique({ points, reportes }, patrimoine) {
+  const figure = $("patrimoine-historique");
+  $("patrimoine-reportes").textContent = reportes.length
+    ? `Comptés à leur première valeur connue avant leur premier relevé ou export : ${reportes.join(", ")}.` : "";
+  figure.parentElement.classList.toggle("cache", points.length < 2);
+  if (points.length < 2) return;
+  const avecCredits = points.some((p) => p.credits > 0);
+  const series = [{ classe: "serie-1", nom: "Actifs", valeurs: points.map((p) => p.actifs) }];
+  if (avecCredits) series.push({ classe: "serie-2", nom: "Crédits", valeurs: points.map((p) => p.credits) });
+  if (!patrimoine.credits_sans_bien) series.push({ classe: "serie-3", nom: "Patrimoine net", valeurs: points.map((p) => p.net) });
+  courbes(figure, {
+    titre: "Patrimoine en fin de mois",
+    abscisses: points.map((p) => p.jour),
+    legendeX: moisDe,
+    series,
+    formater: euros,
+    survol: (rang) => {
+      const p = points[rang];
+      $("patrimoine-historique-infobulle").textContent = rang === null ? "" : `${moisDe(p.jour)} : actifs ${euros(p.actifs)}`
+        + (avecCredits ? `, crédits ${euros(p.credits)}` : "") + (patrimoine.credits_sans_bien ? "" : `, net ${euros(p.net)}`);
+    },
+  });
 }
 
 function afficherTuiles(vue) {

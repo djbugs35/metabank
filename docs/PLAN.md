@@ -193,7 +193,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 |---|---|---|---|
 | Dépôt unique | PDF et CSV glissés dans la page ou posés dans le dossier surveillé ; reconnus par les connecteurs, archivés, dédoublonnés | un fichier quelconque est pris en compte sans intervention | fait : dossier surveillé (data/depot/ ou celui de la Configuration) et dépôt dans la page sans titulaire, rangés d'après le compte reconnu ; un compte jamais vu attend son titulaire |
 | Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | fait : projection à chaque échéance passée (MODELE § 7.10), calculée à l'affichage et marquée « projeté » ; un nouvel export la remplace |
-| Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | à faire |
+| Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | fait : 13 points reconstitués des données en base (MODELE § 8.1), sans instantané stocké ; compte reporté à sa première valeur avant d'être connu, et nommé |
 | Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | à faire |
 | Règles de dépenses dans la page | créer, modifier, tester une règle de classement | une dépense non classée se classe en deux clics | à faire |
 
@@ -262,6 +262,8 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 - **2026-11-22 — metabank tourne aussi sur le NAS QNAP**, comme metascrap, et met à jour seul les comptes en
   connexion directe. Conséquence dès maintenant : cœur en Python standard sans dépendance au Mac, secrets demandés
   à un coffre abstrait (trousseau sur le Mac, autre coffre sur le NAS).
+- **2026-11-23 — Historique du patrimoine reconstitué, sans instantané.** Chaque fin de mois se refait des soldes,
+  opérations et relevés en base ; un instantané stocké ne se reconstruirait pas depuis les archives.
 - **2026-11-23 — Projection des crédits calculée à l'affichage**, pas par un connecteur « calcul » : elle dépend de
   la date du jour et non d'une archive ; l'écrire en base casserait la reconstruction à l'identique. La famille
   « calcul » reste au contrat pour un futur besoin qui produirait des données datées.
@@ -308,7 +310,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Onglet Configuration (comptes, connecteurs, dossiers, paramètres) | 1 | fait (dossiers et secrets avec leurs fonctions) |
 | Onglet Synoptique (accès, réseau, fraîcheur, journal) | 1 | fait |
 | Dépôt unique avec rangement automatique et dossier surveillé | 2 | fait |
-| Historique et courbe du patrimoine net | 2 | à faire |
+| Historique et courbe du patrimoine net | 2 | fait |
 | Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | à faire |
 | Règles de classement des dépenses modifiables depuis la page | 2 | à faire |
 | PEA Trade Republic : positions, plafond, compteur des 5 ans | 3 | à faire |

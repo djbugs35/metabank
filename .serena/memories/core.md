@@ -31,6 +31,8 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
 - `metabank/depot_unique.py` — watched folder (`data/depot/` or configured) and titulaire-less upload: connector
   `reconnaitre` gives établissement/numéro masqué/type/year, matched to a known account, filed in its archive folder;
   processed files moved to `importes/`. `base.archives.DOSSIERS_RESERVES` = top-level dirs that are not titulaires.
+- `metabank/historique.py` — 13-point monthly net-worth curve rebuilt from base data (MODELE § 8.1), accounts
+  back-filled with their first known value before coverage; credits projected (`banque/credit.projeter_credit`, § 7.10).
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,
