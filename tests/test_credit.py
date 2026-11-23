@@ -5,7 +5,7 @@ import pytest
 
 from metabank.banque import fusionner, lire_comptes
 from metabank.banque.bnp import lire_export_bnp
-from metabank.banque.credit import analyser_credit
+from metabank.banque.credit import _echeances, analyser_credit, projeter_credit
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.web.patrimoine import patrimoines
 
@@ -77,3 +77,36 @@ def test_valeur_de_bien_invalide_refusee(tmp_path):
     assert ecrire_corrections(tmp_path, {"biens": {"1234": {"nom": "Maison", "valeur": 300000}}})["biens"] == {
         "1234": {"nom": "Maison", "valeur": 300000}
     }
+
+
+def test_sans_echeance_passee_depuis_l_export_le_credit_reste_tel_quel():
+    credit = _credit()
+    assert projeter_credit(credit, date(2026, 7, 4)) is credit
+
+
+def test_le_capital_projete_suit_le_tableau_d_amortissement_jusqu_au_mois_en_cours():
+    credit, avant = _credit(), analyser_credit(_credit(), [])
+    projete = projeter_credit(credit, date(2026, 9, 10))
+    i = avant.taux_annuel / 12
+    attendu = Decimal(100000) * (1 + i) ** 3 - avant.mensualite * ((1 + i) ** 3 - 1) / i
+    assert projete.date_solde == date(2026, 9, 5) and projete.projete_depuis == date(2026, 6, 20)
+    assert -projete.solde == pytest.approx(attendu, abs=Decimal("0.05"))
+    assert [o.jour for o in projete.operations[-3:]] == [date(2026, 7, 5), date(2026, 8, 5), date(2026, 9, 5)]
+    apres = analyser_credit(projete, [])
+    # Les parts de capital d'un export sont arrondies au centime : le taux médian, donc P, bouge de quelques centimes.
+    assert apres.mensualite == pytest.approx(avant.mensualite, abs=Decimal("0.50"))
+    assert apres.mois_restants == avant.mois_restants - 3
+
+
+def test_une_echeance_du_31_tombe_le_dernier_jour_d_un_mois_court():
+    assert _echeances(date(2026, 1, 31), date(2026, 4, 30), 31) == [
+        date(2026, 2, 28),
+        date(2026, 3, 31),
+        date(2026, 4, 30),
+    ]
+
+
+def test_le_capital_projete_ne_passe_jamais_sous_zero():
+    credit = fusionner("Joint", "BNP", "credit", [lire_export_bnp(_export_credit(Decimal(1000)), "credit.csv")])
+    projete = projeter_credit(credit, date(2027, 12, 31))
+    assert projete.solde == 0

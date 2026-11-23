@@ -189,6 +189,14 @@ l'export + n mois ; intérêts restant à payer ≈ n × P − C. Hors assurance
 Contrôle : P est comparée à la dernière « ECHEANCE PRET » portant le numéro du prêt sur les comptes courants.
 Les crédits rangés dans un dossier « credits » (hors personne) sont rattachés au compte joint.
 
+### 7.10 Capital restant dû projeté au mois en cours
+Entre deux exports, le capital suit le tableau d'amortissement. Jour d'échéance = jour du mois de la dernière ligne
+« AMORTISSEMENT PRET ». k = nombre d'échéances passées entre la date de l'export (exclue) et aujourd'hui (inclus).
+Capital projeté C(k) = C × (1 + i)^k − P × ((1 + i)^k − 1) / i, avec C, i et P de 7.9 (P hors assurance), et
+jamais sous zéro. Mois restants = n − k ; intérêts restant à payer ≈ (n − k) × P − C(k). Sans taux ni mensualité
+estimés, ou sans échéance passée, le capital reste celui de l'export. La date de projection est affichée ; un nouvel
+export remplace la projection par le chiffre de la banque.
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : actifs = Σ valeurs des placements (assurance vie, PER, PERP, au dernier

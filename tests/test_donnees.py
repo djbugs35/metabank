@@ -1,5 +1,7 @@
 """Écrans branchés sur la base : mêmes chiffres qu'avec les anciens lecteurs, fichiers rangés à la main repris."""
 
+from datetime import date
+
 import pytest
 
 from metabank.banque import lire_comptes
@@ -50,3 +52,10 @@ def test_une_archive_illisible_est_signalee_apres_reconstruction(donnees):
 
 def test_sans_dossier_de_donnees_rien_a_afficher(tmp_path):
     assert charger(tmp_path / "absent") == Donnees([], [], [])
+
+
+def test_le_patrimoine_compte_le_capital_projete_au_mois_en_cours(donnees):
+    a_l_export = vues.etat(donnees, date(2026, 6, 20))["patrimoine"]["foyer"]["credits"]
+    trois_mois_plus_tard = vues.etat(donnees, date(2026, 9, 10))
+    assert trois_mois_plus_tard["patrimoine"]["foyer"]["credits"] < a_l_export
+    assert trois_mois_plus_tard["credits"][0]["projete_depuis"] == "2026-06-20"

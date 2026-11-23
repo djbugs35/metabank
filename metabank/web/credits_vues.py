@@ -50,6 +50,7 @@ def _credit(a: AnalyseCredit, revenus: Decimal | None, biens: dict) -> dict:
         "nom": c.libelle,
         "titulaire": c.titulaire,
         "date": c.date_solde.isoformat(),
+        "projete_depuis": c.projete_depuis.isoformat() if c.projete_depuis else None,
         "capital_restant": _n(a.capital_restant),
         "amortissement_mensuel": _n(a.amortissement_mensuel),
         "interets_du_mois": _n(a.interets_du_mois),

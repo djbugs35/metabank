@@ -5,17 +5,20 @@ la part de capital remboursée. Dans un prêt à mensualité constante, cette pa
 on en déduit le taux, puis la mensualité, la durée restante et les intérêts encore à payer.
 """
 
+import calendar
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from itertools import pairwise
 from statistics import median
 
-from metabank.banque.modele import Compte
+from metabank.banque.modele import Compte, Operation
 
 ZERO = Decimal(0)
 DOUZE = Decimal(12)
+CENTIME = Decimal("0.01")
+LIBELLE_PROJECTION = "AMORTISSEMENT PRET (projection metabank)"
 
 
 @dataclass(frozen=True)
@@ -70,6 +73,44 @@ def _taux_mensuel(amortissements: list[Decimal]) -> Decimal | None:
     """Rendre la médiane des hausses d'un mois sur l'autre de la part de capital : le taux mensuel du prêt."""
     hausses = [b / a - 1 for a, b in pairwise(amortissements) if a > 0]
     return Decimal(median(hausses)) if hausses and median(hausses) > 0 else None
+
+
+def projeter_credit(credit: Compte, aujourd_hui: date) -> Compte:
+    """Rendre le crédit avancé jusqu'à la dernière échéance passée, ou tel quel s'il n'y a rien à projeter. MODELE § 7.10.
+
+    Chaque échéance passée depuis l'export ajoute une ligne d'amortissement marquée « projection metabank » : la part
+    de capital croît du taux mensuel i, et le capital restant dû baisse d'autant (en euros, au centime).
+    """
+    amortissements = [o for o in credit.operations if o.montant > 0 and "AMORTISSEMENT" in o.libelle.upper()]
+    taux_mensuel = _taux_mensuel([o.montant for o in amortissements])
+    if taux_mensuel is None or credit.solde >= 0:
+        return credit
+    capital, part = -credit.solde, amortissements[-1].montant
+    projetees = []
+    for echeance in _echeances(credit.date_solde, aujourd_hui, amortissements[-1].jour.day):
+        if capital <= 0:
+            break
+        part = min((part * (1 + taux_mensuel)).quantize(CENTIME), capital)
+        capital -= part
+        projetees.append(Operation(echeance, "", "", LIBELLE_PROJECTION, part))
+    if not projetees:
+        return credit
+    return replace(credit, solde=-capital, date_solde=projetees[-1].jour, operations=credit.operations + tuple(projetees),
+                   projete_depuis=credit.date_solde)  # fmt: skip
+
+
+def _echeances(apres: date, jusqu_a: date, jour: int) -> list[date]:
+    """Rendre les dates d'échéance (ce jour du mois, ou le dernier jour d'un mois plus court) dans ]apres, jusqu_a]."""
+    echeances: list[date] = []
+    annee, mois = apres.year, apres.month
+    while True:
+        dernier = calendar.monthrange(annee, mois)[1]
+        echeance = date(annee, mois, min(jour, dernier))
+        if echeance > jusqu_a:
+            return echeances
+        if echeance > apres:
+            echeances.append(echeance)
+        annee, mois = (annee + 1, 1) if mois == 12 else (annee, mois + 1)
 
 
 def _mensualite_prelevee(credit: Compte, comptes: list[Compte]) -> Decimal | None:

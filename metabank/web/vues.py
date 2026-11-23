@@ -4,8 +4,10 @@ Les montants partent en nombres arrondis au centime et les taux en fractions (0,
 code testé (synthese, frais) ; la page ne fait que les mettre en forme.
 """
 
+from datetime import date, datetime
 from decimal import Decimal
 
+from metabank.banque.credit import projeter_credit
 from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.bilan import BilanContrat, faire_bilans
 from metabank.configuration import lire_configuration
@@ -24,15 +26,20 @@ from metabank.web.patrimoine import patrimoines
 ZERO = Decimal(0)
 
 
-def etat(dossier) -> dict:
-    """Rendre tout ce qu'affiche l'application : vues, fonds, points d'attention, contrats et corrections."""
+def etat(dossier, aujourd_hui: date | None = None) -> dict:
+    """Rendre tout ce qu'affiche l'application : vues, fonds, points d'attention, contrats et corrections.
+
+    Args:
+        aujourd_hui: date des projections (capital des crédits, MODELE § 7.10) ; par défaut, la date locale.
+    """
+    aujourd_hui = aujourd_hui or datetime.now().astimezone().date()
     donnees = charger(dossier)
     releves = appliquer_verifications(donnees.releves, dossier)
     bilans = faire_bilans(releves, lire_ouvertures(dossier))
     historiques = historiques_frais(releves)
     analyses = analyser_frais(releves)
     foyer = synthetiser("Foyer", bilans, historiques)
-    comptes = donnees.comptes
+    comptes = [projeter_credit(c, aujourd_hui) if c.type_compte == "credit" else c for c in donnees.comptes]
     banque = etat_banque(dossier, comptes)
     corrections = lire_corrections(dossier)
     patrimoine = patrimoines(bilans, comptes, corrections["biens"])
