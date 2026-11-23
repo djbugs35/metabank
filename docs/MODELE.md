@@ -155,9 +155,11 @@ année si la date d'ouverture n'est pas saisie) ; le taux est alors un minimum (
 ### 6.4 Progression des placements, fin d'année par fin d'année
 Sur les contrats à relevés annuels de l'ensemble (les contrats à situation seule n'ont pas d'historique et n'y
 sont pas), pour chaque année n : valeur V_n = Σ valeurs au 31/12 (ou à la date de la situation pour l'année en
-cours) ; variation de l'année = V_n − Σ valeurs de début de l'année n ; versé net cumulé = Σ valeurs de début de la
-première année de chaque contrat (0 à l'ouverture) + Σ (versé − rachats) jusqu'à n ; gagné cumulé = V_n − versé net
-cumulé. La variation se décompose en versé net de l'année + gagné de l'année. Ce sont les mouvements des années :
+cours), un contrat sans chiffres l'année n gardant sa dernière valeur connue ; variation de l'année = V_n − V_(n−1)
+(Σ valeurs de début de la première année pour la première) ; versé net cumulé = Σ valeurs de début de la première
+année de chaque contrat (0 à l'ouverture) + Σ (versé − rachats) jusqu'à n ; gagné cumulé = V_n − versé net
+cumulé. Une dernière colonne « aujourd'hui, tous contrats » reprend les tuiles (valeur, versé lu, gagné), contrats à
+situation seule compris : leur valeur y est indiquée à part. La variation se décompose en versé net de l'année + gagné de l'année. Ce sont les mouvements des années :
 si le versé lu sur le document en diffère (§ 2.3), l'écart reste affiché sous le versé.
 
 ### 6.3 Contrats à relevé de situation seul (PERP Cardif)

@@ -2,19 +2,19 @@
 :root {
   color-scheme: light;
   --fond: #f6f5f2; --surface: #fcfcfb; --surface-2: #efeee9; --texte: #0b0b0b; --texte-2: #52514e; --trait: #dcdad3;
-  --accent: #2a78d6; --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #8a5cc2; --alerte: #b45309; --erreur: #c0362c;
+  --accent: #2a78d6; --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #8a5cc2; --serie-5: #b8860b; --serie-6: #6b7280; --alerte: #b45309; --erreur: #c0362c;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --fond: #121211; --surface: #1a1a19; --surface-2: #242422; --texte: #f0efec; --texte-2: #c3c2b7; --trait: #3a3936;
-    --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #9b6fd6; --alerte: #f59e0b; --erreur: #ef6b5f;
+    --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #9b6fd6; --serie-5: #e0b43a; --serie-6: #9ca3af; --alerte: #f59e0b; --erreur: #ef6b5f;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --fond: #121211; --surface: #1a1a19; --surface-2: #242422; --texte: #f0efec; --texte-2: #c3c2b7; --trait: #3a3936;
-  --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #9b6fd6; --alerte: #f59e0b; --erreur: #ef6b5f;
+  --accent: #3987e5; --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #9b6fd6; --serie-5: #e0b43a; --serie-6: #9ca3af; --alerte: #f59e0b; --erreur: #ef6b5f;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--fond); color: var(--texte); font: 15px/1.5 -apple-system, "Segoe UI", sans-serif; }
@@ -91,6 +91,8 @@ button.action.secondaire { background: var(--surface); color: var(--texte); bord
 .repartition { margin: 12px 0 4px; } .repartition svg { height: 22px; }
 #bloc-patrimoine .tuile:first-child { border-color: var(--texte-2); }
 rect.serie-4, i.serie-4 { fill: var(--serie-4); background: var(--serie-4); }
+rect.serie-5, i.serie-5 { fill: var(--serie-5); background: var(--serie-5); }
+rect.serie-6, i.serie-6 { fill: var(--serie-6); background: var(--serie-6); }
 .champ input[data-bien-valeur] { width: 150px; }
 /* Synoptique : pastille de fraîcheur (MODELE § 9) ; la couleur double le texte, jamais seule. */
 .pastille { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; }
