@@ -74,3 +74,21 @@ def test_les_frais_des_fonds_viennent_du_dernier_releve_qui_les_donne():
     situation = lire_situation_suravenir(SITUATION, "s.pdf")
     [p, *_] = positions([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)], {})
     assert p.frais_totaux == Decimal("1.5")
+
+
+def test_la_situation_ajoute_une_annee_en_cours_apres_le_releve_du_31_decembre():
+    annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
+                     primes_non_remboursees=Decimal(19000))  # fmt: skip
+    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero)
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    en_cours = bilan.annees[-1]
+    assert (en_cours.annee, en_cours.en_cours_au, en_cours.apports) == (2026, date(2026, 11, 18), Decimal(1000))
+    assert en_cours.gain == Decimal(21000) - annuel.valeur - Decimal(1000)
+    assert en_cours.rendement == en_cours.gain / (annuel.valeur + Decimal(500)) and en_cours.frais is None
+
+
+def test_sans_cumul_au_31_decembre_pas_d_annee_en_cours():
+    annuel = lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie")
+    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero)
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    assert [a.annee for a in bilan.annees] == [2025]

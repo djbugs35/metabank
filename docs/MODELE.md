@@ -60,7 +60,16 @@ relevés annuels (une situation n'a ni mouvements de l'année ni frais). Contrô
 « Performance (+/- value fiscale) en € » de l'assureur, et somme des fonds face au total ; écart de plus de 1 €
 signalé. Les frais des fonds (§ 4) restent ceux du dernier relevé annuel qui les donne.
 
-## 3. Contrôles (anomalies signalées, jamais corrigées en silence)
+### 2.4 Année en cours, d'après la situation (« 2026 au 23/11 »)
+Après le relevé annuel du 31/12 de l'année précédente, une situation de l'année en cours donne une ligne partielle :
+- versé de l'année = cumul des versements bruts de la situation − cumul au 31/12 précédent (PER : versements depuis
+  l'origine du relevé annuel ; assurance vie : primes versées et non remboursées du relevé annuel, valable tant que le
+  contrat n'a connu aucun rachat) ; rachats de l'année = cumul des rachats de la situation − celui du 31/12 ;
+- gain = valeur de la situation − valeur au 31/12 − versé + rachats ;
+- rendement de la période (non annualisé) = gain / (valeur au 31/12 + (versé − rachats) / 2) ; frais inconnus ;
+- sans cumul au 31/12 connu, pas de ligne. Pour la rentabilité annualisée (§ 6.2), les versements de la période sont
+  placés à son milieu et la valeur finale à la date de la situation.
+ (anomalies signalées, jamais corrigées en silence)
 - Somme des supports = valeur du contrat, à un centime par ligne près.
 - Composantes des frais = total annoncé ; frais sur opérations = frais de la synthèse des mouvements.
 - PER : versements de l'année au tableau « évolution du plan » = versements bruts de la synthèse des mouvements.

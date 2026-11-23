@@ -31,6 +31,8 @@ class Annee:
     poids_estime: bool = False
     # Année d'ouverture : nombre de mois de placement (le rendement porte sur cette durée) ; None = année entière.
     duree_mois: int | None = None
+    # Année en cours, d'après une situation : sa date (MODELE § 2.4) ; None = année close au 31/12.
+    en_cours_au: date | None = None
 
 
 @dataclass(frozen=True)
@@ -131,6 +133,8 @@ def _poids_versements(fin_annee: date, valeur_debut: Decimal, ouverture: date | 
 def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None) -> BilanContrat:
     anomalies = [anomalie for releve in releves for anomalie in releve.anomalies]
     annees = _annees(releves, anomalies, ouverture)
+    en_cours = _annee_en_cours(releves, annees)
+    annees_affichees = [*annees, en_cours] if en_cours else annees
     dernier = releves[-1]
     apports: Decimal | None
     gain: Decimal | None
@@ -163,7 +167,7 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         type_contrat=dernier.type_contrat,
         date_valeur=dernier.date_arrete,
         valeur=dernier.valeur,
-        annees=tuple(annees),
+        annees=tuple(annees_affichees),
         apports_cumules=apports,
         rachats_cumules=rachats,
         gain_cumule=gain,
@@ -191,3 +195,29 @@ def _annees(releves: list[Releve], anomalies: list[str], ouverture: date | None)
         debut = releve.valeur_precedente if releve.valeur_precedente is not None else (precedente or ZERO)
         annees.append(calculer_annee(releve, debut, ouverture))
     return annees
+
+
+def _annee_en_cours(releves: list[Releve], annees: list[Annee]) -> Annee | None:
+    """Rendre l'année en cours d'après une situation postérieure au dernier relevé annuel, ou None. MODELE § 2.4."""
+    situation = releves[-1]
+    annuels = [r for r in releves if r.est_annuel]
+    if situation.est_annuel or not annees or not annuels or situation.versements_bruts_depuis_origine is None:
+        return None
+    dernier = annuels[-1]
+    if situation.date_arrete.year != dernier.date_arrete.year + 1:
+        return None
+    rachats_situation = situation.rachats_depuis_origine or ZERO
+    if dernier.versements_bruts_depuis_origine is not None:
+        cumul, rachats_avant = dernier.versements_bruts_depuis_origine, dernier.rachats_depuis_origine or ZERO
+    elif dernier.primes_non_remboursees is not None and rachats_situation == ZERO:
+        cumul, rachats_avant = dernier.primes_non_remboursees, ZERO
+    else:
+        return None
+    debut = annees[-1].valeur_fin
+    apports, rachats = situation.versements_bruts_depuis_origine - cumul, rachats_situation - rachats_avant
+    gain = situation.valeur - debut - apports + rachats
+    base = debut + (apports - rachats) * MILIEU
+    return Annee(annee=situation.date_arrete.year, valeur_debut=debut, apports=apports, rachats=rachats,
+                 valeur_fin=situation.valeur, gain=gain, frais=None, rendement=gain / base if base > ZERO else None,
+                 rendement_avant_frais=None, frais_sur_encours=None, poids_versements=MILIEU, poids_estime=True,
+                 duree_mois=situation.date_arrete.month, en_cours_au=situation.date_arrete)  # fmt: skip

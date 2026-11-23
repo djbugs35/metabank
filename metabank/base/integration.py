@@ -23,6 +23,9 @@ from metabank.base.lot import Lot
 from metabank.base.schema import ouvrir
 
 FICHIER_BASE = "metabank.db"
+# À augmenter quand un lecteur (connecteur) comprend mieux un document déjà archivé : à l'ouverture suivante, la base
+# se refait depuis les archives, sans rien demander. 2 : primes non remboursées des assurances vie (MODELE § 2.4).
+VERSION_DES_LECTEURS = "2"
 
 # (provenance, nom du fichier archivé, contenu) -> lot, ou None si aucun connecteur ne reconnaît le fichier.
 # Lève LectureImpossible quand le fichier est reconnu mais illisible.
@@ -53,7 +56,22 @@ def ouvrir_base(dossier_data: Path, lire: Lecteur) -> sqlite3.Connection:
     chemin = dossier_data / FICHIER_BASE
     if not chemin.exists() and lister_archives(dossier_data):
         reconstruire(dossier_data, lire)
-    return ouvrir(chemin)
+    connexion = ouvrir(chemin)
+    version = connexion.execute("SELECT valeur FROM meta WHERE cle = 'version_des_lecteurs'").fetchone()
+    if version is None and not connexion.execute("SELECT 1 FROM archives LIMIT 1").fetchone():
+        _noter_version(connexion)
+    elif version is None or version[0] != VERSION_DES_LECTEURS:
+        connexion.close()
+        reconstruire(dossier_data, lire)
+        connexion = ouvrir(chemin)
+    return connexion
+
+
+def _noter_version(connexion: sqlite3.Connection) -> None:
+    with connexion:
+        connexion.execute(
+            "INSERT OR REPLACE INTO meta (cle, valeur) VALUES ('version_des_lecteurs', ?)", (VERSION_DES_LECTEURS,)
+        )
 
 
 def importer_fichier(dossier_data: Path, provenance: str, nom: str, contenu: bytes, lire: Lecteur) -> Resultat:
@@ -104,6 +122,7 @@ def reconstruire(dossier_data: Path, lire: Lecteur) -> Path:
     try:
         for archive in lister_archives(dossier_data):
             _rejouer(connexion, dossier_data, archive, lire)
+        _noter_version(connexion)
     finally:
         connexion.close()
     temporaire.replace(cible)

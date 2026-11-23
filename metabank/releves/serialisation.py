@@ -41,6 +41,7 @@ def releve_depuis_json(texte: str) -> Releve:
         rachats_depuis_origine=_decimal(d["rachats_depuis_origine"]),
         frais_supports=tuple(FraisSupport(**{**_decimaux(f), "isin": f["isin"]}) for f in d["frais_supports"]),
         taux_frais_fonds_euros=_decimal(d["taux_frais_fonds_euros"]),
+        primes_non_remboursees=_decimal(d.get("primes_non_remboursees")),
         anomalies=tuple(d["anomalies"]),
         fichier=d["fichier"],
     )
