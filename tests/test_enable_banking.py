@@ -101,7 +101,12 @@ def test_la_liaison_enregistre_session_et_comptes_masques_a_droits_restreints(cl
         etat = banque.appels[-1][3]["state"]
         return f"https://localhost:8770/enable-banking/retour?state={etat}&code=abc"
 
-    accord = relier(Client(APPLICATION, cle, banque), "BNP Paribas", demander, lambda _adresse: None, chemin=chemin)
+    accord = relier(Client(APPLICATION, cle, banque), "BNP Paribas", demander, lambda _adresse: None, chemin=chemin,
+                    retour="https://localhost/retour")  # fmt: skip
+    assert (
+        banque.appels[1][3]["redirect_url"] == "https://localhost/retour"
+        and accord["retour"] == "https://localhost/retour"
+    )
     assert accord["comptes"] == [{"uid": "u1", "masque": "****9011", "nom": "Compte de chèques", "devise": "EUR"}]
     assert banque.appels[-1][3] == {"code": "abc"} and "FR76" not in chemin.read_text()
     assert stat.S_IMODE(chemin.stat().st_mode) == 0o600 and lire_accord(chemin)["session"] == "s1"

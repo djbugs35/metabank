@@ -12,7 +12,7 @@ from pathlib import Path
 from metabank.archivage import archiver_donnees, comparer_avec_fichiers
 from metabank.base.integration import reconstruire
 from metabank.bilan import faire_bilans
-from metabank.connecteurs._enable_banking import Client, EnableBankingIndisponible, lire_accord
+from metabank.connecteurs._enable_banking import REDIRECTION, Client, EnableBankingIndisponible, lire_accord
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import appliquer_verifications, lire_ouvertures
 from metabank.donnees import charger
@@ -63,6 +63,7 @@ def main(arguments: list[str] | None = None) -> int:
     banque.add_argument("--application", help="identifiant de l'application Enable Banking (nom du fichier .pem)")
     banque.add_argument("--banque", default="BNP Paribas", help="nom de la banque")
     banque.add_argument("--jours", type=int, default=90, help="comparer : période en jours")
+    banque.add_argument("--retour", help="relier : adresse de retour, exactement celle déclarée dans l'application")
     banque.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     mcp = commandes.add_parser(
         "mcp", help="serveur MCP local en lecture seule, pour Claude Code (entrée et sortie standard)"
@@ -171,7 +172,9 @@ def _enable_banking(options) -> int:
         if options.action == "relier":
             print("La page d'accord de la banque va s'ouvrir. Après votre validation dans l'application de la banque,")
             print("le navigateur affichera une erreur sur « localhost » : c'est normal, copiez alors son adresse.")
-            accord = relier(client, options.banque, input, webbrowser.open)
+            retour = options.retour or lire_accord().get("retour") or REDIRECTION
+            print(f"Adresse de retour : {retour}")
+            accord = relier(client, options.banque, input, webbrowser.open, retour=retour)
             print(f"Accord enregistré jusqu'au {accord['fin']} ; comptes autorisés :")
             for compte in accord["comptes"]:
                 print(f"  {compte['nom']} {compte['masque']}")

@@ -91,11 +91,15 @@ class Client:
         """Rendre les banques du pays (« aspsps ») : nom exact à donner pour l'accord."""
         return self._appeler("GET", f"/aspsps?{urlencode({'country': pays})}").get("aspsps", [])
 
-    def demander_accord(self, banque: str, pays: str, jours: int, etat: str) -> str:
-        """Rendre l'adresse où le titulaire donne son accord, pour jours de lecture de ses comptes."""
+    def demander_accord(self, banque: str, pays: str, jours: int, etat: str, retour: str = REDIRECTION) -> str:
+        """Rendre l'adresse où le titulaire donne son accord, pour jours de lecture de ses comptes.
+
+        Args:
+            retour: adresse de retour, identique caractère pour caractère à celle déclarée dans l'application.
+        """
         fin = (datetime.now(tz=UTC) + timedelta(days=jours)).isoformat(timespec="seconds")
         corps = {"access": {"valid_until": fin}, "aspsp": {"name": banque, "country": pays}, "state": etat,
-                 "redirect_url": REDIRECTION, "psu_type": "personal"}  # fmt: skip
+                 "redirect_url": retour, "psu_type": "personal"}  # fmt: skip
         return str(self._appeler("POST", "/auth", corps)["url"])
 
     def ouvrir_session(self, code: str) -> dict:
