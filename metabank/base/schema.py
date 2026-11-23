@@ -20,11 +20,13 @@ MIGRATIONS: tuple[str, ...] = (
         id INTEGER PRIMARY KEY,
         le TEXT NOT NULL,
         connecteur TEXT NOT NULL,
+        compte_cle TEXT NOT NULL DEFAULT '',
         archive_id INTEGER REFERENCES archives(id),
         resultat TEXT NOT NULL CHECK (resultat IN ('ok', 'refus', 'erreur')),
         elements INTEGER NOT NULL DEFAULT 0,
         message TEXT NOT NULL DEFAULT ''
     );
+    CREATE INDEX imports_par_date ON imports (le);
     CREATE TABLE comptes (
         id INTEGER PRIMARY KEY,
         cle TEXT NOT NULL UNIQUE,
