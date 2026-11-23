@@ -19,6 +19,7 @@ from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
+from metabank.web.credits_vues import simuler_remboursement
 from metabank.web.depot import DepotRefuse, deposer_releve
 from metabank.web.regles_vues import enregistrer_regles, essayer_regle, etat_regles
 from metabank.web.simulation import SimulationInvalide, simuler
@@ -38,6 +39,7 @@ FICHIERS = {
     "/configuration.js": ("configuration.js", "text/javascript; charset=utf-8"),
     "/synoptique.js": ("synoptique.js", "text/javascript; charset=utf-8"),
     "/regles.js": ("regles.js", "text/javascript; charset=utf-8"),
+    "/credits.js": ("credits.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -152,6 +154,8 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             return simuler(donnees)
         if self.path == "/api/configuration":
             return enregistrer_configuration(dossier, donnees)
+        if self.path == "/api/credits/simulation":
+            return simuler_remboursement(dossier, donnees)
         if self.path == "/api/regles":
             return enregistrer_regles(dossier, donnees)
         if self.path == "/api/regles/test":

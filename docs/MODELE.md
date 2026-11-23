@@ -197,6 +197,22 @@ jamais sous zéro. Mois restants = n − k ; intérêts restant à payer ≈ (n 
 estimés, ou sans échéance passée, le capital reste celui de l'export. La date de projection est affichée ; un nouvel
 export remplace la projection par le chiffre de la banque.
 
+### 7.11 Tableau d'amortissement, remboursement anticipé ou placement, assurance emprunteur
+Point de départ : le crédit au mois en cours (7.10), capital C, taux mensuel i, mensualité P hors assurance (7.9).
+- **Tableau d'amortissement** : chaque mois k, intérêts = C(k−1) × i, capital remboursé = P − intérêts (le dernier mois,
+  le capital restant), C(k) = C(k−1) − capital remboursé. Regroupé par année civile.
+- **Remboursement anticipé** d'un montant R aujourd'hui, mensualité gardée : le tableau repart de C − R ; intérêts
+  économisés = intérêts restants avant − après ; durée raccourcie de n − n' mois. Indemnités (IRA) : au plus le
+  plafond légal, min(6 mois d'intérêts sur R au taux du prêt, 3 % de C avant remboursement) (code de la
+  consommation, art. R313-25) ; le contrat peut prévoir moins, ou rien.
+- **Rembourser ou placer** : comparaison du patrimoine à la date de fin actuelle du prêt (mois n), avec un rendement
+  annuel net r supposé (taux mensuel r_m = (1 + r)^(1/12) − 1) :
+  rembourser = Σ des mensualités P libérées des mois n' + 1 à n, chacune placée jusqu'au mois n, moins les IRA placées
+  depuis aujourd'hui ; placer = R × (1 + r_m)^n. Écart = rembourser − placer. Hypothèse, pas une prévision ;
+  fiscalité du placement non comptée (r est net).
+- **Assurance emprunteur** : coût mensuel estimé = mensualité prélevée sur le compte courant − P ; coût restant
+  ≈ ce coût × n. Inconnu sans échéance prélevée retrouvée.
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : actifs = Σ valeurs des placements (assurance vie, PER, PERP, au dernier

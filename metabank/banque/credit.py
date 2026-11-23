@@ -113,6 +113,24 @@ def _echeances(apres: date, jusqu_a: date, jour: int) -> list[date]:
         annee, mois = (annee + 1, 1) if mois == 12 else (annee, mois + 1)
 
 
+def jour_echeance(credit: Compte) -> int:
+    """Rendre le jour du mois des échéances : celui de la dernière ligne d'amortissement, sinon celui de l'export."""
+    amortissements = [o for o in credit.operations if o.montant > 0 and "AMORTISSEMENT" in o.libelle.upper()]
+    return amortissements[-1].jour.day if amortissements else credit.date_solde.day
+
+
+def echeances_a_venir(apres: date, jour: int, nombre: int) -> list[date]:
+    """Rendre les nombre prochaines échéances après la date (ce jour du mois, ou le dernier d'un mois court)."""
+    echeances: list[date] = []
+    annee, mois = apres.year, apres.month
+    while len(echeances) < nombre:
+        echeance = date(annee, mois, min(jour, calendar.monthrange(annee, mois)[1]))
+        if echeance > apres:
+            echeances.append(echeance)
+        annee, mois = (annee + 1, 1) if mois == 12 else (annee, mois + 1)
+    return echeances
+
+
 def _mensualite_prelevee(credit: Compte, comptes: list[Compte]) -> Decimal | None:
     """Rendre la dernière « ECHEANCE PRET » qui porte la fin du numéro du prêt, sur un autre compte."""
     chiffres = credit.numero_masque.lstrip("*")

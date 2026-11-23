@@ -150,7 +150,7 @@ export function creditsHtml(credits, synthese, partActifs, { sansNumero = false 
     ["Fin du dernier crédit", moisAnnee(credits.map((c) => c.fin_estimee).filter(Boolean).sort().at(-1)), "", "estimation, sans remboursement anticipé"],
   ];
   const lignes = credits.map((c) => `<tr><td>${echapper(nom(c.nom))}${c.bien_nom ? `<br><span class="note">${echapper(c.bien_nom)}${c.bien_valeur ? ` : ${euros(c.bien_valeur)}, ${pct(c.part_bien)} restant dû` : ""}</span>` : ""}</td>
-    <td class="n">${euros(c.capital_restant)}${c.projete_depuis ? `<br><span class="note">projeté au ${dateCourte(c.date)}, dernier export du ${dateCourte(c.projete_depuis)}</span>` : ""}</td><td class="n">${euros(c.mensualite_prelevee ?? c.mensualite)}</td>
+    <td class="n">${euros(c.capital_restant)}${c.projete_depuis ? `<br><span class="note">projeté au ${dateCourte(c.date)}, dernier export du ${dateCourte(c.projete_depuis)}</span>` : ""}</td><td class="n">${euros(c.mensualite_prelevee ?? c.mensualite)}${c.assurance_mensuelle ? `<br><span class="note">dont assurance ≈ ${euros(c.assurance_mensuelle)}, ${euros(c.assurance_restante)} d'ici la fin</span>` : ""}</td>
     <td class="n">${euros(c.amortissement_mensuel)} / ${euros(c.interets_du_mois)}</td><td class="n">${pct(c.taux_annuel)}</td>
     <td class="n">${moisAnnee(c.fin_estimee)}</td><td class="n">≈ ${euros(c.interets_restants)}</td></tr>`).join("");
   return `<div class="tuiles">${tuiles.map(([t, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(t)}</div>
