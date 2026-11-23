@@ -128,13 +128,20 @@ export function courbes(figure, { titre, abscisses, series, formater, legendeX, 
 
 // Barres empilées par colonne : chaque part part du haut de la précédente, vers le bas si elle est négative (classe
 // « classeNegative » alors) ; au-dessus, le total et une seconde étiquette. parts : [{classe, classeNegative, nom,
-// valeurs}] ; totaux et sous : un par colonne ; survol(rang) au survol d'une colonne.
-export function barresEmpilees(figure, { titre, abscisses, parts, totaux, sous, formater, survol }) {
+// valeurs}] ; totaux et sous : un par colonne ; survol(rang) au survol d'une colonne. Avec « diverge », les parts
+// positives montent depuis zéro et les négatives descendent depuis zéro (hausses et baisses de chaque contrat).
+export function barresEmpilees(figure, { titre, abscisses, parts, totaux, sous, formater, survol, diverge = false }) {
   const L = 640, H = 300, G = 64, D = 12, HAUT = 40, BAS = 26, LIGNE = 13;
   const piles = abscisses.map((_, rang) => {
-    let base = 0;
+    let base = 0, dessus = 0, dessous = 0;
     return parts.map((p) => {
-      const v = p.valeurs[rang] ?? 0, depart = base;
+      const v = p.valeurs[rang] ?? 0;
+      if (diverge) {
+        const depart = v >= 0 ? dessus : dessous;
+        if (v >= 0) dessus += v; else dessous += v;
+        return { v, bas: Math.min(depart, depart + v), haut: Math.max(depart, depart + v) };
+      }
+      const depart = base;
       base += v;
       return { v, bas: Math.min(depart, base), haut: Math.max(depart, base) };
     });

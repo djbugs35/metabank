@@ -7,6 +7,7 @@ from decimal import Decimal
 from metabank.bilan import BilanContrat
 from metabank.corrections import ANOMALIE_VERSEMENTS
 from metabank.frais_historique import HistoriqueFrais
+from metabank.rapport import nom_contrat
 from metabank.releves.modele import cle_du_contrat
 
 ZERO = Decimal(0)
@@ -69,6 +70,15 @@ class Progression:
 
 
 @dataclass(frozen=True)
+class GainsDuContrat:
+    """Gain (frais déduits) et frais de chaque année d'un contrat, en euros. MODELE § 6.1."""
+
+    nom: str
+    gains: dict[int, Decimal]
+    frais: dict[int, Decimal]
+
+
+@dataclass(frozen=True)
 class Synthese:
     """Chiffres d'un ensemble de contrats ; les relevés de situation n'entrent que dans les totaux."""
 
@@ -85,6 +95,9 @@ class Synthese:
     # Versé lu moins versé refait par les mouvements, sur les contrats où les deux existent (euros). MODELE § 2.3.
     ecart_verse: Decimal = ZERO
     progression: tuple[Progression, ...] = ()
+    # Valeur des contrats sans historique annuel (situation seule), absents de la progression (euros).
+    valeur_sans_historique: Decimal = ZERO
+    contrats: tuple[GainsDuContrat, ...] = ()
 
     @property
     def frais_par_an(self) -> Decimal | None:
@@ -112,6 +125,8 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
         progression=tuple(progresser(suivis, annees)),
+        contrats=tuple(gains_par_contrat(bilans)),
+        valeur_sans_historique=sum((b.valeur for b in bilans if not b.annees), ZERO),
         ecart_verse=sum((b.apports_cumules - b.verse_mouvements for b in bilans
                          if b.apports_cumules is not None and b.verse_mouvements is not None), ZERO),
     )  # fmt: skip
@@ -157,15 +172,31 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
 
 
 def progresser(bilans: list[BilanContrat], annees: tuple[AnneeSynthese, ...]) -> list[Progression]:
-    """Rendre la valeur des placements fin d'année par fin d'année, et ce qui l'a fait varier. MODELE § 6.4."""
-    # Valeur de départ d'un contrat antérieur à ses relevés : comptée comme du versé, l'origine étant inconnue.
-    verse = sum((b.annees[0].valeur_debut for b in bilans if b.annees), ZERO)
+    """Rendre la valeur des placements fin d'année par fin d'année, et ce qui l'a fait varier. MODELE § 6.4.
+
+    Un contrat sans chiffres une année (pas encore de situation pour l'année en cours) y garde sa dernière valeur
+    connue, sans flux ni gain : il ne sort pas de la barre.
+    """
+    suivis = [b for b in bilans if b.annees]
+    precedente = sum((b.annees[0].valeur_debut for b in suivis), ZERO)
     resultat = []
     for a in annees:
-        verse += a.verse - a.rachats
-        resultat.append(Progression(a.annee, a.valeur_fin, a.valeur_fin - a.valeur_debut, verse, a.valeur_fin - verse,
-                                    a.en_cours_au, a.verse - a.rachats, a.gain))  # fmt: skip
+        connues = [[x for x in b.annees if x.annee <= a.annee] for b in suivis]
+        valeur = sum((faites[-1].valeur_fin for faites in connues if faites), ZERO)
+        # Valeur de départ d'un contrat antérieur à ses relevés : comptée comme du versé, l'origine étant inconnue.
+        verse = sum((faites[0].valeur_debut + sum((x.apports - x.rachats for x in faites), ZERO)
+                     for faites in connues if faites), ZERO)  # fmt: skip
+        resultat.append(Progression(a.annee, valeur, valeur - precedente, verse, valeur - verse, a.en_cours_au,
+                                    a.verse - a.rachats, a.gain))  # fmt: skip
+        precedente = valeur
     return resultat
+
+
+def gains_par_contrat(bilans: list[BilanContrat]) -> list[GainsDuContrat]:
+    """Rendre, contrat par contrat, le gain et les frais de chaque année : d'où viennent hausses et baisses."""
+    return [GainsDuContrat(nom_contrat(b), {a.annee: a.gain for a in b.annees},
+                           {a.annee: a.frais for a in b.annees if a.frais is not None})
+            for b in bilans if b.annees]  # fmt: skip
 
 
 def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:

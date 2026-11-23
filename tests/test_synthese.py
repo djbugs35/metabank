@@ -84,3 +84,19 @@ def test_un_contrat_anterieur_a_ses_releves_part_de_sa_valeur_de_debut():
     [fin_2024] = synthetiser("Foyer", faire_bilans(releves), []).progression
     assert (fin_2024.valeur, fin_2024.verse_cumule, fin_2024.gain_cumule) == (Decimal(15600), Decimal(15000),
                                                                              Decimal(600))  # fmt: skip
+
+
+def test_un_contrat_sans_chiffres_une_annee_garde_sa_derniere_valeur_dans_la_progression():
+    """B n'a pas encore de relevé 2025 : il reste dans la barre 2025 avec sa valeur de fin 2024, sans variation."""
+    releves = [_annee(2024, "10500", "0", "10000", "A"), _annee(2025, "11000", "0", "10500", "A"),
+               _annee(2024, "5100", "0", "5000", "B")]  # fmt: skip
+    synthese = synthetiser("Foyer", faire_bilans(releves), [])
+    fin_2025 = synthese.progression[-1]
+    assert (fin_2025.valeur, fin_2025.variation, fin_2025.gain_cumule) == (Decimal(16100), Decimal(500), Decimal(1100))
+
+
+def test_le_gain_de_chaque_annee_se_lit_contrat_par_contrat():
+    releves = [_annee(2024, "10500", "0", "10000", "A"), _annee(2024, "4900", "0", "5000", "B")]
+    synthese = synthetiser("Foyer", faire_bilans(releves), [])
+    assert sorted(c.gains[2024] for c in synthese.contrats) == [Decimal(-100), Decimal(500)]
+    assert sum(c.gains[2024] for c in synthese.contrats) == synthese.annees[0].gain
