@@ -47,12 +47,15 @@ export const fondsDeVue = (etat, vue) =>
   );
 
 export function tableFondsHtml(fonds) {
+  // Les rétrocessions sont une partie des frais du fonds (« dont » du relevé), pas un frais de plus :
+  // frais totaux = frais du fonds + frais du contrat (MODELE § 4.1).
   return `<thead><tr><th>Fonds</th><th>Contrat</th><th class="n">Valeur</th><th class="n">Frais du fonds</th>
-    <th class="n">dont rétro.</th><th class="n">Frais totaux</th><th class="n">Coût / an</th><th class="n">Perf. nette</th></tr></thead><tbody>${fonds
+    <th class="n">dont rétrocessions</th><th class="n">+ Frais du contrat</th><th class="n">= Frais totaux</th><th class="n">Coût / an</th>
+    <th class="n">Perf. nette</th></tr></thead><tbody>${fonds
       .map((f) => `<tr><td>${echapper(f.fonds)}</td><td>${echapper(f.contrat)}</td><td class="n">${euros(f.valeur)}</td>
-        <td class="n">${pct(f.frais_fonds)}</td><td class="n">${pct(f.retrocessions)}</td><td class="n">${pct(f.frais_totaux)}</td>
-        <td class="n">${euros(f.cout_annuel)}</td><td class="n">${pct(f.performance_nette, true)}</td></tr>`)
-      .join("") || `<tr><td colspan="8">Aucun fonds détaillé (relevé de situation seul).</td></tr>`}</tbody>`;
+        <td class="n">${pct(f.frais_fonds)}</td><td class="n discret">(${pct(f.retrocessions)})</td><td class="n">${pct(f.frais_contrat)}</td>
+        <td class="n">${pct(f.frais_totaux)}</td><td class="n">${euros(f.cout_annuel)}</td><td class="n">${pct(f.performance_nette, true)}</td></tr>`)
+      .join("") || `<tr><td colspan="9">Aucun fonds détaillé (relevé de situation seul).</td></tr>`}</tbody>`;
 }
 
 export const noteSansHistorique = (vue) =>

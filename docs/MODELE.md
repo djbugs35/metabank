@@ -74,7 +74,9 @@ Une ligne n'est retenue que si A − B = nette, nette − C = finale et B + C = 
 Le fonds en euros a B = 0 et C = taux de frais annuels de gestion du fonds.
 
 ### 4.1 Coût annuel au rythme actuel
-Pour chaque support de valeur V au 31/12 : coût = V × (B + C) / 100. Somme sur le contrat ;
+Pour chaque support de valeur V au 31/12 : coût = V × (B + C) / 100. B = frais de gestion du fonds,
+C = frais du contrat, lus au tableau « frais sur les supports » du relevé ; les rétrocessions y sont imprimées « dont »
+sous B : elles font partie de B (part reversée à l'assureur et au distributeur) et ne s'y ajoutent pas. Somme sur le contrat ;
 taux moyen = coût total / encours × 100. C'est une estimation : l'encours bouge pendant l'année.
 Elle diffère du total du relevé, qui ne contient pas B mais contient les frais sur versements et arbitrages.
 
