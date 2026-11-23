@@ -11,6 +11,7 @@ class SuravenirPdf(ConnecteurReleve):
     nom = "suravenir_pdf"
     libelle = "Relevé annuel Suravenir (PDF)"
     assureur = "Suravenir"
+    mode_emploi = "Dans l'espace client de l'assureur (Suravenir, ou le distributeur du contrat) : relevé annuel d'information, en PDF ; le déposer dans l'onglet Relevés chaque année."
     etablissements = ("Suravenir",)
     types_comptes = ("assurance_vie", "per")
 

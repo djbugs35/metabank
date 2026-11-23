@@ -20,6 +20,7 @@ from metabank.web.assistant import AssistantIndisponible, contexte, demander, tr
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
 from metabank.web.depot import DepotRefuse, deposer_releve
 from metabank.web.simulation import SimulationInvalide, simuler
+from metabank.web.synoptique_vues import etat_synoptique
 from metabank.web.vues import etat
 
 ADRESSE = "127.0.0.1"
@@ -33,6 +34,7 @@ FICHIERS = {
     "/rendu.js": ("rendu.js", "text/javascript; charset=utf-8"),
     "/comptes.js": ("comptes.js", "text/javascript; charset=utf-8"),
     "/configuration.js": ("configuration.js", "text/javascript; charset=utf-8"),
+    "/synoptique.js": ("synoptique.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -106,6 +108,8 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": disponible})
         elif chemin == "/api/configuration":
             self._json(HTTPStatus.OK, etat_configuration(self.cache.dossier))
+        elif chemin == "/api/synoptique":
+            self._json(HTTPStatus.OK, etat_synoptique(self.cache.dossier))
         elif chemin == "/api/assistant/contexte":
             self._envoyer(HTTPStatus.OK, contexte(self.cache.lire()).encode(), "text/plain; charset=utf-8")
         else:

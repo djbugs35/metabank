@@ -95,6 +95,7 @@ class Connecteur:
         etablissements: établissements couverts, tels qu'affichés (« BNP Paribas »).
         types_comptes: types de comptes couverts (« courant », « livret_a », « assurance_vie »…).
         reglages: réglages qui le rendent actif.
+        mode_emploi: comment le titulaire obtient la donnée, affiché dans le synoptique.
     """
 
     nom: str = ""
@@ -104,6 +105,7 @@ class Connecteur:
     etablissements: tuple[str, ...] = ()
     types_comptes: tuple[str, ...] = ()
     reglages: tuple[Reglage, ...] = ()
+    mode_emploi: str = ""
 
     def est_actif(self, valeurs: Mapping[str, str]) -> bool:
         """Rendre vrai si chacun de ses réglages a une valeur non vide dans valeurs."""

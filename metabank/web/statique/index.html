@@ -18,6 +18,7 @@
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
       <button role="tab" data-onglet="assistant" aria-selected="false">Assistant</button>
+      <button role="tab" data-onglet="synoptique" aria-selected="false">Synoptique</button>
       <button role="tab" data-onglet="configuration" aria-selected="false">Configuration</button>
     </nav>
   </div>
@@ -129,6 +130,15 @@
       calculer le patrimoine net (actifs moins crédits). Laissez vide pour ne pas la compter.</p>
     <div id="liste-biens"></div>
     <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
+  </section>
+
+  <section id="synoptique" data-panneau class="cache">
+    <h1>Synoptique</h1>
+    <p class="discret">Chaque compte, de la source jusqu'aux écrans : comment il se met à jour, quand il l'a été, et ce
+      qu'il alimente. Cliquez une ligne pour son journal et la façon d'obtenir le fichier. Fraîcheur : docs/MODELE.md § 9.</p>
+    <div class="defile"><table id="synoptique-comptes"></table></div>
+    <h2>Ce qui sort de la machine</h2>
+    <div class="defile"><table id="synoptique-sorties"></table></div>
   </section>
 
   <section id="configuration" data-panneau class="cache">

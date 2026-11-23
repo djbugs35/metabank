@@ -104,3 +104,14 @@ def lire_registre(connexion: sqlite3.Connection) -> list[dict]:
                          "numero_masque": masque, "libelle": libelle, "dernier_connecteur": connecteur,
                          "derniere_donnee": le})  # fmt: skip
     return registre
+
+
+def lire_dates_des_donnees(connexion: sqlite3.Connection) -> dict[str, date]:
+    """Rendre {clé du compte : date la plus récente de ses soldes, opérations et relevés}. MODELE § 9."""
+    lignes = connexion.execute(
+        "SELECT c.cle, max(d.jour) FROM comptes c JOIN ("
+        "  SELECT compte_id, jour FROM soldes UNION ALL SELECT compte_id, jour FROM operations"
+        "  UNION ALL SELECT compte_id, date_arrete FROM releves"
+        ") d ON d.compte_id = c.id GROUP BY c.cle"
+    )
+    return {cle: date.fromisoformat(jour) for cle, jour in lignes}

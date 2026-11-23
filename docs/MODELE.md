@@ -197,3 +197,17 @@ estimées des biens immobiliers (saisies dans Corrections). Crédits = Σ capita
 Patrimoine net = actifs − crédits ; sans valeur de bien saisie, il n'est pas affiché (il serait trompeur).
 Part d'une famille, d'un compte ou des crédits = son montant / actifs. Les dates de valeur diffèrent d'un compte à l'autre :
 chacune est affichée.
+
+## 9. Fraîcheur des comptes (onglet « Synoptique »)
+
+Date de la dernière donnée d'un compte = la plus récente des dates portées par ses données : jour d'un solde, jour
+d'une opération, date d'arrêté d'un relevé. Ce n'est pas la date d'import : un vieux relevé déposé aujourd'hui reste
+vieux.
+Âge = aujourd'hui − date de la dernière donnée, en jours. Fréquence attendue f = celle saisie dans Configuration,
+sinon celle du type de compte (30 jours pour un compte courant, 90 pour un crédit, 365 pour un livret ou un contrat).
+- **à jour** : âge ≤ f ;
+- **en retard** : f < âge ≤ 2 f ;
+- **très en retard** : âge > 2 f ;
+- **jamais** : aucune donnée.
+Sans fréquence connue, le compte est « à jour » dès qu'il a une donnée. Le journal compte, sur les 30 derniers jours,
+les imports réussis et ceux en erreur ou refusés qui visaient ce compte.
