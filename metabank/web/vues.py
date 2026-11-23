@@ -16,6 +16,7 @@ from metabank.depot_unique import dossier_depot
 from metabank.donnees import charger
 from metabank.frais import AnalyseFrais, analyser_frais
 from metabank.frais_historique import historiques_frais
+from metabank.historique import historique_patrimoine
 from metabank.rapport import nom_contrat
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
@@ -43,6 +44,7 @@ def etat(dossier, aujourd_hui: date | None = None) -> dict:
     banque = etat_banque(dossier, comptes)
     corrections = lire_corrections(dossier)
     patrimoine = patrimoines(bilans, comptes, corrections["biens"])
+    historique = _historique(releves, donnees.comptes, corrections["biens"], aujourd_hui, patrimoine)
     vues = [_vue("foyer", "foyer", None, foyer, foyer)]
     for titulaire in sorted({b.titulaire for b in bilans} | {c.titulaire for c in comptes}):
         des_siens = [b for b in bilans if b.titulaire == titulaire]
@@ -59,6 +61,7 @@ def etat(dossier, aujourd_hui: date | None = None) -> dict:
         "erreurs": donnees.erreurs,
         "banque": banque,
         "patrimoine": patrimoine,
+        "historique": historique,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": corrections,
         "dossier_depot": str(dossier_depot(dossier, lire_configuration(dossier))),
@@ -180,3 +183,22 @@ def _credits(comptes, banque: list[dict], biens: dict) -> dict:
     foyer = next((b for b in courants if b["id"] == "b:foyer"), courants[0] if len(courants) == 1 else None)
     resultat = etat_credits(comptes, foyer["revenus_mois"] if foyer else None, biens)
     return {"credits": resultat["credits"], "synthese_credits": resultat["synthese"]}
+
+
+def _historique(releves, comptes, biens: dict, aujourd_hui: date, patrimoine: dict) -> dict[str, dict]:
+    """Rendre la courbe mensuelle de chaque vue qui a un patrimoine (foyer, personnes). MODELE § 8.1."""
+    resultat = {}
+    for cle in patrimoine:
+        titulaire = None if cle == "foyer" else cle.removeprefix("p:")
+        historique = historique_patrimoine(
+            [r for r in releves if titulaire in (None, r.titulaire)],
+            [c for c in comptes if titulaire in (None, c.titulaire)],
+            biens,
+            aujourd_hui,
+        )
+        resultat[cle] = {
+            "points": [{"jour": p.jour.isoformat(), "actifs": _nombre(p.actifs), "credits": _nombre(p.credits),
+                        "net": _nombre(p.net)} for p in historique.points],
+            "reportes": historique.reportes,
+        }  # fmt: skip
+    return resultat

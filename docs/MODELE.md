@@ -206,6 +206,20 @@ Patrimoine net = actifs − crédits ; sans valeur de bien saisie, il n'est pas 
 Part d'une famille, d'un compte ou des crédits = son montant / actifs. Les dates de valeur diffèrent d'un compte à l'autre :
 chacune est affichée.
 
+### 8.1 Historique mensuel du patrimoine (13 mois)
+Points : la fin de chacun des 12 mois précédents, et aujourd'hui pour le mois en cours. Pour chaque point m, chaque
+montant est reconstitué à partir des données déjà en base, sans instantané :
+- compte courant, livret ou crédit : solde(m) = S − Σ des opérations datées de ]m, d], S étant le solde du dernier
+  export à la date d. Si m ≥ d : S, et pour un crédit le capital projeté au jour m (7.10). Si m précède la veille de la
+  première opération connue, le solde est inconnu ;
+- assurance vie, PER, PERP : valeur du dernier relevé daté au plus tard de m (les relevés sont annuels : la courbe des
+  placements avance par paliers) ; sans relevé à cette date, la valeur est inconnue ;
+- bien immobilier : valeur saisie dans Corrections, la même à chaque point (pas d'historique).
+Actifs, crédits et net comme au § 8, sur le même ensemble de comptes et contrats à chaque point, pour qu'un compte
+qui apparaît ne passe pas pour un gain ni un crédit encore inconnu pour une dette éteinte : avant sa première valeur
+connue, un compte ou contrat est compté à cette première valeur (reportée en arrière) et nommé sous le graphique.
+Un compte sans aucune valeur connue à la date du dernier point est laissé hors de la courbe.
+
 ## 9. Fraîcheur des comptes (onglet « Synoptique »)
 
 Date de la dernière donnée d'un compte = la plus récente des dates portées par ses données : jour d'un solde, jour
