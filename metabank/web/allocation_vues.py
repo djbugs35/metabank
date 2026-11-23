@@ -59,6 +59,7 @@ def etat_allocation(dossier: Path, titulaire: str = "") -> dict:
         ],
         "classes": CLASSES,
         "cible": configuration["cible"],
+        "par_contrat": _par_contrat(supports),
     }  # fmt: skip
 
 
@@ -93,3 +94,19 @@ def simuler_arbitrage_saisi(_dossier: Path, saisie: dict) -> dict:
                           valeurs["frais_arbitrage"], valeurs["rendement"], int(valeurs["horizon"]))  # fmt: skip
     return {"garder": [_n(v) for v in a.garder], "arbitrer": [_n(v) for v in a.arbitrer], "ecart": _n(a.ecart),
             "cout_immediat": _n(a.cout_immediat), "point_mort": a.point_mort}  # fmt: skip
+
+
+def _par_contrat(supports: list) -> list[dict]:
+    """Rendre la répartition par classe de chaque contrat (montants en euros, parts du contrat en fractions)."""
+    contrats: dict[tuple[str, str], list] = {}
+    for p in supports:
+        contrats.setdefault((p.titulaire, p.contrat), []).append(p)
+    resultat = []
+    for (titulaire, contrat), fonds in contrats.items():
+        total = sum((p.valeur for p in fonds), ZERO)
+        classes = {c: sum((p.valeur for p in fonds if p.classe == c), ZERO) for c in CLASSES}
+        resultat.append({"titulaire": titulaire, "contrat": contrat, "total": _n(total), "classes": [
+            {"classe": c, "montant": _n(m), "part": round(float(m / total), 6) if total else None}
+            for c, m in classes.items() if m
+        ]})  # fmt: skip
+    return resultat

@@ -158,6 +158,9 @@ def _contrat(bilan: BilanContrat, analyses: list[AnalyseFrais]) -> dict:
         "encours_frais_connus": _nombre(analyse.encours_connu) if analyse else None,
         "taux_frais": _taux(analyse.taux_moyen / 100) if analyse and analyse.taux_moyen is not None else None,
         "taux_frais_fonds_moins_chers": _taux(_taux_cible(analyse)) if analyse else None,
+        "produit": bilan.produit,
+        "cout_frais_annuel": _nombre(analyse.cout_total) if analyse else None,
+        "retrocessions_annuelles": _nombre(analyse.retrocessions) if analyse else None,
     }
 
 
