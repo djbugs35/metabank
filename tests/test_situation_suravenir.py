@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from metabank.allocation import positions
+from metabank.allocation import coupon_attendu, positions
 from metabank.bilan import faire_bilans
 from metabank.connecteurs.registre import lister_connecteurs, reconnaitre
 from metabank.releves import ReleveRange, lire_releve
@@ -97,3 +97,37 @@ def test_sans_historique_des_operations_pas_d_annee_en_cours():
     assert situation.versements_annee_en_cours is None
     [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
     assert [a.annee for a in bilan.annees] == [2025]
+
+
+def test_la_situation_donne_le_prix_de_revient_de_chaque_fonds():
+    situation = lire_situation_suravenir(SITUATION, "s.pdf")
+    assert [s.prix_de_revient for s in situation.supports] == [Decimal(900), Decimal(210), Decimal(200)]
+
+
+def test_chaque_coupon_de_l_historique_est_rattache_au_fonds_qu_il_nomme():
+    situation = lire_situation_suravenir(SITUATION, "s.pdf")
+    assert {d.support for d in situation.distributions} == {"LU0000000002"}
+    assert sorted(d.jour for d in situation.distributions) == [date(2025, 9, 25), date(2025, 12, 25), date(2026, 3, 25)]
+
+
+def test_le_fonds_donne_sa_plus_value_latente_ses_coupons_et_le_coupon_attendu_non_venu():
+    situation = lire_situation_suravenir(SITUATION, "s.pdf")
+    par_libelle = {p.libelle: p for p in positions([ReleveRange("Alice", situation)], {})}
+    obligations, actions = par_libelle["OBLIGATIONS EXEMPLE R"], par_libelle["FONDS ACTIONS EXEMPLE C"]
+    # 50 parts achetées 210 € en moyenne, valant 200 € : moins 500 €, soit moins 4,76 % ; trois coupons de 50 €.
+    assert (obligations.plus_value, obligations.coupons) == (Decimal(-500), Decimal(150))
+    assert round(obligations.plus_value_taux, 4) == Decimal("-0.0476")
+    assert obligations.coupon_attendu_le == date(2026, 6, 23)
+    assert (actions.plus_value, actions.coupons, actions.coupon_attendu_le) == (Decimal(1000), Decimal(0), None)
+
+
+@pytest.mark.parametrize(
+    ("jours", "au", "attendu"),
+    [
+        ([date(2026, 1, 1), date(2026, 4, 1), date(2026, 7, 1)], date(2026, 9, 1), None),
+        ([date(2026, 1, 1), date(2026, 4, 1), date(2026, 7, 1)], date(2026, 11, 20), date(2026, 9, 29)),
+        ([date(2026, 1, 1), date(2026, 4, 1)], date(2027, 1, 1), None),
+    ],
+)  # fmt: skip
+def test_un_coupon_n_est_attendu_qu_apres_une_fois_et_demie_le_rythme_habituel(jours, au, attendu):
+    assert coupon_attendu(jours, au) == attendu

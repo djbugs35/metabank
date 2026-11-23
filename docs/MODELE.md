@@ -360,6 +360,20 @@ du document d'information du fonds.
   s'écarte de sa cible de plus de 5 points. Les livrets et comptes courants ne sont pas
   des classes de la cible : la cible porte sur les supports des contrats.
 
+### 13.1 Plus-value face au prix de revient, coupons reçus
+
+La situation Suravenir imprime, pour chaque fonds, le nombre de parts n, la valeur liquidative VL et le prix de
+revient P (prix moyen d'achat d'une part détenue, calculé par l'assureur ; un arbitrage entrant le refait, un
+arbitrage sortant ne le change pas). Le relevé annuel ne le donne pas : rien n'est alors affiché.
+- **Plus-value latente** = (VL − P) × n, en euros ; en part du prix payé : VL / P − 1.
+- **Coupons reçus** = somme des lignes « DISTRIBUTION » de l'historique des opérations de la situation qui nomment ce
+  fonds, depuis l'origine. Versés sur un autre support du contrat, ils ne sont pas dans la valeur du fonds.
+- **Net** = plus-value latente + coupons reçus : ce que le fonds a rapporté ou coûté depuis son achat, à ce jour.
+- **Coupon attendu non venu** : pour un fonds qui a versé au moins 3 coupons, rythme habituel R = médiane des jours
+  entre deux coupons consécutifs ; alerte quand la date de la situation dépasse le dernier coupon de plus de 1,5 × R.
+  C'est un constat : un coupon peut dépendre d'une condition (produit structuré), que seul le document
+  d'information du fonds dit.
+
 ## 14. Simulateur d'arbitrage (onglet « Allocation »)
 
 Arbitrer un montant V d'un fonds de frais totaux t₁ (frais du fonds et du contrat, en % par an, 4.1) vers un fonds

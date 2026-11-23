@@ -54,7 +54,13 @@ def etat_allocation(dossier: Path, titulaire: str = "") -> dict:
         "positions": [
             {"cle": p.cle, "libelle": p.libelle, "titulaire": p.titulaire, "contrat": p.contrat, "classe": p.classe,
              "choisie": p.classe_choisie, "valeur": _n(p.valeur),
-             "frais_totaux": float(p.frais_totaux) if p.frais_totaux is not None else None}
+             "frais_totaux": float(p.frais_totaux) if p.frais_totaux is not None else None,
+             "prix_de_revient": None if p.prix_de_revient is None else float(p.prix_de_revient),
+             "plus_value": None if p.plus_value is None else _n(p.plus_value),
+             "plus_value_taux": None if p.plus_value_taux is None else round(float(p.plus_value_taux), 6),
+             "coupons": _n(p.coupons), "net": None if p.plus_value is None else _n(p.plus_value + p.coupons),
+             "dernier_coupon": p.dernier_coupon.isoformat() if p.dernier_coupon else None,
+             "coupon_attendu_le": p.coupon_attendu_le.isoformat() if p.coupon_attendu_le else None}
             for p in supports
         ],
         "classes": CLASSES,

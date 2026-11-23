@@ -5,9 +5,10 @@ de versements et de rachats depuis l'origine. Montants en euros.
 """
 
 import re
+from datetime import date
 from decimal import Decimal
 
-from metabank.releves.modele import Releve, Support
+from metabank.releves.modele import Distribution, Releve, Support
 from metabank.releves.texte import MOTIF_ISIN, MOTIF_MONTANT, ErreurLecture, date_numerique, en_decimal
 
 TITRE = re.compile(r"Situation de votre contrat au (\d{2}/\d{2}/\d{4})")
@@ -46,6 +47,25 @@ def flux_de_l_annee(texte: str, annee: int) -> tuple[Decimal | None, Decimal | N
     return (verse, rachats, frais) if historique else (None, None, None)
 
 
+def lire_distributions(texte: str, supports: list[Support]) -> tuple[Distribution, ...]:
+    """Rendre les coupons de l'historique, chacun rattaché au fonds que sa ligne nomme. MODELE § 13.1.
+
+    La ligne porte « DISTRIBUTION », un nom court puis le libellé complet du fonds : c'est ce libellé qui désigne le
+    support. Une ligne qui ne nomme aucun fonds détenu garde son texte en majuscules comme clé.
+    """
+    vues: dict[tuple[date, str, Decimal], None] = {}
+    for ligne in texte.splitlines():
+        trouve = OPERATION.match(ligne)
+        if not trouve or not trouve.group(3).upper().startswith("DISTRIBUTION"):
+            continue
+        texte_ligne = " ".join(ligne.split()).upper()
+        support = next((s for s in supports if s.libelle.upper() in texte_ligne), None)
+        cle = (support.isin or support.libelle.upper()) if support else texte_ligne
+        # Les pages répètent parfois une ligne : un même coupon (jour, fonds, montant) n'est compté qu'une fois.
+        vues[(date_numerique(trouve.group(1)), cle, en_decimal(trouve.group(4)))] = None
+    return tuple(Distribution(jour, cle, montant) for jour, cle, montant in vues)
+
+
 def est_situation_suravenir(texte: str) -> bool:
     """Rendre vrai si le texte est une situation de contrat Suravenir (et non un relevé annuel)."""
     return "SURAVENIR" in texte.upper() and TITRE.search(texte) is not None and "Supports financiers" in texte
@@ -75,7 +95,8 @@ def lire_situation_suravenir(texte: str, fichier: str = "", type_indique: str | 
         if trouve and trouve["isin"] not in vus:
             vus.add(trouve["isin"])
             supports.append(Support(" ".join(trouve["libelle"].split()), en_decimal(trouve["montant"]), trouve["isin"],
-                                    en_decimal(trouve["parts"]), en_decimal(trouve["vl"])))  # fmt: skip
+                                    en_decimal(trouve["parts"]), en_decimal(trouve["vl"]),
+                                    en_decimal(trouve["pru"])))  # fmt: skip
     if not supports:
         raise ErreurLecture(f"{fichier} : aucun fonds lu dans la situation")
     total = TOTAL.search(texte)
@@ -93,7 +114,7 @@ def lire_situation_suravenir(texte: str, fichier: str = "", type_indique: str | 
     return Releve("Suravenir", produit, numero.group(1), type_contrat, jour, valeur, tuple(supports),
                   versements_bruts_depuis_origine=versements, rachats_depuis_origine=rachats,
                   versements_annee_en_cours=verse_annee, rachats_annee_en_cours=rachats_annee,
-                  frais_annee_en_cours=frais_annee, anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
+                  frais_annee_en_cours=frais_annee, distributions=lire_distributions(texte, supports), anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
                   fichier=fichier)  # fmt: skip
 
 
