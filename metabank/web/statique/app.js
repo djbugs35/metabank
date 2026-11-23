@@ -3,6 +3,7 @@ import { afficherComptes } from "./comptes.js";
 import { afficherConfiguration, preparerConfiguration } from "./configuration.js";
 import { afficherAllocation, preparerAllocation } from "./allocation.js";
 import { preparerBudget } from "./budget.js";
+import { afficherGraphiques } from "./graphiques_tableau.js";
 import { afficherRetraite, preparerRetraite } from "./retraite.js";
 import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
@@ -118,6 +119,7 @@ function afficherTableau() {
   afficherTuiles(vue);
   afficherAnnees(vue);
   afficherReperes(vue);
+  afficherGraphiques(etat, vue);
   afficherNotes(vue);
   afficherFonds(vue);
   $("points").innerHTML = etat.points.length ? `<ul>${etat.points.map((p) => `<li>${echapper(p)}</li>`).join("")}</ul>` : "<p>Aucun.</p>";

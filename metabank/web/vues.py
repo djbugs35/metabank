@@ -222,6 +222,7 @@ def _historique(releves, comptes, biens: dict, aujourd_hui: date, patrimoine: di
             "points": [{"jour": p.jour.isoformat(), "actifs": _nombre(p.actifs), "credits": _nombre(p.credits),
                         "net": _nombre(p.net)} for p in historique.points],
             "reportes": historique.reportes,
+            "familles": {nom: [_nombre(v) for v in valeurs] for nom, valeurs in historique.familles.items()},
         }  # fmt: skip
     return resultat
 

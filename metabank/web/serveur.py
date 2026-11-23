@@ -49,6 +49,7 @@ FICHIERS = {
     "/retraite.js": ("retraite.js", "text/javascript; charset=utf-8"),
     "/allocation.js": ("allocation.js", "text/javascript; charset=utf-8"),
     "/revue.js": ("revue.js", "text/javascript; charset=utf-8"),
+    "/graphiques_tableau.js": ("graphiques_tableau.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
