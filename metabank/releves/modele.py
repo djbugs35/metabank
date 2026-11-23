@@ -19,6 +19,17 @@ class Support:
     isin: str | None = None
     parts: Decimal | None = None
     valeur_part: Decimal | None = None
+    # Prix moyen d'achat d'une part, en euros, tel que l'assureur l'imprime (situation Suravenir). MODELE § 13.1.
+    prix_de_revient: Decimal | None = None
+
+
+@dataclass(frozen=True)
+class Distribution:
+    """Coupon versé par un fonds (ligne « DISTRIBUTION » de l'historique), en euros. MODELE § 13.1."""
+
+    jour: date
+    support: str
+    montant: Decimal
 
 
 @dataclass(frozen=True)
@@ -77,6 +88,8 @@ class Releve:
     versements_annee_en_cours: Decimal | None = None
     rachats_annee_en_cours: Decimal | None = None
     frais_annee_en_cours: Decimal | None = None
+    # Situation : coupons de l'historique, clé du support (ISIN, sinon libellé en majuscules). MODELE § 13.1.
+    distributions: tuple[Distribution, ...] = field(default=())
     anomalies: tuple[str, ...] = field(default=())
     fichier: str = ""
 

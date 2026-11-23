@@ -26,5 +26,8 @@
                             31/12/2026                FRAIS ANNEE 2026                                  -100,00
                             15/03/2026                VERSEMENT                                        1 000,00
                             08/02/2026                ARBITRAGE                                        5 000,00
+                            25/03/2026                DISTRIBUTION       OBLIG EX   OBLIGATIONS EXEMPLE R              50,00
+                            25/12/2025                DISTRIBUTION       OBLIG EX   OBLIGATIONS EXEMPLE R              50,00
                             24/09/2025                VERSEMENT                                       19 800,00
+                            25/09/2025                DISTRIBUTION       OBLIG EX   OBLIGATIONS EXEMPLE R              50,00
             Cette situation est établie à partir des dernières valeurs liquidatives connues.

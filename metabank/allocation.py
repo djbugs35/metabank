@@ -3,16 +3,21 @@
 Montants en euros, parts en fractions. Des faits et une arithmétique, jamais une recommandation.
 """
 
+import itertools
 import re
+import statistics
 from dataclasses import dataclass
+from datetime import date, timedelta
 from decimal import Decimal
 
 from metabank.releves import ReleveRange
-from metabank.releves.modele import cle_du_contrat
+from metabank.releves.modele import Releve, Support, cle_du_contrat
 
 ZERO = Decimal(0)
 SEUIL_CONCENTRATION = Decimal("0.20")
 SEUIL_DERIVE = Decimal("0.05")
+COUPONS_MIN = 3
+RETARD_TOLERE = 1.5
 A_CLASSER = "À classer"
 FONDS_EUROS = "Fonds en euros"
 # Ordre d'examen : le premier motif qui reconnaît le libellé l'emporte (« FLEXIBLE EQUITY » est d'abord une action,
@@ -43,6 +48,13 @@ class Position:
     classe_choisie: bool
     valeur: Decimal
     frais_totaux: Decimal | None = None
+    # MODELE § 13.1, en euros : None quand le document n'imprime pas de prix de revient.
+    prix_de_revient: Decimal | None = None
+    plus_value: Decimal | None = None
+    plus_value_taux: Decimal | None = None
+    coupons: Decimal = ZERO
+    dernier_coupon: date | None = None
+    coupon_attendu_le: date | None = None
 
 
 def cle_support(libelle: str, isin: str | None) -> str:
@@ -72,14 +84,41 @@ def positions(releves: list[ReleveRange], choisies: dict[str, str]) -> list[Posi
             }
     resultat = []
     for (titulaire, numero), r in derniers.items():
-        contrat = f"{r.releve.produit} …{r.releve.numero.replace(' ', '')[-4:]}"
         frais = frais_par_contrat.get((titulaire, numero), {})
-        for s in r.releve.supports:
-            cle = cle_support(s.libelle, s.isin)
-            choisie = choisies.get(cle)
-            resultat.append(Position(cle, s.libelle, r.titulaire, contrat, choisie or classe_deduite(s.libelle),
-                                     choisie is not None, s.valeur, frais.get(s.isin or "")))  # fmt: skip
+        resultat += [_position(s, r.titulaire, r.releve, choisies, frais) for s in r.releve.supports]
     return sorted(resultat, key=lambda p: -p.valeur)
+
+
+def _position(s: Support, titulaire: str, releve: Releve, choisies: dict[str, str],
+              frais: dict[str, Decimal]) -> Position:  # fmt: skip
+    cle = cle_support(s.libelle, s.isin)
+    choisie = choisies.get(cle)
+    jours = sorted(d.jour for d in releve.distributions if d.support == cle)
+    plus_value = taux = None
+    if s.prix_de_revient and s.parts is not None and s.valeur_part is not None:
+        plus_value = (s.valeur_part - s.prix_de_revient) * s.parts
+        taux = s.valeur_part / s.prix_de_revient - 1
+    return Position(
+        cle, s.libelle, titulaire, f"{releve.produit} …{releve.numero.replace(' ', '')[-4:]}",
+        choisie or classe_deduite(s.libelle), choisie is not None, s.valeur, frais.get(s.isin or ""),
+        s.prix_de_revient, plus_value, taux,
+        sum((d.montant for d in releve.distributions if d.support == cle), ZERO),
+        jours[-1] if jours else None, coupon_attendu(jours, releve.date_arrete),
+    )  # fmt: skip
+
+
+def coupon_attendu(jours: list[date], au: date) -> date | None:
+    """Rendre le jour où le coupon suivant était attendu s'il n'est pas venu à la date au, sinon None. MODELE § 13.1.
+
+    Args:
+        jours: jours des coupons déjà versés par le fonds, triés.
+    """
+    if len(jours) < COUPONS_MIN:
+        return None
+    rythme = statistics.median([(b - a).days for a, b in itertools.pairwise(jours)])
+    if (au - jours[-1]).days <= RETARD_TOLERE * rythme:
+        return None
+    return jours[-1] + timedelta(days=round(rythme))
 
 
 def repartir(positions_: list[Position], liquidites: dict[str, Decimal]) -> list[tuple[str, Decimal, Decimal]]:

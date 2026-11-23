@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import Any
 
 from metabank.releves.frais_supports import FraisSupport
-from metabank.releves.modele import Frais, Mouvements, Releve, Support
+from metabank.releves.modele import Distribution, Frais, Mouvements, Releve, Support
 
 
 def releve_en_json(releve: Releve) -> str:
@@ -30,7 +30,14 @@ def releve_depuis_json(texte: str) -> Releve:
         date_arrete=date.fromisoformat(d["date_arrete"]),
         valeur=Decimal(d["valeur"]),
         supports=tuple(
-            Support(s["libelle"], Decimal(s["valeur"]), s["isin"], _decimal(s["parts"]), _decimal(s["valeur_part"]))
+            Support(
+                s["libelle"],
+                Decimal(s["valeur"]),
+                s["isin"],
+                _decimal(s["parts"]),
+                _decimal(s["valeur_part"]),
+                _decimal(s.get("prix_de_revient")),
+            )
             for s in d["supports"]
         ),
         valeur_precedente=_decimal(d["valeur_precedente"]),
@@ -45,6 +52,10 @@ def releve_depuis_json(texte: str) -> Releve:
         versements_annee_en_cours=_decimal(d.get("versements_annee_en_cours")),
         rachats_annee_en_cours=_decimal(d.get("rachats_annee_en_cours")),
         frais_annee_en_cours=_decimal(d.get("frais_annee_en_cours")),
+        distributions=tuple(
+            Distribution(date.fromisoformat(x["jour"]), x["support"], Decimal(x["montant"]))
+            for x in d.get("distributions", [])
+        ),
         anomalies=tuple(d["anomalies"]),
         fichier=d["fichier"],
     )
