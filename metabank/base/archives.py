@@ -13,7 +13,7 @@ from pathlib import Path, PurePosixPath
 
 DOSSIER = "archives"
 # Dossiers de premier niveau de data/ qui ne sont pas des titulaires : archives brutes et dossier de dépôt surveillé.
-DOSSIERS_RESERVES = frozenset({DOSSIER, "depot"})
+DOSSIERS_RESERVES = frozenset({DOSSIER, "depot", "revues"})
 
 
 class CheminRefuse(ValueError):

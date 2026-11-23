@@ -233,7 +233,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
 | Serveur MCP local | metabank expose en lecture seule ses chiffres et ses simulations ; Claude les interroge au lieu de recevoir un résumé figé | une question obtient une réponse chiffrée par metabank | fait : `metabank mcp` (stdio, Python standard), 10 outils en lecture seule, aucun numéro ; essayé avec Claude Code sur données fictives. L'assistant de la page garde son résumé (sans outil) |
-| Revue mensuelle | PDF et courte liste d'actions (fichiers à déposer, échéances, alertes) | revue produite chaque mois | à faire |
+| Revue mensuelle | PDF et courte liste d'actions (fichiers à déposer, échéances, alertes) | revue produite chaque mois | fait : onglet « Revue du mois » (imprimable en PDF), `metabank revue`, trace dans data/revues/ à la première ouverture du mois |
 | Sauvegarde | copie chiffrée de `data/` sur le NAS, depuis l'onglet Configuration | restauration testée | à faire |
 | Exécution sur le NAS QNAP | comme metascrap : dépôt copié sans git, environnement Python dédié, crontab, `data/` sur le NAS, secrets hors trousseau ; application servie sur le réseau local avec authentification | metabank tourne sur le QNAP et s'ouvre depuis le téléphone à la maison | à faire |
 | Autres comptes | Revolut, compte-titres d'entreprise, relevés annuels Cardif | chacun a son connecteur | à faire |
@@ -325,7 +325,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Crédits : remboursement anticipé ou placement, assurance emprunteur | 5 | fait |
 | Bien locatif : rendement et trésorerie | 5 | fait |
 | Serveur MCP local en lecture seule pour l'assistant | 6 | fait |
-| Revue mensuelle automatique (PDF et liste d'actions) | 6 | à faire |
+| Revue mensuelle automatique (PDF et liste d'actions) | 6 | fait |
 | Sauvegarde chiffrée de `data/` sur le NAS | 6 | à faire |
 | Exécution sur le NAS QNAP comme metascrap (crontab, sans git, réseau local authentifié) | 6 | à faire |
 
