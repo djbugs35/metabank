@@ -13,11 +13,12 @@ from collections.abc import Callable
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from metabank.configuration import ecrire_objectifs, lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
+from metabank.web.allocation_vues import enregistrer_allocation, etat_allocation
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
 from metabank.web.credits_vues import simuler_remboursement
@@ -44,6 +45,7 @@ FICHIERS = {
     "/credits.js": ("credits.js", "text/javascript; charset=utf-8"),
     "/budget.js": ("budget.js", "text/javascript; charset=utf-8"),
     "/retraite.js": ("retraite.js", "text/javascript; charset=utf-8"),
+    "/allocation.js": ("allocation.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -104,6 +106,7 @@ ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
     "/api/regles": enregistrer_regles,
     "/api/regles/test": essayer_regle,
     "/api/retraite": simuler_retraite,
+    "/api/allocation": enregistrer_allocation,
 }
 
 
@@ -131,6 +134,9 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": disponible})
         elif chemin == "/api/configuration":
             self._json(HTTPStatus.OK, etat_configuration(self.cache.dossier))
+        elif chemin == "/api/allocation":
+            titulaire = parse_qs(urlsplit(self.path).query).get("titulaire", [""])[0]
+            self._json(HTTPStatus.OK, etat_allocation(self.cache.dossier, titulaire))
         elif chemin == "/api/regles":
             self._json(HTTPStatus.OK, etat_regles(self.cache.dossier))
         elif chemin == "/api/synoptique":

@@ -10,6 +10,8 @@ Format :
 secours nomment les connecteurs qui le mettent à jour ; la fréquence attendue (en jours) colore le synoptique.
 « reglages » : valeurs des réglages non secrets des connecteurs. Un secret n'est jamais écrit ici (coffre de la
 machine, étape 4).
+« classes » : classe choisie d'un support (clé = ISIN ou libellé) ; « cible » : part visée par classe, en %
+(onglet Allocation, MODELE § 13).
 « objectifs » : dépense mensuelle visée par catégorie, en euros (onglet Budget, MODELE § 7.13).
 « dossiers » : dossier de dépôt surveillé (chemin absolu ; vide = data/depot/).
 Saisie du titulaire, hors de la base : effacer data/metabank.db ne la perd pas.
@@ -20,6 +22,7 @@ import re
 from collections.abc import Sequence
 from pathlib import Path
 
+from metabank.allocation import A_CLASSER, CLASSES
 from metabank.connecteurs.contrat import Connecteur
 
 FICHIER = "configuration.json"
@@ -51,6 +54,8 @@ def lire_configuration(dossier: Path) -> dict:
         "parametres": {**PARAMETRES_PAR_DEFAUT, **contenu.get("parametres", {})},
         "dossiers": {"depot": "", **contenu.get("dossiers", {})},
         "objectifs": dict(contenu.get("objectifs", {})),
+        "classes": dict(contenu.get("classes", {})),
+        "cible": dict(contenu.get("cible", {})),
     }
 
 
@@ -75,11 +80,12 @@ def ecrire_configuration(
         "reglages": _reglages(_rubrique(configuration, "reglages"), connecteurs),
         "parametres": _parametres(_rubrique(configuration, "parametres")),
         "dossiers": _dossiers(_rubrique(configuration, "dossiers"), dossier),
-        # Les objectifs se saisissent dans l'onglet Budget : absents de la saisie, ils sont gardés tels quels.
-        "objectifs": _objectifs(_rubrique(configuration, "objectifs"))
-        if "objectifs" in configuration
-        else lire_configuration(dossier)["objectifs"],
     }
+    # Objectifs (onglet Budget), classes et cible (onglet Allocation) se saisissent ailleurs : absents de la saisie,
+    # ils sont gardés tels quels.
+    actuelle = lire_configuration(dossier)
+    for nom, valider in (("objectifs", _objectifs), ("classes", _classes), ("cible", _cible)):
+        propre[nom] = valider(_rubrique(configuration, nom)) if nom in configuration else actuelle[nom]
     _ecrire(dossier, propre)
     return lire_configuration(dossier)
 
@@ -96,6 +102,20 @@ def ecrire_objectifs(dossier: Path, objectifs: dict) -> dict:
     contenu["objectifs"] = _objectifs(objectifs)
     _ecrire(dossier, contenu)
     return contenu["objectifs"]
+
+
+def ecrire_allocation(dossier: Path, classes: dict, cible: dict) -> dict:
+    """Rendre {"classes", "cible"} validés après les avoir enregistrés seuls (onglet Allocation). MODELE § 13.
+
+    Raises:
+        ConfigurationInvalide: classe inconnue, part hors de [0, 100] ou somme des parts différente de 100 %.
+    """
+    if not isinstance(classes, dict) or not isinstance(cible, dict):
+        raise ConfigurationInvalide("classes et cible : objets attendus")
+    contenu = lire_configuration(dossier)
+    contenu["classes"], contenu["cible"] = _classes(classes), _cible(cible)
+    _ecrire(dossier, contenu)
+    return {"classes": contenu["classes"], "cible": contenu["cible"]}
 
 
 def _ecrire(dossier: Path, contenu: dict) -> None:
@@ -203,4 +223,30 @@ def _objectifs(objectifs: dict) -> dict:
         if isinstance(montant, bool) or not isinstance(montant, int | float) or not 0 <= montant <= OBJECTIF_MAX:
             raise ConfigurationInvalide(f"{nom} : objectif entre 0 et {OBJECTIF_MAX} € par mois")
         propres[nom] = montant
+    return propres
+
+
+def _classes(classes: dict) -> dict:
+    propres = {}
+    for cle, classe in classes.items():
+        if classe in (None, "", A_CLASSER):
+            continue
+        if classe not in CLASSES or not str(cle).strip():
+            raise ConfigurationInvalide(f"classe inconnue : {classe}")
+        propres[str(cle).strip()] = classe
+    return propres
+
+
+def _cible(cible: dict) -> dict:
+    propres = {}
+    for classe, part in cible.items():
+        if part in (None, ""):
+            continue
+        if classe not in CLASSES or classe == A_CLASSER:
+            raise ConfigurationInvalide(f"cible : classe inconnue {classe}")
+        if isinstance(part, bool) or not isinstance(part, int | float) or not 0 <= part <= 100:
+            raise ConfigurationInvalide(f"cible {classe} : part entre 0 et 100 %")
+        propres[classe] = part
+    if propres and abs(sum(propres.values()) - 100) > 0.5:
+        raise ConfigurationInvalide(f"cible : la somme des parts fait {sum(propres.values()):g} %, pas 100 %")
     return propres

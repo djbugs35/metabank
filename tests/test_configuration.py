@@ -45,6 +45,8 @@ def test_sans_fichier_la_configuration_est_vide_et_l_assistant_actif(tmp_path):
         "parametres": {"assistant_actif": True, "imposition_commune": False},
         "dossiers": {"depot": ""},
         "objectifs": {},
+        "classes": {},
+        "cible": {},
     }
 
 
@@ -60,6 +62,8 @@ def test_une_configuration_valide_est_enregistree_puis_relue(tmp_path):
         "parametres": {"assistant_actif": False, "imposition_commune": False},
         "dossiers": {"depot": ""},
         "objectifs": {},
+        "classes": {},
+        "cible": {},
     }
 
 

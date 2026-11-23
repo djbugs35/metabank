@@ -18,6 +18,7 @@
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
       <button role="tab" data-onglet="assistant" aria-selected="false">Assistant</button>
+      <button role="tab" data-onglet="allocation" aria-selected="false">Allocation</button>
       <button role="tab" data-onglet="synoptique" aria-selected="false">Synoptique</button>
       <button role="tab" data-onglet="configuration" aria-selected="false">Configuration</button>
     </nav>
@@ -179,6 +180,20 @@
       calculer le patrimoine net (actifs moins crédits). Laissez vide pour ne pas la compter.</p>
     <div id="liste-biens"></div>
     <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
+  </section>
+
+  <section id="allocation" data-panneau class="cache">
+    <h1>Allocation</h1>
+    <p class="discret">Comment le patrimoine financier se répartit, fonds par fonds. La classe d'un fonds est déduite de son
+      libellé tant que vous ne l'avez pas choisie. Des faits et une arithmétique, pas un conseil (docs/MODELE.md § 13).</p>
+    <div class="carte"><label class="champ">Vue <select id="alloc-titulaire"></select></label>
+      <div id="alloc-alertes"></div></div>
+    <div class="carte"><div class="defile"><table id="alloc-repartition"></table></div>
+      <p class="discret" id="alloc-versements"></p>
+      <p class="note">Cible : part visée de chaque classe dans les fonds des contrats (somme 100 %). « À verser » : ce qu'il
+        faudrait verser dans chaque classe pour atteindre la cible sans rien vendre.</p></div>
+    <details class="carte"><summary>Fonds détenus et leur classe</summary><div class="defile"><table id="alloc-positions"></table></div></details>
+    <p><button class="action" id="enregistrer-allocation">Enregistrer classes et cible</button> <span id="etat-allocation"></span></p>
   </section>
 
   <section id="synoptique" data-panneau class="cache">
