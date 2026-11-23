@@ -33,6 +33,8 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   processed files moved to `importes/`. `base.archives.DOSSIERS_RESERVES` = top-level dirs that are not titulaires.
 - `metabank/historique.py` — 13-point monthly net-worth curve rebuilt from base data (MODELE § 8.1), accounts
   back-filled with their first known value before coverage; credits projected (`banque/credit.projeter_credit`, § 7.10).
+- Spending rules from the page: `banque/categories.py` (`ecrire_regles`, `essayer_motif`, `motif_suggere`;
+  never name a helper `test*`, pytest collects it), `web/regles_vues.py`, `statique/regles.js`, API `/api/regles[/test]`.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

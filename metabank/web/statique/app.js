@@ -1,6 +1,7 @@
 // metabank : page unique. Les chiffres viennent tous de l'API (code Python testé) ; ici, on ne fait que les montrer.
 import { afficherComptes } from "./comptes.js";
 import { afficherConfiguration, preparerConfiguration } from "./configuration.js";
+import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique } from "./synoptique.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
@@ -50,6 +51,7 @@ document.querySelectorAll("nav [data-onglet]").forEach((bouton) =>
     document.querySelectorAll("nav [data-onglet]").forEach((b) => b.setAttribute("aria-selected", String(b === bouton)));
     document.querySelectorAll("[data-panneau]").forEach((p) => p.classList.toggle("cache", p.id !== bouton.dataset.onglet));
     if (bouton.dataset.onglet === "simulation") simuler();
+    if (bouton.dataset.onglet === "comptes") afficherRegles().catch((e) => { $("regles-liste").textContent = e.message; });
     if (bouton.dataset.onglet === "synoptique") afficherSynoptique().catch((e) => { $("synoptique-comptes").textContent = e.message; });
     if (bouton.dataset.onglet === "configuration") afficherConfiguration().catch((e) => { $("etat-configuration").textContent = e.message; });
   }),
@@ -466,4 +468,5 @@ document.querySelector("#assistant details").addEventListener("toggle", async (e
 });
 
 preparerConfiguration(charger);
+preparerRegles(charger);
 charger();
