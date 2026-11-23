@@ -3,7 +3,7 @@
 from decimal import Decimal
 from pathlib import Path
 
-from metabank.banque import lire_comptes, regrouper
+from metabank.banque import regrouper
 from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
 from metabank.banque.categories import lire_regles
 from metabank.banque.modele import LIBELLES_TYPES, TYPES_COURANTS, Compte
@@ -24,9 +24,12 @@ def _part(montant: Decimal, total: Decimal) -> float | None:
     return _t(montant / total) if total else None
 
 
-def etat_banque(dossier: Path) -> tuple[list[dict], list[str], list[Compte]]:
-    """Rendre une vue par compte bancaire, les erreurs de lecture des exports, et les comptes eux-mêmes."""
-    comptes, erreurs = lire_comptes(dossier)
+def etat_banque(dossier: Path, comptes: list[Compte]) -> list[dict]:
+    """Rendre une vue par compte bancaire, et une pour le foyer s'il a plusieurs comptes courants.
+
+    Args:
+        dossier: data/, pour les règles de classement des dépenses (data/categories.json).
+    """
     regles = lire_regles(dossier)
     analyses = [analyser(compte, regles) for compte in comptes if compte.type_compte != "credit"]
     total = sum((a.compte.solde for a in analyses), ZERO)
@@ -36,7 +39,7 @@ def etat_banque(dossier: Path) -> tuple[list[dict], list[str], list[Compte]]:
         foyer = _vue(analyser(regrouper("Foyer", courants), regles), total)
         vues.insert(0, {**foyer, "id": "b:foyer", "nom": "Foyer · tous les comptes courants",
                         "court": "Foyer · tous les comptes courants", "consolide": True})  # fmt: skip
-    return vues, erreurs, comptes
+    return vues
 
 
 def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:

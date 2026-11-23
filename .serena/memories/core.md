@@ -21,6 +21,8 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
 - `metabank/base/lecture.py` — base back to domain objects (`lire_releves`, `lire_comptes_bancaires`), same figures
   as `releves.lire_dossier` / `banque.lire_comptes`. `metabank/archivage.py` + CLI `archiver` (copy old layout into
   archives, then compare), `reconstruire`.
+- `metabank/donnees.py` — `charger(data)`: archives hand-placed files, then reads the base; used by `web/vues.etat`
+  and the CLI. Upload (`web/depot.py`) writes through `importer_fichier` into `data/archives/`.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

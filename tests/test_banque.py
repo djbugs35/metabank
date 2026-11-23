@@ -145,16 +145,16 @@ def test_export_depose_dans_la_page_range_dans_le_dossier_du_compte(tmp_path):
     existant = tmp_path / "Alice" / "CC - BNP - 0001234"
     existant.mkdir(parents=True)
     resultat = deposer_releve(tmp_path, "Alice", "export.csv", (EXEMPLES / "bnp_courant.csv").read_bytes())
-    assert resultat["chemin"] == "Alice/CC - BNP - 0001234/export.csv"
+    assert resultat["chemin"] == "archives/Alice/CC - BNP - 0001234/export.csv"
     livret = deposer_releve(tmp_path, "Alice", "livret.csv", (EXEMPLES / "bnp_livret.csv").read_bytes())
-    assert livret["chemin"] == "Alice/LA - BNP - 5678/livret.csv"
+    assert livret["chemin"] == "archives/Alice/LA - BNP - 5678/livret.csv"
 
 
 def test_contexte_de_l_assistant_sans_numero_de_compte(tmp_path):
     dossier = tmp_path / "Alice" / "CC - BNP - 1234"
     dossier.mkdir(parents=True)
     (dossier / "export.csv").write_bytes((EXEMPLES / "bnp_courant.csv").read_bytes())
-    vues, _, _ = etat_banque(tmp_path)
+    vues = etat_banque(tmp_path, lire_comptes(tmp_path)[0])
     texte = contexte({"vues": [], "fonds": [], "points": [], "banque": vues})
     assert "Alice · Compte courant BNP" in texte
     assert "1234" not in texte

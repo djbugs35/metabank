@@ -13,11 +13,12 @@ from metabank.base.integration import reconstruire
 from metabank.bilan import faire_bilans
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import appliquer_verifications, lire_ouvertures
+from metabank.donnees import charger
 from metabank.frais import analyser_frais
 from metabank.frais_historique import historiques_frais
 from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
-from metabank.releves import lire_dossier
+from metabank.releves import ReleveRange
 from metabank.tableau import Tableau, generer_html
 from metabank.web.serveur import PORT_DEFAUT, creer_serveur
 
@@ -63,8 +64,13 @@ def main(arguments: list[str] | None = None) -> int:
     return _bilan(options.donnees)
 
 
+def _releves(dossier: Path) -> tuple[list[ReleveRange], list[str]]:
+    donnees = charger(dossier)
+    return donnees.releves, donnees.erreurs
+
+
 def _frais(options) -> int:
-    releves, erreurs = lire_dossier(options.donnees)
+    releves, erreurs = _releves(options.donnees)
     analyses = analyser_frais(releves, options.cible, options.rendement, options.horizon)
     print(formater_frais(analyses))
     anomalies = [a for r in releves for a in r.releve.anomalies if "frais du support" in a]
@@ -74,7 +80,7 @@ def _frais(options) -> int:
 
 
 def _tableau(dossier: Path, ouvrir: bool) -> int:
-    releves, erreurs = lire_dossier(dossier)
+    releves, erreurs = _releves(dossier)
     releves = appliquer_verifications(releves, dossier)
     page = generer_html(
         Tableau(
@@ -132,7 +138,7 @@ def _archiver(dossier: Path) -> int:
 
 
 def _bilan(dossier: Path) -> int:
-    releves, erreurs = lire_dossier(dossier)
+    releves, erreurs = _releves(dossier)
     releves = appliquer_verifications(releves, dossier)
     bilans = faire_bilans(releves, lire_ouvertures(dossier))
     print(formater_texte(bilans, erreurs))
