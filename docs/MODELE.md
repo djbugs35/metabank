@@ -143,6 +143,15 @@ Si |F_courant| > 25 % de V₀, la date inconnue des versements pèse : l'année 
 donnée, de G / (V₀ + F_ouverture + F_courant) (tout versé en janvier) à G / (V₀ + F_ouverture) (tout en décembre).
 Le gain G, lui, est exact. Les relevés de situation n'entrent que dans la valeur, le versé et le gain.
 
+### 6.5 Tableau par contrat
+Une ligne par contrat à relevés annuels ; pour chaque année : versé A, gain hors frais = G + F, frais F (frais du
+relevé + frais des fonds, comme § 6.1), gagné net G. Une ligne par personne (s'il y en a plusieurs) et une ligne
+« Total » somment les contrats, année par année ; la colonne « Cumul » somme les années affichées. Le total de chaque
+année égale l'année de l'ensemble (§ 6.1). Les contrats à situation seule n'ont pas d'années : ils n'y figurent pas.
+Rapprochement avec les tuiles, toutes années affichées : versé de la tuile = cumul versé du total + versé des contrats
+à situation seule + écart de versé (§ 2.3) ; gagné de la tuile = cumul gagné net du total + gagné des contrats à
+situation seule − écart de versé.
+
 ### 6.2 Rentabilité annualisée depuis l'ouverture
 Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :
 versements nets de rachats au 1er juillet de chaque année, ou à la date d'ouverture l'année d'ouverture (négatifs), valeur au premier 31/12 connu si le contrat

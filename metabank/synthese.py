@@ -70,12 +70,22 @@ class Progression:
 
 
 @dataclass(frozen=True)
-class GainsDuContrat:
-    """Gain (frais déduits) et frais de chaque année d'un contrat, en euros. MODELE § 6.1."""
+class ChiffresAnnee:
+    """Une année d'une ligne du tableau par contrat, en euros. MODELE § 6.5."""
+
+    verse: Decimal
+    gain_avant_frais: Decimal
+    frais: Decimal
+    gain: Decimal
+
+
+@dataclass(frozen=True)
+class LigneContrats:
+    """Une ligne du tableau : un contrat, le cumul d'une personne (« personne ») ou le total (« total »)."""
 
     nom: str
-    gains: dict[int, Decimal]
-    frais: dict[int, Decimal]
+    niveau: str
+    annees: dict[int, ChiffresAnnee]
 
 
 @dataclass(frozen=True)
@@ -97,7 +107,9 @@ class Synthese:
     progression: tuple[Progression, ...] = ()
     # Valeur des contrats sans historique annuel (situation seule), absents de la progression (euros).
     valeur_sans_historique: Decimal = ZERO
-    contrats: tuple[GainsDuContrat, ...] = ()
+    verse_sans_historique: Decimal = ZERO
+    gain_sans_historique: Decimal = ZERO
+    tableau: tuple[LigneContrats, ...] = ()
 
     @property
     def frais_par_an(self) -> Decimal | None:
@@ -125,8 +137,10 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
         progression=tuple(progresser(suivis, annees)),
-        contrats=tuple(gains_par_contrat(bilans)),
+        tableau=tuple(tableau_par_contrat(suivis, frais_fonds)),
         valeur_sans_historique=sum((b.valeur for b in bilans if not b.annees), ZERO),
+        verse_sans_historique=sum((b.apports_cumules or ZERO for b in bilans if not b.annees), ZERO),
+        gain_sans_historique=sum((b.gain_cumule or ZERO for b in bilans if not b.annees), ZERO),
         ecart_verse=sum((b.apports_cumules - b.verse_mouvements for b in bilans
                          if b.apports_cumules is not None and b.verse_mouvements is not None), ZERO),
     )  # fmt: skip
@@ -192,11 +206,41 @@ def progresser(bilans: list[BilanContrat], annees: tuple[AnneeSynthese, ...]) ->
     return resultat
 
 
-def gains_par_contrat(bilans: list[BilanContrat]) -> list[GainsDuContrat]:
-    """Rendre, contrat par contrat, le gain et les frais de chaque année : d'où viennent hausses et baisses."""
-    return [GainsDuContrat(nom_contrat(b), {a.annee: a.gain for a in b.annees},
-                           {a.annee: a.frais for a in b.annees if a.frais is not None})
-            for b in bilans if b.annees]  # fmt: skip
+def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[LigneContrats]:
+    """Rendre une ligne par contrat, le cumul de chaque personne (s'il y en a plusieurs) et le total. MODELE § 6.5.
+
+    Args:
+        frais_fonds: frais des fonds par (titulaire, contrat, année), en euros, comme pour l'année du foyer (§ 6.1).
+    """
+    contrats = []
+    for b in sorted(bilans, key=lambda b: (b.titulaire, nom_contrat(b))):
+        annees = {}
+        for a in b.annees:
+            frais = (a.frais or ZERO) + frais_fonds.get((b.titulaire, cle_du_contrat(b.numero), a.annee), ZERO)
+            annees[a.annee] = ChiffresAnnee(a.apports, a.gain + frais, frais, a.gain)
+        contrats.append((b.titulaire, LigneContrats(nom_contrat(b), "contrat", annees)))
+    lignes: list[LigneContrats] = []
+    titulaires = list(dict.fromkeys(t for t, _ in contrats))
+    for titulaire in titulaires:
+        siens = [ligne for t, ligne in contrats if t == titulaire]
+        lignes += siens
+        if len(titulaires) > 1:
+            lignes.append(_sommer(f"Total {titulaire}", "personne", siens))
+    return [*lignes, _sommer("Total", "total", [ligne for _, ligne in contrats])] if contrats else []
+
+
+def _sommer(nom: str, niveau: str, lignes: list[LigneContrats]) -> LigneContrats:
+    annees = sorted({an for ligne in lignes for an in ligne.annees})
+    somme = {
+        an: ChiffresAnnee(
+            *(
+                sum((getattr(ligne.annees[an], champ) for ligne in lignes if an in ligne.annees), ZERO)
+                for champ in ("verse", "gain_avant_frais", "frais", "gain")
+            )
+        )
+        for an in annees
+    }
+    return LigneContrats(nom, niveau, somme)
 
 
 def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:

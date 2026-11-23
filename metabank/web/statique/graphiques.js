@@ -10,10 +10,12 @@ const legende = (series) =>
 
 // Barres côte à côte par année ; chaque barre porte sa valeur et, dessous, une seconde étiquette (le %).
 // series : [{classe, nom, valeurs: [nombre|null], sous: [texte]}] ; survol(rang) appelé au survol d'une année.
-export function barresGroupees(figure, { titre, annees, series, formater, survol, etiquettes = true }) {
-  const L = 640, H = 260, HAUT = etiquettes ? 44 : 12, BAS = 26, ECART = 2, LIGNE = 13;
+export function barresGroupees(figure, { titre, annees, series, formater, survol, etiquettes = true, largeur = 640 }) {
+  const L = largeur, H = 260, HAUT = etiquettes ? 44 : 12, ECART = 2, LIGNE = 13;
   const valeurs = series.flatMap((s) => s.valeurs.filter((v) => v !== null));
   const bas = Math.min(0, ...valeurs), haut = Math.max(0, ...valeurs);
+  // Sous une barre négative, son étiquette : de la place au-dessus des années pour ne pas les recouvrir.
+  const BAS = 26 + (etiquettes && bas < 0 ? 20 : 0);
   const etendue = haut - bas || 1;
   const y = (v) => HAUT + ((haut - v) / etendue) * (H - HAUT - BAS);
   const pas = L / Math.max(annees.length, 1);
@@ -128,20 +130,13 @@ export function courbes(figure, { titre, abscisses, series, formater, legendeX, 
 
 // Barres empilées par colonne : chaque part part du haut de la précédente, vers le bas si elle est négative (classe
 // « classeNegative » alors) ; au-dessus, le total et une seconde étiquette. parts : [{classe, classeNegative, nom,
-// valeurs}] ; totaux et sous : un par colonne ; survol(rang) au survol d'une colonne. Avec « diverge », les parts
-// positives montent depuis zéro et les négatives descendent depuis zéro (hausses et baisses de chaque contrat).
-export function barresEmpilees(figure, { titre, abscisses, parts, totaux, sous, formater, survol, diverge = false }) {
+// valeurs}] ; totaux et sous : un par colonne ; survol(rang) au survol d'une colonne.
+export function barresEmpilees(figure, { titre, abscisses, parts, totaux, sous, formater, survol }) {
   const L = 640, H = 300, G = 64, D = 12, HAUT = 40, BAS = 26, LIGNE = 13;
   const piles = abscisses.map((_, rang) => {
-    let base = 0, dessus = 0, dessous = 0;
+    let base = 0;
     return parts.map((p) => {
-      const v = p.valeurs[rang] ?? 0;
-      if (diverge) {
-        const depart = v >= 0 ? dessus : dessous;
-        if (v >= 0) dessus += v; else dessous += v;
-        return { v, bas: Math.min(depart, depart + v), haut: Math.max(depart, depart + v) };
-      }
-      const depart = base;
+      const v = p.valeurs[rang] ?? 0, depart = base;
       base += v;
       return { v, bas: Math.min(depart, base), haut: Math.max(depart, base) };
     });
