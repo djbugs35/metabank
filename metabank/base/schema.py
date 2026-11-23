@@ -2,6 +2,7 @@
 
 On n'édite jamais une migration publiée : une base existante ne la rejouerait pas. On en ajoute une à la fin.
 Montants en centimes entiers (base/montants.py), dates en texte ISO 8601, devise sur chaque ligne qui porte un montant.
+Quantités (parts, valeurs liquidatives) et détail des relevés en texte décimal : aucun flottant.
 """
 
 import sqlite3
@@ -57,6 +58,32 @@ MIGRATIONS: tuple[str, ...] = (
         devise TEXT NOT NULL,
         archive_id INTEGER REFERENCES archives(id),
         PRIMARY KEY (compte_id, jour)
+    );
+    """,
+    # 2 : relevés d'assureurs (le relevé complet en JSON, ses supports à part) ; sous-type des opérations bancaires.
+    """
+    ALTER TABLE operations ADD COLUMN sous_nature TEXT NOT NULL DEFAULT '';
+    CREATE TABLE releves (
+        id INTEGER PRIMARY KEY,
+        compte_id INTEGER NOT NULL REFERENCES comptes(id),
+        date_arrete TEXT NOT NULL,
+        est_annuel INTEGER NOT NULL,
+        valeur_centimes INTEGER NOT NULL,
+        devise TEXT NOT NULL,
+        detail TEXT NOT NULL,
+        archive_id INTEGER REFERENCES archives(id),
+        UNIQUE (compte_id, date_arrete, est_annuel)
+    );
+    CREATE TABLE positions (
+        releve_id INTEGER NOT NULL REFERENCES releves(id) ON DELETE CASCADE,
+        rang INTEGER NOT NULL,
+        libelle TEXT NOT NULL,
+        isin TEXT,
+        parts TEXT,
+        valeur_part TEXT,
+        valeur_centimes INTEGER NOT NULL,
+        devise TEXT NOT NULL,
+        PRIMARY KEY (releve_id, rang)
     );
     """,
 )

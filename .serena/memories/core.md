@@ -16,7 +16,11 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   (`importer_fichier`, `reconstruire`, `ouvrir_base`), `montants.py` (integer cents). User input stays in JSON files.
 - `metabank/connecteurs/` — plug-ins: `contrat.py` (families fichier/direct/calcul/reference, `est_actif` = all
   settings filled), `registre.py` (auto-discovers modules exposing `CONNECTEUR`, `composer_lecteur`,
-  `synchroniser_compte` principal then fallback). Journal: `metabank/base/journal.py`.
+  `synchroniser_compte` principal then fallback). Journal: `metabank/base/journal.py`. Real connectors: `bnp_csv.py`,
+  `suravenir_pdf.py`, `cardif_pdf.py` (shared `_releves.py`, `_provenance.py`; `_`-modules are not plug-ins).
+- `metabank/base/lecture.py` — base back to domain objects (`lire_releves`, `lire_comptes_bancaires`), same figures
+  as `releves.lire_dossier` / `banque.lire_comptes`. `metabank/archivage.py` + CLI `archiver` (copy old layout into
+  archives, then compare), `reconstruire`.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

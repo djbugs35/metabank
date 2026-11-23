@@ -1,5 +1,6 @@
 """Outils communs de lecture du texte extrait des PDF (pdftotext -layout)."""
 
+import functools
 import re
 import shutil
 import subprocess
@@ -61,3 +62,22 @@ def chercher_montant(motif: str, texte: str) -> Decimal | None:
     """Rendre le montant capturé par le premier groupe du motif dans le texte à plat, ou None."""
     trouve = re.search(motif, texte, flags=re.IGNORECASE)
     return en_decimal(trouve.group(1)) if trouve else None
+
+
+@functools.lru_cache(maxsize=8)
+def extraire_texte_contenu(contenu: bytes) -> str | None:
+    """Rendre le texte d'un PDF donné par son contenu, ou None si ce n'est pas un PDF.
+
+    Gardé en cache : chaque connecteur de relevés essaie de reconnaître chaque PDF, et pdftotext coûte.
+
+    Raises:
+        ErreurLecture: pdftotext absent ou en échec sur un fichier qui commence comme un PDF.
+    """
+    if not contenu.startswith(b"%PDF"):
+        return None
+    if shutil.which("pdftotext") is None:
+        raise ErreurLecture("pdftotext absent : « brew install poppler » (Mac) ou « apt install poppler-utils »")
+    resultat = subprocess.run(["pdftotext", "-layout", "-", "-"], input=contenu, capture_output=True, check=False)
+    if resultat.returncode != 0:
+        raise ErreurLecture(f"pdftotext a échoué ({resultat.stderr.decode(errors='replace').strip()})")
+    return resultat.stdout.decode("utf-8", errors="replace")

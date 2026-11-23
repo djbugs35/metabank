@@ -6,6 +6,7 @@ code testé (synthese, frais) ; la page ne fait que les mettre en forme.
 
 from decimal import Decimal
 
+from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
 from metabank.bilan import BilanContrat, faire_bilans
 from metabank.corrections import appliquer_verifications, cle_contrat, lire_corrections, lire_ouvertures
 from metabank.frais import AnalyseFrais, analyser_frais
@@ -51,7 +52,13 @@ def etat(dossier) -> dict:
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": corrections,
         **_credits(comptes, banque, corrections["biens"]),
-        "titulaires": sorted({p.name for p in dossier.iterdir() if p.is_dir() and not p.name.startswith(".")})
+        "titulaires": sorted(
+            {
+                p.name
+                for p in dossier.iterdir()
+                if p.is_dir() and not p.name.startswith(".") and p.name != DOSSIER_ARCHIVES
+            }
+        )
         if dossier.exists()
         else [],
     }

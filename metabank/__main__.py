@@ -1,4 +1,4 @@
-"""Ligne de commande : « uv run python -m metabank web | bilan | frais | tableau »."""
+"""Ligne de commande : « uv run python -m metabank web | bilan | frais | tableau | archiver | reconstruire »."""
 
 import argparse
 import shutil
@@ -8,7 +8,10 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
+from metabank.archivage import archiver_donnees, comparer_avec_fichiers
+from metabank.base.integration import reconstruire
 from metabank.bilan import faire_bilans
+from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import appliquer_verifications, lire_ouvertures
 from metabank.frais import analyser_frais
 from metabank.frais_historique import historiques_frais
@@ -39,7 +42,18 @@ def main(arguments: list[str] | None = None) -> int:
     web.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/<titulaire>/<contrat>/")
     web.add_argument("--port", type=int, default=PORT_DEFAUT, help="port local (127.0.0.1 seulement)")
     web.add_argument("--sans-ouvrir", action="store_true", help="ne pas ouvrir le navigateur")
+    archiver = commandes.add_parser(
+        "archiver", help="copier les fichiers de data/<titulaire>/ dans data/archives/ et la base, puis comparer"
+    )
+    archiver.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
+    refaire = commandes.add_parser("reconstruire", help="refaire data/metabank.db depuis data/archives/ seules")
+    refaire.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     options = analyseur.parse_args(arguments)
+    if options.commande == "archiver":
+        return _archiver(options.donnees)
+    if options.commande == "reconstruire":
+        print(f"Base refaite : {reconstruire(options.donnees, composer_lecteur(lister_connecteurs()))}")
+        return 0
     if options.commande == "frais":
         return _frais(options)
     if options.commande == "web":
@@ -101,6 +115,20 @@ def _ecrire(sortie: Path, contenu: str) -> None:
     temporaire = sortie.with_suffix(sortie.suffix + ".tmp")
     temporaire.write_text(contenu, encoding="utf-8")
     temporaire.replace(sortie)
+
+
+def _archiver(dossier: Path) -> int:
+    connecteurs = lister_connecteurs()
+    bilan = archiver_donnees(dossier, connecteurs)
+    print(f"Archivés : {bilan.archives} ; déjà présents : {bilan.deja_presents} ; refusés : {len(bilan.refus)}")
+    for refus in bilan.refus:
+        print(f"  refusé : {refus}")
+    ecarts = comparer_avec_fichiers(dossier, connecteurs)
+    print("Base et fichiers donnent les mêmes chiffres." if not ecarts else f"{len(ecarts)} écart(s) :")
+    for ecart in ecarts:
+        print(f"  {ecart}")
+    print("Les fichiers d'origine n'ont pas été touchés.")
+    return 1 if ecarts or bilan.refus else 0
 
 
 def _bilan(dossier: Path) -> int:
