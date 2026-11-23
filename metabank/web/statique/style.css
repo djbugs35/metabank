@@ -103,3 +103,7 @@ tr.detail > td { background: var(--surface-2); white-space: normal; }
   header, .pas-imprime, button { display: none !important; }
   body { background: #fff; color: #000; }
 }
+/* Séries 5 et 6 (repères publics) : tons neutres, la couleur reste aux séries principales. */
+rect.serie-5, i.serie-5 { fill: var(--texte-2); background: var(--texte-2); }
+rect.serie-6, i.serie-6 { fill: var(--trait); background: var(--trait); }
+path.serie-4 { stroke: var(--serie-4); } circle.serie-4 { fill: var(--serie-4); }

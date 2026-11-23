@@ -1,6 +1,7 @@
 // Onglet « Budget » : comptes courants. Les chiffres viennent de l'API (banque/analyse.py, testé).
 import { barresGroupees, barresHorizontales, courbes, echapper } from "./graphiques.js";
 import { afficherBudget } from "./budget.js";
+import { remplirRangements } from "./regles.js";
 import { euros, eurosSignes, pct } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -77,7 +78,9 @@ function afficherCourant(c) {
     .map((f) => `<tr><td>${echapper(f.libelle)}</td><td class="n">${euros(f.montant)}</td></tr>`).join("") || "<tr><td colspan='2'>Aucun.</td></tr>"}</tbody>`;
   $("compte-non-classees").innerHTML = `<thead><tr><th>Libellé</th><th class="n">Nombre</th><th class="n">Montant</th><th></th></tr></thead><tbody>${c.non_classees
     .map((o) => `<tr><td>${echapper(o.libelle)}</td><td class="n">${o.nombre}</td><td class="n">${euros(o.montant)}</td>
-      <td><button class="puce" data-classer="${echapper(o.motif)}">Classer</button></td></tr>`).join("") || "<tr><td colspan='4'>Tout est classé.</td></tr>"}</tbody>`;
+      <td><select class="ranger" data-motif="${echapper(o.motif)}"><option value="">Ranger dans…</option></select>
+        <button class="puce" data-classer="${echapper(o.motif)}">Règle…</button></td></tr>`).join("") || "<tr><td colspan='4'>Tout est classé.</td></tr>"}</tbody>`;
+  remplirRangements();
 }
 
 function afficherSolde(c) {

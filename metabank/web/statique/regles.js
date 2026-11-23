@@ -4,6 +4,16 @@ import { euros } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
 let regles = [];
+let categories = [];
+let recharge = async () => {};
+
+// Chaque dépense non classée a une liste « Ranger dans… » : choisir une catégorie crée la règle proposée (motif du
+// marchand) et range d'un coup toutes ses dépenses.
+export function remplirRangements() {
+  document.querySelectorAll("select.ranger").forEach((s) => {
+    s.innerHTML = `<option value="">Ranger dans…</option>${categories.map((c) => `<option>${echapper(c)}</option>`).join("")}`;
+  });
+}
 
 async function appeler(chemin, corps) {
   const options = corps === undefined ? {} : {
@@ -17,6 +27,8 @@ async function appeler(chemin, corps) {
 
 function montrer(etat) {
   regles = etat.regles;
+  categories = etat.categories.filter((c) => c !== "Autres dépenses");
+  remplirRangements();
   $("regle-categories").innerHTML = etat.categories.map((c) => `<option value="${echapper(c)}">`).join("");
   $("regles-liste").innerHTML = regles.length
     ? `<table><thead><tr><th>Motif</th><th>Catégorie</th><th></th></tr></thead><tbody>${regles
@@ -45,6 +57,11 @@ export async function afficherRegles() {
 }
 
 export function preparerRegles(recharger) {
+  recharge = recharger;
+  $("compte-non-classees").addEventListener("change", (e) => {
+    const liste = e.target.closest("select.ranger");
+    if (liste?.value) enregistrer([{ motif: liste.dataset.motif, categorie: liste.value }, ...regles], recharge);
+  });
   $("compte-non-classees").addEventListener("click", (e) => {
     const bouton = e.target.closest("[data-classer]");
     if (!bouton) return;

@@ -56,8 +56,10 @@
           avancent par paliers, d'un relevé annuel au suivant.</p></div>
     </div>
     <div id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="epargne"></div>
+      <div class="carte"><figure id="graphique-livrets"></figure><div class="infobulle" id="infobulle-livrets"></div></div>
       <details class="carte"><summary>Détail par livret</summary><div id="livrets"></div></details></div>
     <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div>
+      <div class="carte"><figure id="graphique-credits"></figure><div class="infobulle" id="infobulle-credits"></div></div>
       <details class="carte"><summary>Rembourser par anticipation ou placer ? Tableau d'amortissement</summary>
         <div class="champs">
           <label class="champ">Crédit <select id="sim-credit"></select></label>
@@ -75,6 +77,7 @@
     <div id="bloc-echeances" class="cache"><h2>Échéances et fiscalité</h2><div class="carte"><ul id="echeances"></ul>
       <p class="note">Faits datés (docs/MODELE.md § 11), pas un conseil. Couple soumis à imposition commune : onglet Configuration.</p></div></div>
     <div id="bloc-locatif" class="cache"><h2>Bien locatif</h2><div id="locatif"></div>
+      <div class="carte"><figure id="graphique-locatif"></figure><div class="infobulle" id="infobulle-locatif"></div></div>
       <p class="note">Sur la période des exports du compte locatif, ramenée à l'année ; avant impôts. Loyers : entrées hors
         virements de vos comptes ; charges : sorties hors mensualités du prêt. Formules : docs/MODELE.md § 7.12.</p></div>
     <h2 id="titre-placements">Placements : assurance vie, PER, PERP</h2>
@@ -85,15 +88,17 @@
       <figure id="graphique-annees"></figure>
       <div class="infobulle" id="infobulle-annees"></div>
       <div class="defile"><table id="table-annees"></table></div>
-      <details id="bloc-reperes"><summary>Face aux repères publics</summary>
+      <div id="bloc-reperes"><figure id="graphique-reperes"></figure><div class="infobulle" id="infobulle-reperes"></div>
+        <details><summary>Face aux repères publics : le tableau</summary>
         <div class="defile"><table id="table-reperes"></table></div>
         <p class="note">Votre rendement de l'année (gagné rapporté aux sommes placées, frais déduits) face aux moyennes
           publiques. Fonds en euros : moyenne des contrats (ACPR), nette de frais. Unités de compte : moyenne des
           supports (France Assureurs), avant les frais de gestion du contrat. MSCI World : actions mondiales en euros,
           sans aucun frais. Sources et méthode : docs/MODELE.md § 10. Une case vide : repère non publié ou non vérifié.</p>
-      </details>
+      </details></div>
     </div>
     <div id="notes"></div>
+    <div class="carte" id="bloc-graphique-fonds"><figure id="graphique-fonds"></figure></div>
     <details class="carte"><summary>Fonds de cette vue, du plus coûteux au moins coûteux</summary>
       <div class="defile"><table id="table-fonds"></table></div>
       <p class="note">Frais totaux = frais du fonds + frais du contrat. Les rétrocessions, entre parenthèses, font partie des
@@ -128,8 +133,9 @@
             export ajouté.</p></div>
         <details class="carte"><summary>Frais bancaires</summary><div class="defile"><table id="compte-frais"></table></div></details>
         <details class="carte"><summary>Dépenses non classées, de la plus coûteuse à la moins coûteuse</summary>
-          <p class="note">« Classer » propose une règle : testez combien d'opérations elle reconnaît, choisissez la
-            catégorie, enregistrez. Les règles sont gardées dans data/categories.json.</p>
+          <p class="note">« Ranger dans… » : choisissez une catégorie, et toutes les dépenses de ce marchand y sont rangées
+            (une règle est créée). « Règle… » pour ajuster le motif et tester avant d'enregistrer. Les règles sont gardées
+            dans data/categories.json.</p>
           <div class="defile"><table id="compte-non-classees"></table></div>
           <div class="champs">
             <label class="champ">Motif (expression régulière) <input id="regle-motif" maxlength="200"></label>

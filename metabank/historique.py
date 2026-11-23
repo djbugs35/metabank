@@ -6,16 +6,17 @@ archives. Montants en euros.
 
 import calendar
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
 from metabank.banque.credit import projeter_credit
-from metabank.banque.modele import Compte
+from metabank.banque.modele import TYPES_COURANTS, Compte
 from metabank.releves import ReleveRange
 
 ZERO = Decimal(0)
 NOMBRE_DE_POINTS = 13
+PLACEMENTS, EPARGNE, COURANTS, CREDITS = "Placements", "Épargne disponible", "Comptes courants", "Crédits"
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,9 @@ class Historique:
 
     points: list[PointPatrimoine]
     reportes: list[str]
+    # Même courbe par famille (« Placements », « Épargne disponible », « Comptes courants », « Crédits »), en euros,
+    # crédits en positif : de quoi tracer chaque bloc du tableau de bord.
+    familles: dict[str, list[Decimal]] = field(default_factory=dict)
 
 
 def jours_des_points(aujourd_hui: date, nombre: int = NOMBRE_DE_POINTS) -> list[date]:
@@ -82,7 +86,7 @@ def historique_patrimoine(
     # Un compte sans valeur connue au dernier point est laissé hors de la courbe (MODELE § 8.1).
     lignes = [ligne for ligne in _lignes(releves, comptes, jours) if ligne[2][-1] is not None]
     reportes = [nom for nom, _, valeurs in lignes if valeurs[0] is None]
-    completes = [(credit, _reporter(valeurs)) for _, credit, valeurs in lignes]
+    completes = [(famille == CREDITS, famille, _reporter(valeurs)) for _, famille, valeurs in lignes]
     immobilier = sum(
         (Decimal(str(biens[c.numero_masque.lstrip("*")]["valeur"])) for c in comptes
          if c.type_compte == "credit" and (biens.get(c.numero_masque.lstrip("*")) or {}).get("valeur")),
@@ -91,12 +95,16 @@ def historique_patrimoine(
     points = [
         PointPatrimoine(
             jour,
-            immobilier + sum((v[i] for credit, v in completes if not credit), ZERO),
-            -sum((v[i] for credit, v in completes if credit), ZERO),
+            immobilier + sum((v[i] for credit, _, v in completes if not credit), ZERO),
+            -sum((v[i] for credit, _, v in completes if credit), ZERO),
         )
         for i, jour in enumerate(jours)
     ]
-    return Historique(points, reportes)
+    familles = {
+        nom: [abs(sum((v[i] for _, f, v in completes if f == nom), ZERO)) for i in range(len(jours))]
+        for nom in dict.fromkeys(f for _, f, _ in completes)
+    }
+    return Historique(points, reportes, familles)
 
 
 def _reporter(valeurs: list[Decimal | None]) -> list[Decimal]:
@@ -106,13 +114,19 @@ def _reporter(valeurs: list[Decimal | None]) -> list[Decimal]:
 
 
 def _lignes(releves: Sequence[ReleveRange], comptes: Sequence[Compte], jours: list[date]) -> list[tuple]:
-    """Rendre (libellé, est un crédit, montant à chaque jour ou None) pour chaque contrat puis chaque compte."""
+    """Rendre (libellé, famille, montant à chaque jour ou None) pour chaque contrat puis chaque compte."""
     contrats: dict[tuple[str, str], list[ReleveRange]] = {}
     for r in releves:
         contrats.setdefault((r.titulaire, r.releve.numero), []).append(r)
     lignes: list[tuple] = [
-        (f"{titulaire} · {v[0].releve.produit}", False, [valeur_au(v, j) for j in jours])
+        (f"{titulaire} · {v[0].releve.produit}", PLACEMENTS, [valeur_au(v, j) for j in jours])
         for (titulaire, _), v in contrats.items()
     ]
-    lignes += [(c.libelle, c.type_compte == "credit", [solde_au(c, j) for j in jours]) for c in comptes]
+    lignes += [(c.libelle, _famille(c.type_compte), [solde_au(c, j) for j in jours]) for c in comptes]
     return lignes
+
+
+def _famille(type_compte: str) -> str:
+    if type_compte == "credit":
+        return CREDITS
+    return COURANTS if type_compte in TYPES_COURANTS else EPARGNE

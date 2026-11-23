@@ -81,3 +81,12 @@ def test_l_application_donne_une_courbe_au_foyer_et_a_chaque_personne(donnees):
     assert set(etat["historique"]) == set(etat["patrimoine"])
     foyer = etat["historique"]["foyer"]
     assert len(foyer["points"]) == 13 and foyer["points"][-1]["actifs"] == etat["patrimoine"]["foyer"]["total"]
+
+
+def test_chaque_famille_a_sa_courbe_et_leur_somme_refait_le_patrimoine(donnees):
+    releves, comptes = lire_dossier(donnees)[0], lire_comptes(donnees)[0]
+    h = historique_patrimoine(releves, comptes, {}, date(2026, 12, 15))
+    assert set(h.familles) == {"Placements", "Épargne disponible", "Comptes courants", "Crédits"}
+    for rang, point in enumerate(h.points):
+        actifs = sum(h.familles[f][rang] for f in ("Placements", "Épargne disponible", "Comptes courants"))
+        assert (actifs, h.familles["Crédits"][rang]) == (point.actifs, point.credits)
