@@ -9,6 +9,7 @@ from metabank.base.lecture import lire_registre
 from metabank.configuration import FREQUENCES_PAR_TYPE, ecrire_configuration, lire_configuration
 from metabank.connecteurs.contrat import Connecteur
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
+from metabank.depot_unique import dossier_depot
 
 LIBELLES_CONTRATS = {
     "assurance_vie": "Assurance vie",
@@ -30,6 +31,8 @@ def etat_configuration(dossier: Path) -> dict:
         "comptes": [_compte(c, configuration["comptes"].get(c["cle"], {}), connecteurs) for c in _registre(dossier)],
         "connecteurs": [_connecteur(c, configuration["reglages"]) for c in connecteurs],
         "parametres": configuration["parametres"],
+        "dossiers": configuration["dossiers"],
+        "dossier_depot": str(dossier_depot(dossier, configuration)),
         "dossier_donnees": str(dossier),
     }
 

@@ -23,13 +23,19 @@ class BnpCsv(ConnecteurFichier):
     etablissements = ("BNP Paribas",)
     types_comptes = ("courant", "locatif", "livret_a", "ldd", "credit")
 
-    def reconnaitre(self, nom: str, contenu: bytes) -> Reconnaissance | None:  # noqa: ARG002 (signature du contrat)
-        """Rendre la banque si le fichier est un export d'opérations BNP."""
+    def reconnaitre(self, nom: str, contenu: bytes) -> Reconnaissance | None:
+        """Rendre le compte si le fichier est un export d'opérations BNP : numéro masqué, et « credit » pour un prêt."""
         try:
             texte = decoder(contenu)
         except UnicodeDecodeError:
             return None
-        return Reconnaissance("BNP", "") if est_export_bnp(texte) else None
+        if not est_export_bnp(texte):
+            return None
+        try:
+            export = lire_export_bnp(texte, nom)
+        except ExportIllisible:
+            return Reconnaissance("BNP", "")
+        return Reconnaissance("BNP", "credit" if est_credit(export) else "", export.numero_masque)
 
     def lire(self, provenance: str, nom: str, contenu: bytes) -> Lot:
         """Rendre le lot de l'export : le compte, ses opérations et son solde.

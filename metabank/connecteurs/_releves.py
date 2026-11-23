@@ -23,10 +23,25 @@ class ConnecteurReleve(ConnecteurFichier):
         """Rendre le relevé lu dans le texte du PDF."""
         raise NotImplementedError
 
-    def reconnaitre(self, nom: str, contenu: bytes) -> Reconnaissance | None:  # noqa: ARG002 (signature du contrat)
-        """Rendre l'assureur si le PDF est un de ses relevés ; lève LectureImpossible si pdftotext manque."""
+    def reconnaitre(self, nom: str, contenu: bytes) -> Reconnaissance | None:
+        """Rendre le contrat si le PDF est un de ses relevés ; lève LectureImpossible si pdftotext manque.
+
+        Le relevé est lu en entier (texte en cache) : son numéro et son année rangent un dépôt sans titulaire.
+        """
         texte = _texte(contenu)
-        return Reconnaissance(self.assureur, "") if texte is not None and self.est_de_la_forme(texte) else None
+        if texte is None or not self.est_de_la_forme(texte):
+            return None
+        try:
+            releve = self.lire_texte(texte, nom, None)
+        except ErreurLecture:
+            return Reconnaissance(self.assureur, "")
+        chiffres = re.sub(r"\D", "", releve.numero)
+        return Reconnaissance(
+            self.assureur,
+            releve.type_contrat,
+            "****" + chiffres[-4:] if chiffres else "",
+            sous_dossier=str(releve.date_arrete.year) if releve.est_annuel else "",
+        )
 
     def lire(self, provenance: str, nom: str, contenu: bytes) -> Lot:
         """Rendre le lot du relevé : le contrat, et le relevé complet. Le type vient du préfixe du dossier."""

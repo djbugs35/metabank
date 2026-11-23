@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
+from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.releves.cardif import est_situation_cardif, lire_situation_cardif
 from metabank.releves.modele import Releve
 from metabank.releves.suravenir import est_releve_suravenir, lire_releve_suravenir
@@ -35,7 +35,7 @@ def lire_dossier(dossier: Path) -> tuple[list[ReleveRange], list[str]]:
     releves, erreurs = [], []
     for pdf in sorted(dossier.glob("*/*/**/*.pdf")):
         titulaire, dossier_contrat = pdf.relative_to(dossier).parts[:2]
-        if titulaire == DOSSIER_ARCHIVES:
+        if titulaire in DOSSIERS_RESERVES:
             continue
         prefixe = dossier_contrat.split(" - ")[0].strip().upper()
         try:
