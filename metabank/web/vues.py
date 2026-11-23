@@ -17,6 +17,7 @@ from metabank.configuration import lire_configuration
 from metabank.corrections import appliquer_verifications, cle_contrat, lire_corrections, lire_ouvertures
 from metabank.depot_unique import dossier_depot
 from metabank.donnees import charger
+from metabank.fiscalite import echeances
 from metabank.frais import AnalyseFrais, analyser_frais
 from metabank.frais_historique import historiques_frais
 from metabank.historique import historique_patrimoine
@@ -68,6 +69,16 @@ def etat(dossier, aujourd_hui: date | None = None) -> dict:
         "historique": historique,
         "reperes": _reperes(vues),
         "locatif": _locatif(dossier, comptes, corrections["biens"]),
+        "echeances": [
+            {
+                "jour": e.jour.isoformat() if e.jour else None,
+                "titulaire": e.titulaire,
+                "contrat": e.contrat,
+                "quoi": e.quoi,
+                "detail": e.detail,
+            }
+            for e in echeances(bilans, aujourd_hui, lire_configuration(dossier)["parametres"]["imposition_commune"])
+        ],
         "sources_reperes": SOURCES,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": corrections,

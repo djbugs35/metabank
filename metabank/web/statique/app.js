@@ -108,6 +108,7 @@ function afficherTableau() {
   const epargne = etat.epargne?.[vue.id];
   $("epargne").innerHTML = epargne && livrets.length ? epargneHtml(epargne) : "";
   afficherLocatif(vue);
+  afficherEcheances(vue);
   afficherTuiles(vue);
   afficherAnnees(vue);
   afficherReperes(vue);
@@ -142,6 +143,18 @@ function afficherHistorique({ points, reportes }, patrimoine) {
         + (avecCredits ? `, crédits ${euros(p.credits)}` : "") + (patrimoine.credits_sans_bien ? "" : `, net ${euros(p.net)}`);
     },
   });
+}
+
+// Échéances (MODELE § 11) : toutes au foyer, celles de la personne (et du foyer) sinon.
+function afficherEcheances(vue) {
+  const titulaire = vue.niveau === "foyer" ? null : vue.niveau === "personne" ? vue.nom : vue.parent?.slice(2);
+  const liste = (etat.echeances ?? []).filter((e) => !titulaire || e.titulaire === titulaire || e.titulaire === "Foyer");
+  $("bloc-echeances").classList.toggle("cache", !liste.length);
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  $("echeances").innerHTML = liste.map((e) => {
+    const quand = e.jour === null ? "date à saisir" : `${e.jour <= aujourdhui ? "atteint le" : "le"} ${new Date(e.jour).toLocaleDateString("fr-FR")}`;
+    return `<li><strong>${echapper(e.quoi)}</strong>, ${quand} : ${echapper(e.titulaire)} · ${echapper(e.contrat)}<br><span class="note">${echapper(e.detail)}</span></li>`;
+  }).join("");
 }
 
 // Bien locatif (MODELE § 7.12) : au foyer et à la personne qui en tient le compte.

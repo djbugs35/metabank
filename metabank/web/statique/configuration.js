@@ -17,6 +17,7 @@ export async function afficherConfiguration() {
   afficherComptes();
   afficherConnecteurs();
   $("config-assistant").checked = configuration.parametres.assistant_actif;
+  $("config-imposition").checked = configuration.parametres.imposition_commune;
   $("config-depot").value = configuration.dossiers.depot;
   $("config-dossier").textContent = `Données : ${configuration.dossier_donnees} ; dépôt surveillé : ${configuration.dossier_depot}`;
 }
@@ -66,7 +67,7 @@ function saisie() {
     };
   });
   const reglages = Object.fromEntries([...document.querySelectorAll("[data-reglage]")].map((i) => [i.dataset.reglage, i.value]));
-  return { comptes, reglages, parametres: { assistant_actif: $("config-assistant").checked }, dossiers: { depot: $("config-depot").value.trim() } };
+  return { comptes, reglages, parametres: { assistant_actif: $("config-assistant").checked, imposition_commune: $("config-imposition").checked }, dossiers: { depot: $("config-depot").value.trim() } };
 }
 
 export function preparerConfiguration(apresEnregistrement) {

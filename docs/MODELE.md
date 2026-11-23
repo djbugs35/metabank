@@ -287,3 +287,17 @@ points (rendement − repère). Repères, dans metabank/reperes.py avec leur sou
   frais.
 Une année sans repère publié ou vérifié reste vide. Les repères se mettent à jour une fois par an, à la publication.
 La comparaison pondérée par la répartition de chaque contrat viendra à l'étape 5.
+
+## 11. Fiscalité et échéances
+
+Faits datés pour chaque contrat ; aucune recommandation. Date d'ouverture : celle saisie dans Corrections (sinon
+l'échéance est « à saisir »).
+- **Assurance vie, 8 ans** : date d'ouverture + 8 ans. Ensuite, les gains compris dans un rachat bénéficient d'un
+  abattement annuel d'impôt sur le revenu de 4 600 € (9 200 € pour un couple soumis à imposition commune, paramètre de
+  Configuration), pour l'ensemble des contrats du foyer (CGI, art. 125-0 A). Part de gain d'un rachat = gain / valeur
+  du contrat ; rachat couvert par l'abattement ≈ abattement × valeur / gain (si le gain est positif). Les prélèvements
+  sociaux restent dus.
+- **PER, transfert** : frais de transfert au plus 1 % de l'épargne avant 5 ans, nuls ensuite (loi Pacte) ; date de
+  gratuité = ouverture + 5 ans. PERP et autres anciens contrats : règles de transfert propres, non chiffrées ici.
+- **PER, versements déductibles** : rappel du 31 décembre de l'année en cours.
+Échéances listées par date ; une échéance passée de moins d'un an reste affichée comme « atteinte ».

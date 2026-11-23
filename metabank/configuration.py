@@ -26,7 +26,8 @@ FICHIER = "configuration.json"
 TITULAIRE_VALIDE = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ' -]{0,39}$")
 FREQUENCE_MAX_JOURS = 400
 VALEUR_REGLAGE_MAX = 200
-PARAMETRES_PAR_DEFAUT = {"assistant_actif": True}
+# imposition_commune : couple marié ou pacsé, pour l'abattement des assurances vie (MODELE § 11).
+PARAMETRES_PAR_DEFAUT = {"assistant_actif": True, "imposition_commune": False}
 
 # Fréquence de mise à jour attendue par défaut, en jours : un export mensuel des comptes courants, un relevé annuel
 # des contrats et des livrets (intérêts de fin d'année), un export trimestriel suffit pour un prêt amortissable.
