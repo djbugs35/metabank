@@ -53,6 +53,13 @@ gain = V_dernier − V₀(premier) − Σ A + Σ R, et une anomalie le signale.
 Gain = valeur de rachat − total brut versé depuis l'origine + total racheté, tel que donné par l'assureur.
 Ni frais ni rendement annuel : il faut les relevés annuels.
 
+### 2.3 Relevés annuels suivis d'une situation plus récente (Suravenir, « Situation de votre contrat au … »)
+Valeur et date de valeur : celles de la situation. Apports cumulés = cumul des versements bruts depuis l'origine ;
+rachats = cumul des rachats bruts ; gain = valeur − apports + rachats (comme 2.2), les années restant celles des
+relevés annuels (une situation n'a ni mouvements de l'année ni frais). Contrôles : gain calculé face à la
+« Performance (+/- value fiscale) en € » de l'assureur, et somme des fonds face au total ; écart de plus de 1 €
+signalé. Les frais des fonds (§ 4) restent ceux du dernier relevé annuel qui les donne.
+
 ## 3. Contrôles (anomalies signalées, jamais corrigées en silence)
 - Somme des supports = valeur du contrat, à un centime par ligne près.
 - Composantes des frais = total annoncé ; frais sur opérations = frais de la synthèse des mouvements.

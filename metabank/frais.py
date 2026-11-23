@@ -4,7 +4,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from metabank.releves import ReleveRange
-from metabank.releves.modele import Releve
+from metabank.releves.modele import Releve, cle_du_contrat
 
 ZERO = Decimal(0)
 CENT = Decimal(100)
@@ -105,7 +105,7 @@ def analyser_frais(
     derniers: dict[tuple[str, str], ReleveRange] = {}
     for range_ in releves:
         if range_.releve.frais_supports:
-            cle = (range_.titulaire, range_.releve.numero)
+            cle = (range_.titulaire, cle_du_contrat(range_.releve.numero))
             if cle not in derniers or range_.releve.date_arrete > derniers[cle].releve.date_arrete:
                 derniers[cle] = range_
     return [

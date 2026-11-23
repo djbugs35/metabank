@@ -77,3 +77,12 @@ class Releve:
     def est_annuel(self) -> bool:
         """Rendre vrai si le relevé couvre une année civile entière (mouvements et frais de l'année)."""
         return self.mouvements is not None
+
+
+def cle_du_contrat(numero: str) -> str:
+    """Rendre ce qui identifie un contrat d'un document à l'autre : le dernier groupe de son numéro (« 270549974 »).
+
+    Le relevé annuel Suravenir imprime un préfixe (« 0000067935 B7 270549974 »), la situation non (« B7 270549974 ») :
+    seul le dernier groupe est commun.
+    """
+    return numero.rsplit(maxsplit=1)[-1] if numero.strip() else numero

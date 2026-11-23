@@ -17,6 +17,7 @@ from datetime import date
 from pathlib import Path
 
 from metabank.releves import ReleveRange
+from metabank.releves.modele import cle_du_contrat
 
 FICHIER = "corrections.json"
 ANOMALIE_VERSEMENTS = "versements de l'année"
@@ -31,7 +32,7 @@ class CorrectionInvalide(ValueError):
 
 def cle_contrat(numero: str) -> str:
     """Rendre la clé de corrections d'un contrat : le dernier groupe de son numéro (« 270549974 »)."""
-    return numero.rsplit(maxsplit=1)[-1] if numero.strip() else numero
+    return cle_du_contrat(numero)
 
 
 def _lire(dossier: Path) -> dict:

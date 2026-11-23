@@ -13,6 +13,7 @@ from decimal import Decimal
 from metabank.banque.credit import projeter_credit
 from metabank.banque.modele import TYPES_COURANTS, Compte
 from metabank.releves import ReleveRange
+from metabank.releves.modele import cle_du_contrat
 
 ZERO = Decimal(0)
 NOMBRE_DE_POINTS = 13
@@ -117,7 +118,7 @@ def _lignes(releves: Sequence[ReleveRange], comptes: Sequence[Compte], jours: li
     """Rendre (libellé, famille, montant à chaque jour ou None) pour chaque contrat puis chaque compte."""
     contrats: dict[tuple[str, str], list[ReleveRange]] = {}
     for r in releves:
-        contrats.setdefault((r.titulaire, r.releve.numero), []).append(r)
+        contrats.setdefault((r.titulaire, cle_du_contrat(r.releve.numero)), []).append(r)
     lignes: list[tuple] = [
         (f"{titulaire} · {v[0].releve.produit}", PLACEMENTS, [valeur_au(v, j) for j in jours])
         for (titulaire, _), v in contrats.items()

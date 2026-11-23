@@ -103,7 +103,13 @@ def test_l_onglet_propose_le_dernier_connecteur_et_la_frequence_du_type_par_defa
     assert (courant["principal"], courant["secours"], courant["frequence_jours"]) == ("bnp_csv", "", 30)
     assert courant["connecteurs_possibles"] == ["bnp_csv", "enable_banking"]
     assert courant["derniere_donnee"] and len(etat["comptes"]) == 6
-    assert [c["nom"] for c in etat["connecteurs"]] == ["bnp_csv", "cardif_pdf", "enable_banking", "suravenir_pdf"]
+    assert [c["nom"] for c in etat["connecteurs"]] == [
+        "bnp_csv",
+        "cardif_pdf",
+        "enable_banking",
+        "suravenir_pdf",
+        "suravenir_situation_pdf",
+    ]
 
 
 def test_un_reglage_secret_n_est_jamais_renvoye(donnees, monkeypatch):
