@@ -2,9 +2,12 @@ from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from metabank.frais import analyser_frais, projeter
 from metabank.releves import ReleveRange, lire_releve
 from metabank.releves.frais_supports import lire_frais_supports, taux_frais_fonds_euros
+from metabank.web import vues
 
 EXEMPLES = Path(__file__).parent / "exemples"
 
@@ -68,3 +71,21 @@ def test_performance_a_trois_chiffres_remontee_d_une_ligne():
     assert fonds_or.performance_finale == Decimal("118.74")
     assert fonds_or.frais_support == Decimal("2.00")
     assert fonds_or.retrocessions == Decimal("0.93")
+
+
+def test_les_retrocessions_font_partie_des_frais_du_fonds_et_ne_s_ajoutent_pas():
+    """Relevé Suravenir : « dont » sous les frais du fonds ; frais totaux = frais du fonds + frais du contrat."""
+    lignes, _ = lire_frais_supports((Path(__file__).parent / "exemples" / "suravenir_frais_supports.txt").read_text())
+    assert lignes
+    for f in lignes:
+        assert f.retrocessions <= f.frais_support
+        assert f.frais_totaux == f.frais_support + f.frais_contrat
+
+
+def test_le_tableau_des_fonds_montre_les_frais_du_contrat_qui_completent_le_total():
+    fonds = vues._fonds(analyser_frais([ReleveRange("A", _releve_avec_frais())]))
+    assert any(f["frais_totaux"] is not None for f in fonds)
+    for f in fonds:
+        if f["frais_totaux"] is not None:
+            assert f["frais_totaux"] == pytest.approx(f["frais_fonds"] + f["frais_contrat"], abs=1e-6)
+            assert f["retrocessions"] <= f["frais_fonds"]

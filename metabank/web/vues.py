@@ -177,6 +177,7 @@ def _fonds(analyses: list[AnalyseFrais]) -> list[dict]:
             "valeur": _nombre(ligne.valeur),
             "frais_fonds": _taux(None if ligne.frais_support is None else ligne.frais_support / 100),
             "retrocessions": _taux(None if ligne.retrocessions is None else ligne.retrocessions / 100),
+            "frais_contrat": _taux(None if ligne.frais_contrat is None else ligne.frais_contrat / 100),
             "frais_totaux": _taux(None if ligne.frais_totaux is None else ligne.frais_totaux / 100),
             "cout_annuel": _nombre(ligne.cout_annuel),
             "performance_nette": _taux(None if ligne.performance_finale is None else ligne.performance_finale / 100),

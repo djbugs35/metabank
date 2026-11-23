@@ -148,12 +148,14 @@ def _table_supports(analyses: list[AnalyseFrais]) -> str:
     corps = "".join(
         f"<tr><td>{escape(l.libelle)}</td><td>{escape(a.titulaire)} · {escape(a.produit)}</td>"
         f'<td class="n">{euros(l.valeur)}</td><td class="n">{points(l.frais_support)}</td>'
-        f'<td class="n">{points(l.retrocessions)}</td><td class="n">{points(l.frais_totaux)}</td>'
+        f'<td class="n">({points(l.retrocessions)})</td><td class="n">{points(l.frais_contrat)}</td>'
+        f'<td class="n">{points(l.frais_totaux)}</td>'
         f'<td class="n">{euros(l.cout_annuel)}</td><td class="n">{points(l.performance_finale)}</td></tr>'
         for a, l in lignes
     )
-    entete = ("<tr><th>Support</th><th>Contrat</th><th>Valeur</th><th>Frais du fonds</th><th>dont rétro.</th>"
-              "<th>Frais totaux</th><th>Coût/an</th><th>Perf. nette année</th></tr>")  # fmt: skip
+    # Rétrocessions incluses dans les frais du fonds ; frais totaux = fonds + contrat (MODELE § 4.1).
+    entete = ("<tr><th>Support</th><th>Contrat</th><th>Valeur</th><th>Frais du fonds</th><th>dont rétrocessions</th>"
+              "<th>+ Frais du contrat</th><th>= Frais totaux</th><th>Coût/an</th><th>Perf. nette année</th></tr>")  # fmt: skip
     return f'<div class="defile"><table><thead>{entete}</thead><tbody>{corps}</tbody></table></div>'
 
 
