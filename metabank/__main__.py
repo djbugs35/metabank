@@ -1,4 +1,4 @@
-"""Ligne de commande : « uv run python -m metabank web | bilan | frais | tableau | archiver | reconstruire »."""
+"""Ligne de commande : « uv run python -m metabank web | bilan | frais | tableau | archiver | reconstruire | mcp »."""
 
 import argparse
 import shutil
@@ -19,6 +19,7 @@ from metabank.frais_historique import historiques_frais
 from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
 from metabank.releves import ReleveRange
+from metabank.serveur_mcp import servir
 from metabank.tableau import Tableau, generer_html
 from metabank.web.serveur import PORT_DEFAUT, creer_serveur
 
@@ -49,7 +50,14 @@ def main(arguments: list[str] | None = None) -> int:
     archiver.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     refaire = commandes.add_parser("reconstruire", help="refaire data/metabank.db depuis data/archives/ seules")
     refaire.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
+    mcp = commandes.add_parser(
+        "mcp", help="serveur MCP local en lecture seule, pour Claude Code (entrée et sortie standard)"
+    )
+    mcp.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     options = analyseur.parse_args(arguments)
+    if options.commande == "mcp":
+        servir(options.donnees)
+        return 0
     if options.commande == "archiver":
         return _archiver(options.donnees)
     if options.commande == "reconstruire":
