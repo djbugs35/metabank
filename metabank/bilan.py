@@ -201,23 +201,19 @@ def _annee_en_cours(releves: list[Releve], annees: list[Annee]) -> Annee | None:
     """Rendre l'année en cours d'après une situation postérieure au dernier relevé annuel, ou None. MODELE § 2.4."""
     situation = releves[-1]
     annuels = [r for r in releves if r.est_annuel]
-    if situation.est_annuel or not annees or not annuels or situation.versements_bruts_depuis_origine is None:
+    if situation.est_annuel or not annees or not annuels:
         return None
     dernier = annuels[-1]
     if situation.date_arrete.year != dernier.date_arrete.year + 1:
         return None
-    rachats_situation = situation.rachats_depuis_origine or ZERO
-    if dernier.versements_bruts_depuis_origine is not None:
-        cumul, rachats_avant = dernier.versements_bruts_depuis_origine, dernier.rachats_depuis_origine or ZERO
-    elif dernier.primes_non_remboursees is not None and rachats_situation == ZERO:
-        cumul, rachats_avant = dernier.primes_non_remboursees, ZERO
-    else:
+    if situation.versements_annee_en_cours is None:
         return None
     debut = annees[-1].valeur_fin
-    apports, rachats = situation.versements_bruts_depuis_origine - cumul, rachats_situation - rachats_avant
+    apports, rachats = situation.versements_annee_en_cours, situation.rachats_annee_en_cours or ZERO
     gain = situation.valeur - debut - apports + rachats
     base = debut + (apports - rachats) * MILIEU
     return Annee(annee=situation.date_arrete.year, valeur_debut=debut, apports=apports, rachats=rachats,
-                 valeur_fin=situation.valeur, gain=gain, frais=None, rendement=gain / base if base > ZERO else None,
+                 valeur_fin=situation.valeur, gain=gain, frais=situation.frais_annee_en_cours,
+                 rendement=gain / base if base > ZERO else None,
                  rendement_avant_frais=None, frais_sur_encours=None, poids_versements=MILIEU, poids_estime=True,
                  duree_mois=situation.date_arrete.month, en_cours_au=situation.date_arrete)  # fmt: skip
