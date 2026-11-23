@@ -23,6 +23,7 @@ from metabank.web.configuration_vues import enregistrer_configuration, etat_conf
 from metabank.web.credits_vues import simuler_remboursement
 from metabank.web.depot import DepotRefuse, deposer_releve
 from metabank.web.regles_vues import enregistrer_regles, essayer_regle, etat_regles
+from metabank.web.retraite_vues import simuler_retraite
 from metabank.web.simulation import SimulationInvalide, simuler
 from metabank.web.synoptique_vues import etat_synoptique
 from metabank.web.vues import etat
@@ -42,6 +43,7 @@ FICHIERS = {
     "/regles.js": ("regles.js", "text/javascript; charset=utf-8"),
     "/credits.js": ("credits.js", "text/javascript; charset=utf-8"),
     "/budget.js": ("budget.js", "text/javascript; charset=utf-8"),
+    "/retraite.js": ("retraite.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -101,6 +103,7 @@ ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
     "/api/objectifs": lambda dossier, saisie: {"objectifs": ecrire_objectifs(dossier, saisie.get("objectifs") or {})},
     "/api/regles": enregistrer_regles,
     "/api/regles/test": essayer_regle,
+    "/api/retraite": simuler_retraite,
 }
 
 

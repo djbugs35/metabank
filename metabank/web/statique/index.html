@@ -231,6 +231,24 @@
     </div>
     <div class="tuiles" id="sim-tuiles"></div>
     <div class="carte"><figure id="sim-graphique"></figure><div class="infobulle" id="sim-infobulle"></div></div>
+
+    <h1>Projection retraite</h1>
+    <p class="discret">Le capital des PER et PERP d'une personne à son départ, selon trois rendements nets supposés, et
+      ce qu'il permettrait de retirer chaque mois. Hypothèses, pas une prévision ; fiscalité de la sortie non comptée.</p>
+    <div class="carte"><div class="champs">
+      <label class="champ">Personne <select id="ret-titulaire"></select></label>
+      <label class="champ">Année de départ <input type="number" id="ret-annee" min="2026" max="2090" value="2045"></label>
+      <label class="champ">Versement mensuel (€) <input type="number" id="ret-versement" min="0" step="50" value="0"></label>
+      <label class="champ">Inflation (% par an) <input type="number" id="ret-inflation" min="-5" max="20" step="0.1" value="2"></label>
+      <label class="champ">Retraits pendant (ans) <input type="number" id="ret-duree" min="1" max="50" value="25"></label>
+      <label class="champ">Rendements nets (% par an) <span class="ligne">
+        <input type="number" id="ret-r1" step="0.5" value="1"> <input type="number" id="ret-r2" step="0.5" value="3">
+        <input type="number" id="ret-r3" step="0.5" value="5"></span></label>
+      <label><input type="checkbox" id="ret-av"> Compter aussi les assurances vie</label>
+    </div><p><button class="action" id="ret-calculer">Projeter</button></p>
+    <div id="ret-resultat"></div>
+    <p class="note">Formules : docs/MODELE.md § 12. Retraits : sortie en capital fractionnée, le reste continuant de
+      rapporter ; ce n'est pas une rente viagère.</p></div>
   </section>
 
   <section id="assistant" data-panneau class="cache">

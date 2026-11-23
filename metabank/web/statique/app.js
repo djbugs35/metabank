@@ -2,6 +2,7 @@
 import { afficherComptes } from "./comptes.js";
 import { afficherConfiguration, preparerConfiguration } from "./configuration.js";
 import { preparerBudget } from "./budget.js";
+import { afficherRetraite, preparerRetraite } from "./retraite.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique } from "./synoptique.js";
@@ -41,6 +42,7 @@ async function charger() {
   if ($("export-vues").children.length) preparerExport();
   afficherComptes(etat);
   afficherCreditsSimulation(etat);
+  afficherRetraite(etat);
   afficherReleves();
   afficherCorrections();
   afficherBiens();
@@ -523,4 +525,5 @@ preparerConfiguration(charger);
 preparerRegles(charger);
 preparerCreditsSimulation();
 preparerBudget(charger);
+preparerRetraite();
 charger();
