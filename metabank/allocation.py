@@ -31,7 +31,8 @@ CLASSES = [*dict.fromkeys(c for _, c in CLASSES_PAR_MOTIF), A_CLASSER]
 
 @dataclass(frozen=True)
 class Position:
-    """Un support détenu : son contrat, sa classe (choisie ou déduite) et sa valeur en euros."""
+    """Un support détenu : son contrat, sa classe (choisie ou déduite), sa valeur en euros et ses frais totaux
+    (fonds et contrat, en points par an, au dernier relevé ; None s'ils n'y figurent pas)."""
 
     cle: str
     libelle: str
@@ -40,6 +41,7 @@ class Position:
     classe: str
     classe_choisie: bool
     valeur: Decimal
+    frais_totaux: Decimal | None = None
 
 
 def cle_support(libelle: str, isin: str | None) -> str:
@@ -63,11 +65,12 @@ def positions(releves: list[ReleveRange], choisies: dict[str, str]) -> list[Posi
     resultat = []
     for r in derniers.values():
         contrat = f"{r.releve.produit} …{r.releve.numero.replace(' ', '')[-4:]}"
+        frais = {f.isin: f.frais_totaux for f in r.releve.frais_supports}
         for s in r.releve.supports:
             cle = cle_support(s.libelle, s.isin)
             choisie = choisies.get(cle)
             resultat.append(Position(cle, s.libelle, r.titulaire, contrat, choisie or classe_deduite(s.libelle),
-                                     choisie is not None, s.valeur))  # fmt: skip
+                                     choisie is not None, s.valeur, frais.get(s.isin or "")))  # fmt: skip
     return sorted(resultat, key=lambda p: -p.valeur)
 
 

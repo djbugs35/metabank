@@ -1,5 +1,5 @@
 // Onglet « Allocation » : répartition, concentration, cible, rééquilibrage (calculés en Python, MODELE § 13).
-import { echapper } from "./graphiques.js";
+import { courbes, echapper } from "./graphiques.js";
 import { euros, pct } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -15,8 +15,50 @@ async function appeler(chemin, corps) {
   return donnees;
 }
 
+function remplirArbitrage(a) {
+  const fonds = a.positions.map((p, rang) => ({ ...p, rang }));
+  $("arb-source").innerHTML = fonds.map((p) => `<option value="${p.rang}">${echapper(p.libelle)} · ${echapper(p.contrat)} (${euros(p.valeur)})</option>`).join("");
+  choisirSource();
+}
+
+function choisirSource() {
+  const source = allocation.positions[Number($("arb-source").value)];
+  if (!source) return;
+  $("arb-montant").value = Math.round(source.valeur);
+  $("arb-frais-source").value = source.frais_totaux ?? "";
+  const memeContrat = allocation.positions.map((p, rang) => ({ ...p, rang }))
+    .filter((p) => p.contrat === source.contrat && p.titulaire === source.titulaire && p.libelle !== source.libelle);
+  $("arb-cible").innerHTML = [...memeContrat.map((p) => `<option value="${p.rang}">${echapper(p.libelle)}</option>`),
+    `<option value="">Autre fonds (frais à saisir)</option>`].join("");
+  choisirCible();
+}
+
+function choisirCible() {
+  const cible = $("arb-cible").value === "" ? null : allocation.positions[Number($("arb-cible").value)];
+  $("arb-frais-cible").value = cible?.frais_totaux ?? "";
+}
+
+async function simulerArbitrage() {
+  const saisie = Object.fromEntries(["montant", "frais_source", "frais_cible", "frais_arbitrage", "rendement", "horizon"]
+    .map((cle) => [cle, $(`arb-${cle.replace("_", "-")}`).value]));
+  try {
+    const r = await appeler("/api/arbitrage", saisie);
+    const mieux = r.ecart >= 0 ? "de plus en arbitrant" : "de moins en arbitrant";
+    $("arb-resultat").innerHTML = `<p><strong>${euros(Math.abs(r.ecart))} ${mieux}</strong> au bout de ${saisie.horizon} ans ;
+      coût immédiat ${euros(r.cout_immediat)} ; ${r.point_mort === null ? "pas de point mort sur la durée" : `point mort au bout de ${r.point_mort} an${r.point_mort > 1 ? "s" : ""}`}.</p>`;
+    courbes($("arb-graphique"), {
+      titre: "Valeur du montant arbitré", abscisses: r.garder.map((_, annee) => annee), legendeX: (annee) => `${annee} ans`,
+      series: [{ classe: "serie-1", nom: "Garder", valeurs: r.garder }, { classe: "serie-3", nom: "Arbitrer", valeurs: r.arbitrer }],
+      formater: euros, survol: () => {},
+    });
+  } catch (erreur) {
+    $("arb-resultat").innerHTML = `<p class="ko">${echapper(erreur.message)}</p>`;
+  }
+}
+
 function montrer(a) {
   allocation = a;
+  remplirArbitrage(a);
   $("alloc-titulaire").innerHTML = [`<option value="">Foyer</option>`, ...a.titulaires.map((t) => `<option>${echapper(t)}</option>`)].join("");
   $("alloc-titulaire").value = a.titulaire;
   const aClasser = a.positions.filter((p) => p.classe === "À classer");
@@ -48,6 +90,9 @@ export async function afficherAllocation(titulaire = $("alloc-titulaire").value 
 }
 
 export function preparerAllocation() {
+  $("arb-source").addEventListener("change", choisirSource);
+  $("arb-cible").addEventListener("change", choisirCible);
+  $("arb-simuler").addEventListener("click", simulerArbitrage);
   $("alloc-titulaire").addEventListener("change", () => afficherAllocation($("alloc-titulaire").value));
   $("enregistrer-allocation").addEventListener("click", async () => {
     const classes = {};
