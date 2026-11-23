@@ -148,6 +148,9 @@ Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis
 versements nets de rachats au 1er juillet de chaque année, ou à la date d'ouverture l'année d'ouverture (négatifs), valeur au premier 31/12 connu si le contrat
 est antérieur aux relevés (négative), valeur au dernier 31/12 (positive). Résolu par dichotomie entre −99 % et
 +1 000 %. Elle est nette de tous les frais.
+Elle porte sur le même versé que le gain affiché : quand le versé lu sur le document diffère du versé refait par les
+mouvements (§ 2.3), l'écart est un flux négatif de plus, placé à l'ouverture du contrat (1er janvier de la première
+année si la date d'ouverture n'est pas saisie) ; le taux est alors un minimum (comme § 6.3).
 
 ### 6.3 Contrats à relevé de situation seul (PERP Cardif)
 Avec une date d'ouverture saisie, ils entrent dans la rentabilité annualisée : tout le versé depuis l'origine est

@@ -148,6 +148,10 @@ def test_le_verse_est_celui_du_document_et_l_ecart_avec_les_mouvements_est_signa
     assert any(f"écart {Decimal(30000) - refait} €" in a for a in bilan.anomalies)
     synthese = synthetiser("Alice", [bilan], [])
     assert synthese.ecart_verse == Decimal(30000) - refait
+    # Le taux annuel part du même versé que le gain : gain négatif, taux négatif.
+    assert bilan.gain_cumule < 0 and synthese.rendement_annualise < 0
+    sans_ecart = synthetiser("Alice", [replace(bilan, verse_mouvements=None)], [])
+    assert sans_ecart.rendement_annualise > 0
 
 
 def test_sans_les_premiers_releves_le_verse_ne_se_refait_pas():
