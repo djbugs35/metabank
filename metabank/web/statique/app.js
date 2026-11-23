@@ -9,10 +9,10 @@ import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique, preparerSynoptique } from "./synoptique.js";
-import { barresEmpilees, courbes, echapper } from "./graphiques.js";
+import { barresEmpilees, barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
   anneeLibelle, creditsDeVue, creditsHtml, epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct,
-  reperesHtml, tableAnneesHtml, tableFondsHtml, tuilesHtml,
+  reperesHtml, tableFondsHtml, tuilesHtml,
 } from "./rendu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -20,6 +20,7 @@ const $ = (id) => document.getElementById(id);
 let etat = null;
 let vueChoisie = "foyer";
 let anneesChoisies = null;
+let ligneChoisie = null;
 
 async function appeler(chemin, options = {}) {
   const reponse = await fetch(chemin, options);
@@ -80,6 +81,7 @@ function puce(texte, actif, action) {
 function choisirVue(id) {
   vueChoisie = id;
   anneesChoisies = null;
+  ligneChoisie = null;
   afficherTableau();
 }
 
@@ -228,6 +230,58 @@ function afficherProgression(vue) {
   $("note-progression").textContent = notes.join(" ");
 }
 
+// Tableau par contrat (MODELE § 6.5) : versé, gain hors frais et frais de chaque année choisie, puis leur cumul ;
+// lignes des contrats, cumul par personne, total. Le graphique montre la ligne cliquée (le total d'abord).
+// « +8,1 k€ » : étiquettes courtes, trois barres par année tiennent sans se chevaucher.
+const kiloEuros = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} k€` : euros(Math.abs(v))}`;
+const CHAMPS_TABLEAU = [["verse", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"]];
+
+function afficherTableauContrats(vue, annees) {
+  const lignes = vue.tableau ?? [];
+  if (!lignes.length) return;
+  const choisie = lignes.find((l) => l.nom === ligneChoisie) ?? lignes[lignes.length - 1];
+  const cumul = (l, champ) => annees.reduce((t, a) => t + (l.annees[a.annee]?.[champ] ?? 0), 0);
+  const cellule = (v, champ) => `<td class="n">${v === undefined ? "—" : champ === "verse" || champ === "frais" ? euros(v) : eurosSignes(v)}</td>`;
+  const groupes = [...annees.map((a) => anneeLibelle(a)), "Cumul"];
+  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${groupes.map((g) => `<th colspan="3" class="n">${echapper(g)}</th>`).join("")}</tr>
+    <tr>${groupes.map(() => CHAMPS_TABLEAU.map(([, titre]) => `<th class="n">${titre}</th>`).join("")).join("")}</tr></thead>
+    <tbody>${lignes.map((l) => `<tr class="cliquable ligne-${l.niveau}${l === choisie ? " ligne-choisie" : ""}" data-ligne="${echapper(l.nom)}">
+      <td>${echapper(l.nom)}</td>${annees.map((a) => CHAMPS_TABLEAU.map(([champ]) => cellule(l.annees[a.annee]?.[champ], champ)).join("")).join("")}
+      ${CHAMPS_TABLEAU.map(([champ]) => cellule(cumul(l, champ), champ)).join("")}</tr>`).join("")}</tbody>`;
+  $("table-annees").querySelectorAll("tr[data-ligne]").forEach((tr) => tr.addEventListener("click", () => {
+    ligneChoisie = tr.dataset.ligne;
+    afficherTableauContrats(vue, annees);
+  }));
+  const chiffres = annees.map((a) => choisie.annees[a.annee] ?? null);
+  barresGroupees($("graphique-annees"), {
+    titre: `${choisie.nom} : gain hors frais, frais et gagné net, année par année`,
+    annees: annees.map((a) => anneeLibelle(a)),
+    series: [
+      { classe: "serie-1", nom: "Gain hors frais", valeurs: chiffres.map((c) => c?.gain_avant_frais ?? null) },
+      { classe: "serie-2", nom: "Frais", valeurs: chiffres.map((c) => (c ? -c.frais : null)) },
+      { classe: "serie-3", nom: "Gagné net (frais déduits)", valeurs: chiffres.map((c) => c?.gain ?? null) },
+    ],
+    formater: kiloEuros,
+    largeur: 960,
+    survol: (rang) => {
+      const c = rang === null ? null : chiffres[rang];
+      $("infobulle-annees").textContent = c
+        ? `${anneeLibelle(annees[rang])} : versé ${euros(c.verse)} · gain hors frais ${eurosSignes(c.gain_avant_frais)} − frais ${euros(c.frais)} = gagné net ${eurosSignes(c.gain)}`
+        : "Cliquez une ligne du tableau pour la voir ici.";
+    },
+  });
+  $("infobulle-annees").textContent = "Cliquez une ligne du tableau pour la voir ici.";
+  const total = lignes[lignes.length - 1], ecart = vue.ecart_verse ?? 0;
+  const toutes = annees.length === vue.annees.length;
+  $("rapprochement").textContent = toutes && (vue.sans_historique.length || ecart)
+    ? `Rapprochement avec les tuiles : versé ${euros(cumul(total, "verse"))} au tableau`
+      + (vue.sans_historique.length ? ` + ${euros(vue.verse_sans_historique)} des contrats sans historique annuel (${vue.sans_historique.join(", ")})` : "")
+      + (ecart ? ` + ${euros(ecart)} d'écart de versé (voir « Versé »)` : "") + ` = ${euros(vue.verse)} ; gagné net ${eurosSignes(cumul(total, "gain"))} au tableau`
+      + (vue.sans_historique.length ? ` ${eurosSignes(vue.gain_sans_historique)} des contrats sans historique` : "")
+      + (ecart ? ` − ${euros(ecart)} d'écart` : "") + ` = ${eurosSignes(vue.gain)}.`
+    : "";
+}
+
 function afficherAnnees(vue) {
   const bloc = $("bloc-annees");
   bloc.classList.toggle("cache", !vue.annees.length || $("tuiles").classList.contains("cache"));
@@ -247,25 +301,7 @@ function afficherAnnees(vue) {
     (${pct(capital ? somme("gain") / capital : null, true)} des sommes placées),
     <strong>frais ${euros(somme("frais"))}</strong> (${pct(capital ? somme("frais") / capital : null)}),
     versé ${euros(somme("verse"))}.`;
-  // Gain de chaque contrat empilé : hausses au-dessus de zéro, baisses en dessous ; le total de l'année au-dessus.
-  const contrats = vue.contrats_annuels ?? [];
-  barresEmpilees($("graphique-annees"), {
-    titre: "Gagné chaque année (frais déduits), contrat par contrat",
-    abscisses: annees.map((a) => anneeLibelle(a)),
-    parts: contrats.map((c, i) => ({ classe: `serie-${(i % 6) + 1}`, nom: c.nom, valeurs: annees.map((a) => c.gains[a.annee] ?? null) })),
-    totaux: annees.map((a) => a.gain),
-    sous: annees.map((a) => `${pct(a.gain_taux, true)} · frais ${euros(a.frais)}`),
-    formater: eurosSignes,
-    diverge: true,
-    survol: (rang) => {
-      const a = rang === null ? null : annees[rang];
-      $("infobulle-annees").textContent = a
-        ? `${anneeLibelle(a)} : gagné ${eurosSignes(a.gain)} (${pct(a.gain_taux, true)}) = ${contrats.filter((c) => c.gains[a.annee] !== undefined)
-          .map((c) => `${c.nom} ${eurosSignes(c.gains[a.annee])}${c.frais[a.annee] !== undefined ? ` (frais ${euros(c.frais[a.annee])})` : ""}`).join(" ; ")} · versé ${euros(a.verse)} · sommes placées ${euros(a.capital)}`
-        : "";
-    },
-  });
-  $("table-annees").innerHTML = tableAnneesHtml(annees);
+  afficherTableauContrats(vue, annees);
 }
 
 function afficherNotes(vue) {

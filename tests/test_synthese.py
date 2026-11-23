@@ -95,8 +95,14 @@ def test_un_contrat_sans_chiffres_une_annee_garde_sa_derniere_valeur_dans_la_pro
     assert (fin_2025.valeur, fin_2025.variation, fin_2025.gain_cumule) == (Decimal(16100), Decimal(500), Decimal(1100))
 
 
-def test_le_gain_de_chaque_annee_se_lit_contrat_par_contrat():
+def test_le_tableau_donne_chaque_contrat_le_cumul_par_personne_et_le_total():
     releves = [_annee(2024, "10500", "0", "10000", "A"), _annee(2024, "4900", "0", "5000", "B")]
     synthese = synthetiser("Foyer", faire_bilans(releves), [])
-    assert sorted(c.gains[2024] for c in synthese.contrats) == [Decimal(-100), Decimal(500)]
-    assert sum(c.gains[2024] for c in synthese.contrats) == synthese.annees[0].gain
+    assert [(ligne.nom.split(" ·")[0], ligne.niveau) for ligne in synthese.tableau] == [
+        ("A", "contrat"), ("Total A", "personne"), ("B", "contrat"), ("Total B", "personne"), ("Total", "total"),
+    ]  # fmt: skip
+    total = synthese.tableau[-1].annees[2024]
+    # Frais du relevé : 10 € par contrat ; gain hors frais = gagné net + frais.
+    assert (total.gain, total.frais, total.gain_avant_frais) == (Decimal(400), Decimal(20), Decimal(420))
+    assert total.gain == synthese.annees[0].gain and total.frais == synthese.annees[0].frais
+    assert synthese.tableau[-2].annees[2024].gain == Decimal(-100)

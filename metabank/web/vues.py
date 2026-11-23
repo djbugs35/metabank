@@ -131,13 +131,23 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
         "frais_sur_partie": bool(s.sans_historique) and frais_connus,
         "sans_historique": list(s.sans_historique),
         "valeur_sans_historique": _nombre(s.valeur_sans_historique),
-        "contrats_annuels": [
+        "verse_sans_historique": _nombre(s.verse_sans_historique),
+        "gain_sans_historique": _nombre(s.gain_sans_historique),
+        "tableau": [
             {
-                "nom": c.nom,
-                "gains": {str(an): _nombre(g) for an, g in c.gains.items()},
-                "frais": {str(an): _nombre(f) for an, f in c.frais.items()},
+                "nom": ligne.nom,
+                "niveau": ligne.niveau,
+                "annees": {
+                    str(an): {
+                        "verse": _nombre(c.verse),
+                        "gain_avant_frais": _nombre(c.gain_avant_frais),
+                        "frais": _nombre(c.frais),
+                        "gain": _nombre(c.gain),
+                    }
+                    for an, c in ligne.annees.items()
+                },
             }
-            for c in s.contrats
+            for ligne in s.tableau
         ],
         "progression": [
             {

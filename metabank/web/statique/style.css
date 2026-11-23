@@ -98,6 +98,8 @@ rect.serie-6, i.serie-6 { fill: var(--serie-6); background: var(--serie-6); }
 .pastille { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; }
 .pastille-ok { background: var(--serie-3); } .pastille-alerte { background: var(--alerte); }
 .pastille-ko { background: var(--erreur); } .pastille-vide { border: 1px solid var(--texte-2); }
+tr.ligne-personne td, tr.ligne-total td { font-weight: 600; } tr.ligne-total td { border-top: 2px solid var(--trait); }
+tr.ligne-choisie td { background: var(--surface-2); }
 tr.cliquable { cursor: pointer; } tr.cliquable:hover { background: var(--surface-2); }
 tr.detail > td { background: var(--surface-2); white-space: normal; }
 /* Impression (revue du mois) : seul le panneau affiché, sans l'en-tête ni les boutons. */
