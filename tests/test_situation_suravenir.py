@@ -61,7 +61,7 @@ def test_une_situation_apres_les_releves_annuels_donne_la_valeur_et_le_gain_du_j
     [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
     assert (bilan.valeur, bilan.date_valeur) == (Decimal(21000), date(2026, 11, 18))
     assert bilan.apports_cumules == Decimal(20000) and bilan.gain_cumule == Decimal(1000)
-    assert [a.annee for a in bilan.annees] == [2025]
+    assert [a.annee for a in bilan.annees] == [2025, 2026]
 
 
 def test_les_frais_des_fonds_viennent_du_dernier_releve_qui_les_donne():
@@ -76,19 +76,24 @@ def test_les_frais_des_fonds_viennent_du_dernier_releve_qui_les_donne():
     assert p.frais_totaux == Decimal("1.5")
 
 
-def test_la_situation_ajoute_une_annee_en_cours_apres_le_releve_du_31_decembre():
-    annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
-                     primes_non_remboursees=Decimal(19000))  # fmt: skip
-    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero)
-    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
-    en_cours = bilan.annees[-1]
-    assert (en_cours.annee, en_cours.en_cours_au, en_cours.apports) == (2026, date(2026, 11, 18), Decimal(1000))
-    assert en_cours.gain == Decimal(21000) - annuel.valeur - Decimal(1000)
-    assert en_cours.rendement == en_cours.gain / (annuel.valeur + Decimal(500)) and en_cours.frais is None
-
-
-def test_sans_cumul_au_31_decembre_pas_d_annee_en_cours():
+def test_l_annee_en_cours_prend_versements_et_frais_dans_l_historique_des_operations():
     annuel = lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie")
     situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero)
+    assert (situation.versements_annee_en_cours, situation.frais_annee_en_cours) == (Decimal(1000), Decimal(100))
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    en_cours = bilan.annees[-1]
+    # Le versement de septembre 2025 et l'arbitrage de 2026 ne comptent pas comme versés en 2026.
+    assert (en_cours.annee, en_cours.en_cours_au, en_cours.apports, en_cours.frais) == (
+        2026, date(2026, 11, 18), Decimal(1000), Decimal(100),
+    )  # fmt: skip
+    assert en_cours.gain == Decimal(21000) - annuel.valeur - Decimal(1000)
+    assert en_cours.rendement == en_cours.gain / (annuel.valeur + Decimal(500))
+
+
+def test_sans_historique_des_operations_pas_d_annee_en_cours():
+    sans_historique = "\n".join(l for l in SITUATION.splitlines() if not l.strip()[:2].isdigit() or "/" not in l[:40])
+    annuel = lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie")
+    situation = replace(lire_situation_suravenir(sans_historique, "s.pdf"), numero=annuel.numero)
+    assert situation.versements_annee_en_cours is None
     [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
     assert [a.annee for a in bilan.annees] == [2025]

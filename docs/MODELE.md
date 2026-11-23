@@ -61,15 +61,19 @@ relevés annuels (une situation n'a ni mouvements de l'année ni frais). Contrô
 signalé. Les frais des fonds (§ 4) restent ceux du dernier relevé annuel qui les donne.
 
 ### 2.4 Année en cours, d'après la situation (« 2026 au 23/11 »)
-Après le relevé annuel du 31/12 de l'année précédente, une situation de l'année en cours donne une ligne partielle :
-- versé de l'année = cumul des versements bruts de la situation − cumul au 31/12 précédent (PER : versements depuis
-  l'origine du relevé annuel ; assurance vie : primes versées et non remboursées du relevé annuel, valable tant que le
-  contrat n'a connu aucun rachat) ; rachats de l'année = cumul des rachats de la situation − celui du 31/12 ;
-- gain = valeur de la situation − valeur au 31/12 − versé + rachats ;
-- rendement de la période (non annualisé) = gain / (valeur au 31/12 + (versé − rachats) / 2) ; frais inconnus ;
-- sans cumul au 31/12 connu, pas de ligne. Pour la rentabilité annualisée (§ 6.2), les versements de la période sont
-  placés à son milieu et la valeur finale à la date de la situation.
- (anomalies signalées, jamais corrigées en silence)
+La situation Suravenir imprime l'historique des opérations depuis l'ouverture (date, nature, montant). Pour l'année de
+la situation :
+- versé = somme des opérations « VERSEMENT… », « SOUSCRIPTION », « ADHESION » datées de l'année ; rachats = somme des
+  « RACHAT… » ; frais = « FRAIS ANNEE n » (frais annoncés par l'assureur pour l'année) ; les arbitrages et les
+  distributions restent dans le contrat et ne sont pas des flux ;
+- gain = valeur de la situation − valeur au 31/12 précédent − versé + rachats ;
+- rendement de la période (non annualisé) = gain / (valeur au 31/12 + (versé − rachats) / 2).
+Corrigé le 2026-11-23 : la première version prenait « cumul des versements − primes non remboursées au 31/12 » pour
+l'assurance vie ; ce montant fiscal n'est pas le cumul des versements (20 000 € comptés à tort en 2026).
+Pour la rentabilité annualisée (§ 6.2), les versements de la période sont placés à son milieu et la valeur finale à
+la date de la situation.
+
+## 3. Contrôles (anomalies signalées, jamais corrigées en silence)
 - Somme des supports = valeur du contrat, à un centime par ligne près.
 - Composantes des frais = total annoncé ; frais sur opérations = frais de la synthèse des mouvements.
 - PER : versements de l'année au tableau « évolution du plan » = versements bruts de la synthèse des mouvements.

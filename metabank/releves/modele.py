@@ -70,8 +70,13 @@ class Releve:
     rachats_depuis_origine: Decimal | None = None
     frais_supports: tuple[FraisSupport, ...] = field(default=())
     taux_frais_fonds_euros: Decimal | None = None
-    # Assurance vie : primes versées et non remboursées au 31/12 (tableau fiscal du relevé annuel). MODELE § 2.4.
+    # Assurance vie : primes versées et non remboursées au 31/12 (tableau fiscal du relevé annuel), pour mémoire :
+    # ce n'est pas le cumul des versements.
     primes_non_remboursees: Decimal | None = None
+    # Situation : versements, rachats et frais de son année, lus dans l'historique des opérations. MODELE § 2.4.
+    versements_annee_en_cours: Decimal | None = None
+    rachats_annee_en_cours: Decimal | None = None
+    frais_annee_en_cours: Decimal | None = None
     anomalies: tuple[str, ...] = field(default=())
     fichier: str = ""
 

@@ -19,6 +19,31 @@ SUPPORT = re.compile(
 TOTAL = re.compile(rf"^\s*TOTAL\s+({MOTIF_MONTANT})\s*$", re.MULTILINE)
 COMPARTIMENT = re.compile(rf"\d+\s*-\s*Compartiment\s+\d+\s+({MOTIF_MONTANT})\s*€")
 ECART_TOLERE = Decimal(1)
+OPERATION = re.compile(rf"^\s*(\d\d/\d\d/(\d{{4}}))\s+(\S.*?)\s{{2,}}.*?({MOTIF_MONTANT})\s*$")
+VERSEMENTS = ("VERSEMENT", "SOUSCRIPTION", "ADHESION")
+
+
+def flux_de_l_annee(texte: str, annee: int) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
+    """Rendre (versé, rachats, frais) de l'année d'après l'historique des opérations, en euros. MODELE § 2.4.
+
+    Tout vaut None quand le document n'imprime pas d'historique : l'année en cours ne se calcule pas.
+    """
+    verse = rachats = Decimal(0)
+    frais = None
+    historique = False
+    for ligne in texte.splitlines():
+        trouve = OPERATION.match(ligne)
+        historique = historique or trouve is not None
+        if not trouve or int(trouve.group(2)) != annee:
+            continue
+        nature, montant = trouve.group(3).upper(), abs(en_decimal(trouve.group(4)))
+        if nature.startswith(VERSEMENTS):
+            verse += montant
+        elif nature.startswith("RACHAT"):
+            rachats += montant
+        elif nature.startswith(f"FRAIS ANNEE {annee}"):
+            frais = (frais or Decimal(0)) + montant
+    return (verse, rachats, frais) if historique else (None, None, None)
 
 
 def est_situation_suravenir(texte: str) -> bool:
@@ -63,9 +88,13 @@ def lire_situation_suravenir(texte: str, fichier: str = "", type_indique: str | 
         valeur, somme, versements, rachats, _montant_apres("Performance (+/- value fiscale) en €", texte)
     )
     type_contrat = type_indique or ("per" if "RETRAITE" in produit.upper() else "assurance_vie")
-    return Releve("Suravenir", produit, numero.group(1), type_contrat, date_numerique(titre.group(1)), valeur,
-                  tuple(supports), versements_bruts_depuis_origine=versements, rachats_depuis_origine=rachats,
-                  anomalies=tuple(f"{fichier} : {a}" for a in anomalies), fichier=fichier)  # fmt: skip
+    jour = date_numerique(titre.group(1))
+    verse_annee, rachats_annee, frais_annee = flux_de_l_annee(texte, jour.year)
+    return Releve("Suravenir", produit, numero.group(1), type_contrat, jour, valeur, tuple(supports),
+                  versements_bruts_depuis_origine=versements, rachats_depuis_origine=rachats,
+                  versements_annee_en_cours=verse_annee, rachats_annee_en_cours=rachats_annee,
+                  frais_annee_en_cours=frais_annee, anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
+                  fichier=fichier)  # fmt: skip
 
 
 def _controles(valeur: Decimal, somme: Decimal, versements: Decimal | None, rachats: Decimal | None,
