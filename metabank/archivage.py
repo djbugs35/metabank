@@ -8,7 +8,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from metabank.banque import lire_comptes
-from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
+from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.base.integration import importer_fichier, ouvrir_base
 from metabank.base.lecture import lire_comptes_bancaires, lire_releves
 from metabank.connecteurs.contrat import Connecteur
@@ -37,7 +37,9 @@ def archiver_donnees(dossier_data: Path, connecteurs: list[Connecteur]) -> Bilan
     fichiers = sorted(
         f
         for f in dossier_data.glob("*/*/**/*")
-        if f.is_file() and f.suffix.lower() in EXTENSIONS and f.relative_to(dossier_data).parts[0] != DOSSIER_ARCHIVES
+        if f.is_file()
+        and f.suffix.lower() in EXTENSIONS
+        and f.relative_to(dossier_data).parts[0] not in DOSSIERS_RESERVES
     )
     for fichier in fichiers:
         relatif = fichier.relative_to(dossier_data)

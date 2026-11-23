@@ -28,6 +28,9 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   `statique/configuration.js`, API `/api/configuration`.
 - `metabank/synoptique.py` (freshness, MODELE § 9) + `web/synoptique_vues.py`, `statique/synoptique.js`, API
   `/api/synoptique`: one row per account (access, network, last data date, journal 30 days, how-to), outgoing data.
+- `metabank/depot_unique.py` — watched folder (`data/depot/` or configured) and titulaire-less upload: connector
+  `reconnaitre` gives établissement/numéro masqué/type/year, matched to a known account, filed in its archive folder;
+  processed files moved to `importes/`. `base.archives.DOSSIERS_RESERVES` = top-level dirs that are not titulaires.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

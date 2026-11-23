@@ -4,11 +4,13 @@ Format :
   {"comptes": {"BNP:courant:****1234": {"titulaire": "Alice", "principal": "bnp_csv", "secours": "",
                                        "frequence_jours": 30}},
    "reglages": {"<connecteur>.<réglage>": "valeur"},
-   "parametres": {"assistant_actif": true}}
+   "parametres": {"assistant_actif": true},
+   "dossiers": {"depot": "/Users/alice/Documents/metabank"}}
 « comptes » : le registre des comptes. Le titulaire saisi l'emporte sur celui déduit du dossier ; principal et
 secours nomment les connecteurs qui le mettent à jour ; la fréquence attendue (en jours) colore le synoptique.
 « reglages » : valeurs des réglages non secrets des connecteurs. Un secret n'est jamais écrit ici (coffre de la
 machine, étape 4).
+« dossiers » : dossier de dépôt surveillé (chemin absolu ; vide = data/depot/).
 Saisie du titulaire, hors de la base : effacer data/metabank.db ne la perd pas.
 """
 
@@ -45,6 +47,7 @@ def lire_configuration(dossier: Path) -> dict:
         "comptes": dict(contenu.get("comptes", {})),
         "reglages": dict(contenu.get("reglages", {})),
         "parametres": {**PARAMETRES_PAR_DEFAUT, **contenu.get("parametres", {})},
+        "dossiers": {"depot": "", **contenu.get("dossiers", {})},
     }
 
 
@@ -68,6 +71,7 @@ def ecrire_configuration(
         "comptes": _comptes(_rubrique(configuration, "comptes"), connecteurs, cles_comptes),
         "reglages": _reglages(_rubrique(configuration, "reglages"), connecteurs),
         "parametres": _parametres(_rubrique(configuration, "parametres")),
+        "dossiers": _dossiers(_rubrique(configuration, "dossiers"), dossier),
     }
     chemin = dossier / FICHIER
     temporaire = chemin.with_suffix(".json.tmp")
@@ -144,3 +148,17 @@ def _parametres(parametres: dict) -> dict:
             raise ConfigurationInvalide(f"{nom} : vrai ou faux attendu")
         propres[nom] = valeur
     return propres
+
+
+def _dossiers(dossiers: dict, dossier_data: Path) -> dict:
+    inconnus = set(dossiers) - {"depot"}
+    if inconnus:
+        raise ConfigurationInvalide(f"dossier inconnu : {min(inconnus)}")
+    depot = str(dossiers.get("depot") or "").strip()
+    if depot:
+        chemin = Path(depot).expanduser()
+        if not chemin.is_absolute():
+            raise ConfigurationInvalide("dossier de dépôt : chemin complet attendu (« /Users/… »)")
+        if chemin.resolve().is_relative_to((dossier_data / "archives").resolve()):
+            raise ConfigurationInvalide("dossier de dépôt : pas dans data/archives/, qui ne se modifie jamais")
+    return {"depot": depot}

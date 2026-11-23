@@ -15,6 +15,7 @@ from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
 from metabank.base.integration import importer_fichier
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import cle_contrat
+from metabank.depot_unique import importer_sans_titulaire
 from metabank.releves import TYPES_PAR_PREFIXE, lire_releve
 from metabank.releves.modele import Releve
 from metabank.releves.texte import ErreurLecture, extraire_texte
@@ -36,10 +37,12 @@ def deposer_releve(dossier: Path, titulaire: str, nom_fichier: str, contenu: byt
         DepotRefuse: fichier vide, trop gros, pas un PDF, titulaire invalide ou relevé non reconnu.
     """
     titulaire = titulaire.strip()
-    if not TITULAIRE_VALIDE.match(titulaire):
+    if titulaire and not TITULAIRE_VALIDE.match(titulaire):
         raise DepotRefuse("prénom du titulaire invalide")
     if not contenu or len(contenu) > TAILLE_MAX:
         raise DepotRefuse("fichier vide ou de plus de 20 Mo")
+    if not titulaire:
+        return _deposer_sans_titulaire(dossier, nom_fichier, contenu)
     if not contenu.startswith(b"%PDF"):
         return _deposer_export(dossier, titulaire, nom_fichier, contenu)
     releve = _lire(contenu, nom_fichier)
@@ -48,6 +51,18 @@ def deposer_releve(dossier: Path, titulaire: str, nom_fichier: str, contenu: byt
         provenance += f"/{releve.date_arrete.year}"
     chemin, deja = _archiver(dossier, provenance, _nom_propre(nom_fichier), contenu)
     return _reponse(chemin, releve, deja_present=deja)
+
+
+def _deposer_sans_titulaire(dossier: Path, nom_fichier: str, contenu: bytes) -> dict:
+    """Rendre où le fichier a été archivé, rangé d'après son contenu dans le dossier de son compte déjà connu."""
+    extension = ".pdf" if contenu.startswith(b"%PDF") else ".csv"
+    try:
+        resultat = importer_sans_titulaire(dossier, lister_connecteurs(), _nom_propre(nom_fichier, extension), contenu)
+    except ValueError as erreur:
+        # Compte encore inconnu, fichier non reconnu ou illisible : la page demande alors le titulaire.
+        raise DepotRefuse(str(erreur)) from erreur
+    return {"chemin": f"{DOSSIER_ARCHIVES}/{resultat.chemin}", "connecteur": resultat.connecteur,
+            "deja_present": resultat.deja_present}  # fmt: skip
 
 
 def _archiver(dossier: Path, provenance: str, nom: str, contenu: bytes) -> tuple[str, bool]:

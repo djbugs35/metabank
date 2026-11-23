@@ -191,7 +191,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
-| Dépôt unique | PDF et CSV glissés dans la page ou posés dans le dossier surveillé ; reconnus par les connecteurs, archivés, dédoublonnés | un fichier quelconque est pris en compte sans intervention | à faire |
+| Dépôt unique | PDF et CSV glissés dans la page ou posés dans le dossier surveillé ; reconnus par les connecteurs, archivés, dédoublonnés | un fichier quelconque est pris en compte sans intervention | fait : dossier surveillé (data/depot/ ou celui de la Configuration) et dépôt dans la page sans titulaire, rangés d'après le compte reconnu ; un compte jamais vu attend son titulaire |
 | Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | à faire |
 | Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | à faire |
 | Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | à faire |
@@ -304,7 +304,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Connecteurs (plug-ins) fichier, direct, calcul, référence ; registre et journal | 1 | fait (contrat, registre, journal ; aucun connecteur réel encore) |
 | Onglet Configuration (comptes, connecteurs, dossiers, paramètres) | 1 | fait (dossiers et secrets avec leurs fonctions) |
 | Onglet Synoptique (accès, réseau, fraîcheur, journal) | 1 | fait |
-| Dépôt unique avec rangement automatique et dossier surveillé | 2 | à faire |
+| Dépôt unique avec rangement automatique et dossier surveillé | 2 | fait |
 | Historique et courbe du patrimoine net | 2 | à faire |
 | Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | à faire |
 | Règles de classement des dépenses modifiables depuis la page | 2 | à faire |

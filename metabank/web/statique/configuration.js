@@ -17,7 +17,8 @@ export async function afficherConfiguration() {
   afficherComptes();
   afficherConnecteurs();
   $("config-assistant").checked = configuration.parametres.assistant_actif;
-  $("config-dossier").textContent = `Données : ${configuration.dossier_donnees}`;
+  $("config-depot").value = configuration.dossiers.depot;
+  $("config-dossier").textContent = `Données : ${configuration.dossier_donnees} ; dépôt surveillé : ${configuration.dossier_depot}`;
 }
 
 function choix(nom, valeur, possibles, vide) {
@@ -65,7 +66,7 @@ function saisie() {
     };
   });
   const reglages = Object.fromEntries([...document.querySelectorAll("[data-reglage]")].map((i) => [i.dataset.reglage, i.value]));
-  return { comptes, reglages, parametres: { assistant_actif: $("config-assistant").checked } };
+  return { comptes, reglages, parametres: { assistant_actif: $("config-assistant").checked }, dossiers: { depot: $("config-depot").value.trim() } };
 }
 
 export function preparerConfiguration(apresEnregistrement) {

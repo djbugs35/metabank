@@ -16,6 +16,7 @@ from urllib.parse import unquote, urlsplit
 
 from metabank.configuration import lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
+from metabank.depot_unique import dossier_depot
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
 from metabank.web.depot import DepotRefuse, deposer_releve
@@ -67,6 +68,7 @@ class EtatEnCache:
             self.dossier / "corrections.json",
             self.dossier / "categories.json",
             self.dossier / "configuration.json",
+            *dossier_depot(self.dossier, lire_configuration(self.dossier)).glob("*.*"),
         ]
         return tuple(sorted((str(f), f.stat().st_mtime_ns) for f in fichiers if f.exists()))
 

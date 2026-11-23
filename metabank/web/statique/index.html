@@ -102,7 +102,9 @@
 
   <section id="releves" data-panneau class="cache">
     <h1>Ajouter des relevés</h1>
-    <p class="discret">Les PDF restent sur ce Mac : ils sont lus puis rangés dans data/&lt;titulaire&gt;/&lt;contrat&gt;/&lt;année&gt;/.</p>
+    <p class="discret">Les fichiers restent sur cette machine : lus, puis archivés dans data/archives/&lt;titulaire&gt;/&lt;compte&gt;/.
+      Un fichier d'un compte déjà connu se range seul ; pour un nouveau compte, choisissez son titulaire.</p>
+    <p class="discret" id="depot-surveille"></p>
     <div class="carte">
       <div class="champs">
         <label class="champ">Titulaire
@@ -157,6 +159,11 @@
     <h2>Paramètres</h2>
     <div class="carte"><label><input type="checkbox" id="config-assistant"> Assistant Claude activé</label>
       <p class="note">Désactivé, aucune question n'est envoyée à Claude Code et l'onglet Assistant le dit.</p></div>
+    <h2>Dossiers</h2>
+    <div class="carte"><label class="champ">Dossier de dépôt surveillé
+      <input id="config-depot" maxlength="300" placeholder="data/depot/ (par défaut)"></label>
+      <p class="note">Un PDF ou un CSV posé là est pris en compte au prochain affichage, puis déplacé dans son
+        sous-dossier « importes ». Chemin complet, par exemple /Users/…/Documents/metabank.</p></div>
     <p class="discret" id="config-dossier"></p>
     <p><button class="action" id="enregistrer-configuration">Enregistrer</button> <span id="etat-configuration"></span></p>
   </section>

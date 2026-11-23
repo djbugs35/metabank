@@ -14,7 +14,13 @@ from pathlib import Path
 from metabank.base.integration import Lecteur, Resultat, importer_fichier, ouvrir_base
 from metabank.base.journal import noter_sans_archive
 from metabank.base.lot import LectureImpossible, Lot
-from metabank.connecteurs.contrat import AccesIndisponible, Connecteur, ConnecteurDirect, ConnecteurFichier
+from metabank.connecteurs.contrat import (
+    AccesIndisponible,
+    Connecteur,
+    ConnecteurDirect,
+    ConnecteurFichier,
+    Reconnaissance,
+)
 
 PAQUET = "metabank.connecteurs"
 # Modules du paquet qui ne sont pas des connecteurs.
@@ -126,3 +132,19 @@ def synchroniser_compte(
             continue
         return importer_fichier(dossier_data, acces.provenance, reponse.nom, reponse.contenu, lire)
     raise AucunAccesDirect(f"{acces.compte_cle} : " + ("; ".join(echecs) or "aucun accès direct actif"))
+
+
+def reconnaitre(connecteurs: Sequence[Connecteur], nom: str, contenu: bytes) -> Reconnaissance | None:
+    """Rendre ce que le seul connecteur qui reconnaît le fichier en déduit, ou None si aucun ne le reconnaît.
+
+    Raises:
+        LectureImpossible: deux connecteurs le reconnaissent, ou l'outil de lecture manque (pdftotext).
+    """
+    trouvees = [
+        (c.nom, r)
+        for c in connecteurs
+        if isinstance(c, ConnecteurFichier) and (r := c.reconnaitre(nom, contenu)) is not None
+    ]
+    if len(trouvees) > 1:
+        raise LectureImpossible(f"{nom} : reconnu à la fois par {', '.join(n for n, _ in trouvees)}")
+    return trouvees[0][1] if trouvees else None

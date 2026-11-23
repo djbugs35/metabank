@@ -58,12 +58,14 @@ class Reconnaissance:
     Attributes:
         numero_masque: « ****1234 », vide si le fichier ne le dit pas.
         titulaire: vide si le fichier ne le dit pas (le registre des comptes le dira).
+        sous_dossier: où ranger le fichier dans le dossier du compte (« 2025 » pour un relevé annuel), ou vide.
     """
 
     etablissement: str
     type_compte: str
     numero_masque: str = ""
     titulaire: str = ""
+    sous_dossier: str = ""
 
 
 @dataclass(frozen=True)

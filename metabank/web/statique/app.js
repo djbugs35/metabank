@@ -189,9 +189,11 @@ $("creer-pdf").addEventListener("click", () => {
 function afficherReleves() {
   const choix = $("depot-titulaire");
   const actuel = choix.value;
-  choix.innerHTML = [...etat.titulaires.map((t) => `<option>${echapper(t)}</option>`), `<option value="">Nouveau titulaire…</option>`].join("");
+  choix.innerHTML = [`<option value="auto">Reconnaître le compte</option>`, ...etat.titulaires.map((t) => `<option>${echapper(t)}</option>`),
+    `<option value="">Nouveau titulaire…</option>`].join("");
   if (actuel !== undefined && [...choix.options].some((o) => o.value === actuel)) choix.value = actuel;
   $("champ-nouveau").classList.toggle("cache", choix.value !== "");
+  $("depot-surveille").textContent = `Dossier surveillé : ${etat.dossier_depot} (onglet Configuration).`;
   $("table-contrats").innerHTML = `<thead><tr><th>Contrat</th><th>N°</th><th>Années</th><th>Dernier relevé</th><th class="n">Valeur</th></tr></thead><tbody>${etat.contrats
     .map((c) => `<tr><td>${echapper(c.nom)}</td><td>${echapper(c.numero_masque)}</td><td>${c.annees.join(", ") || "situation"}</td>
       <td>${new Date(c.date_valeur).toLocaleDateString("fr-FR")}</td><td class="n">${euros(c.valeur)}</td></tr>`)
@@ -204,9 +206,10 @@ function afficherReleves() {
 $("depot-titulaire").addEventListener("change", () => $("champ-nouveau").classList.toggle("cache", $("depot-titulaire").value !== ""));
 
 async function deposer(fichiers) {
-  const titulaire = $("depot-titulaire").value || $("depot-nouveau").value.trim();
+  const choix = $("depot-titulaire").value;
+  const titulaire = choix === "auto" ? "" : choix || $("depot-nouveau").value.trim();
   const resultats = $("depot-resultats");
-  if (!titulaire) {
+  if (choix !== "auto" && !titulaire) {
     resultats.innerHTML = `<li class="ko">Indiquez d'abord le titulaire.</li>`;
     return;
   }
@@ -222,8 +225,8 @@ async function deposer(fichiers) {
         body: fichier,
       });
       ligne.className = "ok";
-      ligne.textContent = `${fichier.name} : ${r.deja_present ? "déjà présent" : "rangé"} dans ${r.chemin}
-        (${r.assureur}, ${r.annuel ? "relevé annuel" : "situation"} au ${new Date(r.date).toLocaleDateString("fr-FR")})`;
+      const precision = r.date ? ` (${r.assureur}, ${r.annuel ? "relevé annuel" : "situation"} au ${new Date(r.date).toLocaleDateString("fr-FR")})` : "";
+      ligne.textContent = `${fichier.name} : ${r.deja_present ? "déjà présent" : "rangé"} dans ${r.chemin}${precision}`;
     } catch (erreur) {
       ligne.className = "ko";
       ligne.textContent = `${fichier.name} : refusé, ${erreur.message}`;

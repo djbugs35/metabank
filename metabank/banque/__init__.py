@@ -7,7 +7,7 @@ from pathlib import Path
 
 from metabank.banque.bnp import ExportIllisible, decoder, lire_export_bnp
 from metabank.banque.modele import TYPES_PAR_PREFIXE, Compte, Export, Operation
-from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
+from metabank.base.archives import DOSSIERS_RESERVES
 
 
 def lire_comptes(dossier: Path) -> tuple[list[Compte], list[str]]:
@@ -20,7 +20,7 @@ def lire_comptes(dossier: Path) -> tuple[list[Compte], list[str]]:
         morceaux = [m.strip() for m in dossier_compte.name.split(" - ")]
         type_compte = TYPES_PAR_PREFIXE.get(morceaux[0].upper())
         dossier_credits = est_dossier_credits(dossier_compte.parent.name)
-        if dossier_compte.parent.name == DOSSIER_ARCHIVES:
+        if dossier_compte.parent.name in DOSSIERS_RESERVES:
             continue
         if not dossier_compte.is_dir() or (type_compte is None and not dossier_credits):
             continue
