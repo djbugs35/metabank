@@ -43,7 +43,7 @@ def _base64url(donnees: bytes) -> str:
     return base64.urlsafe_b64encode(donnees).rstrip(b"=").decode()
 
 
-def jeton(application: str, cle: Path = CLE, maintenant: int | None = None) -> str:
+def jeton(application: str, cle: Path, maintenant: int | None = None) -> str:
     """Rendre le jeton JWT RS256 d'une heure qui authentifie l'application auprès de l'API.
 
     Raises:
@@ -79,8 +79,10 @@ def _transport_reseau(methode: str, adresse: str, entetes: dict, corps: bytes | 
 class Client:
     """Les appels de lecture à l'API, pour une application donnée."""
 
-    def __init__(self, application: str, cle: Path = CLE, transport: Transport = _transport_reseau) -> None:
-        self.application, self.cle, self.transport = application, cle, transport
+    def __init__(self, application: str, cle: Path | None = None, transport: Transport | None = None) -> None:
+        self.application, self.cle = application, cle or CLE
+        # Lu à l'appel, et non figé à l'import : les tests remplacent le transport réseau par un faux serveur.
+        self.transport = transport or _transport_reseau
 
     def _appeler(self, methode: str, chemin: str, corps: dict | None = None) -> dict:
         entetes = {"Authorization": f"Bearer {jeton(self.application, self.cle)}", "Content-Type": "application/json"}
@@ -138,13 +140,15 @@ def code_de_retour(adresse: str) -> str:
     return parametres["code"][0]
 
 
-def lire_accord(chemin: Path = ACCORD) -> dict:
+def lire_accord(chemin: Path | None = None) -> dict:
     """Rendre l'accord enregistré (application, session, comptes), ou {} s'il n'y en a pas."""
+    chemin = chemin or ACCORD
     return json.loads(chemin.read_text(encoding="utf-8")) if chemin.exists() else {}
 
 
-def enregistrer_accord(accord: dict, chemin: Path = ACCORD) -> None:
+def enregistrer_accord(accord: dict, chemin: Path | None = None) -> None:
     """Écrire l'accord atomiquement, lisible par le seul titulaire (droits 600)."""
+    chemin = chemin or ACCORD
     chemin.parent.mkdir(parents=True, exist_ok=True)
     temporaire = chemin.with_suffix(".json.tmp")
     descripteur = os.open(temporaire, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)

@@ -4,6 +4,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import threading
 import webbrowser
 from datetime import datetime
 from decimal import Decimal
@@ -24,6 +25,7 @@ from metabank.rapport_frais import formater_frais
 from metabank.releves import ReleveRange
 from metabank.revue import enregistrer_revue, faire_revue
 from metabank.serveur_mcp import servir
+from metabank.synchronisation import synchroniser_tout
 from metabank.tableau import Tableau, generer_html
 from metabank.web.serveur import PORT_DEFAUT, creer_serveur
 
@@ -59,7 +61,8 @@ def main(arguments: list[str] | None = None) -> int:
     banque = commandes.add_parser(
         "enable-banking", help="relier ses comptes par Enable Banking (DSP2), puis comparer au CSV"
     )
-    banque.add_argument("action", choices=("relier", "comparer"))
+    banque.add_argument("action", choices=("relier", "comparer", "synchroniser"))
+    banque.add_argument("--forcer", action="store_true", help="synchroniser même si c'est déjà fait aujourd'hui")
     banque.add_argument("--application", help="identifiant de l'application Enable Banking (nom du fichier .pem)")
     banque.add_argument("--banque", default="BNP Paribas", help="nom de la banque")
     banque.add_argument("--jours", type=int, default=90, help="comparer : période en jours")
@@ -131,6 +134,8 @@ def _web(dossier: Path, port: int, ouvrir: bool) -> int:
     serveur = creer_serveur(dossier, port)
     adresse = f"http://127.0.0.1:{serveur.server_port}"
     print(f"metabank : {adresse} (ce Mac seulement). Ctrl-C ou fermer la fenêtre pour arrêter.")
+    # Au lancement, la mise à jour des comptes en connexion directe, à côté : la page s'ouvre sans l'attendre.
+    threading.Thread(target=_synchroniser_au_lancement, args=(dossier,), daemon=True).start()
     if ouvrir and shutil.which("open"):
         subprocess.run(["open", adresse], check=False)
     try:
@@ -140,6 +145,11 @@ def _web(dossier: Path, port: int, ouvrir: bool) -> int:
     finally:
         serveur.server_close()
     return 0
+
+
+def _synchroniser_au_lancement(dossier: Path) -> None:
+    for message in synchroniser_tout(dossier):
+        print(f"Connexion directe : {message}")
 
 
 def _ecrire(sortie: Path, contenu: str) -> None:
@@ -178,6 +188,9 @@ def _enable_banking(options) -> int:
             print(f"Accord enregistré jusqu'au {accord['fin']} ; comptes autorisés :")
             for compte in accord["comptes"]:
                 print(f"  {compte['nom']} {compte['masque']}")
+        elif options.action == "synchroniser":
+            for ligne in synchroniser_tout(options.donnees, forcer=options.forcer) or ["aucun accord enregistré"]:
+                print(ligne)
         else:
             for ligne in comparer(client, options.donnees, options.jours):
                 print(ligne)

@@ -42,6 +42,9 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   `cible` are written by their own tabs and preserved by the Configuration tab. POST routes: `web/serveur.ENVOIS_JSON`.
 - MCP server: `serveur_mcp.py` (JSON-RPC over stdio, stdlib, `metabank mcp`), tools in `outils_mcp.py` built from
   `web/vues.etat` with explicit fields; `sans_numero` strips even masked numbers (rule: AI gets no number).
+- Enable Banking (DSP2): client `connecteurs/_enable_banking.py` (JWT RS256 via openssl, key+consent in
+  ~/.config/metabank, tests isolate them in conftest), connector `connecteurs/enable_banking.py`, linking/compare
+  `liaison_enable_banking.py`, daily sync `synchronisation.py`; cross-source twins table `jumelles` (MODELE § 7.1 bis).
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

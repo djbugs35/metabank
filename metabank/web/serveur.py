@@ -19,6 +19,7 @@ from metabank.configuration import ecrire_objectifs, lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
 from metabank.revue import SUJETS, enregistrer_revue, faire_revue
+from metabank.synchronisation import synchroniser_tout
 from metabank.web.allocation_vues import enregistrer_allocation, etat_allocation, simuler_arbitrage_saisi
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
@@ -77,6 +78,7 @@ class EtatEnCache:
         fichiers = [
             *self.dossier.glob("*/*/**/*.pdf"),
             *self.dossier.glob("*/*/**/*.csv"),
+            *self.dossier.glob("archives/**/*.json"),
             self.dossier / "corrections.json",
             self.dossier / "categories.json",
             self.dossier / "configuration.json",
@@ -110,6 +112,9 @@ ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
     "/api/retraite": simuler_retraite,
     "/api/allocation": enregistrer_allocation,
     "/api/arbitrage": simuler_arbitrage_saisi,
+    "/api/synchroniser": lambda dossier, saisie: {
+        "messages": synchroniser_tout(dossier, forcer=bool(saisie.get("forcer")))
+    },
 }
 
 

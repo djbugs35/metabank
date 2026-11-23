@@ -46,3 +46,18 @@ export async function afficherSynoptique() {
     .map((o) => `<tr><td>${echapper(o.nom)}</td><td>${echapper(o.reseau)}</td><td>${echapper(o.destinataire)}</td><td>${echapper(o.contenu)}</td><td>${echapper(o.etat)}</td></tr>`)
     .join("")}</tbody>`;
 }
+
+export function preparerSynoptique(recharger) {
+  $("synoptique-synchroniser").addEventListener("click", async () => {
+    $("synoptique-messages").textContent = "Mise à jour…";
+    const reponse = await fetch("/api/synchroniser", {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Metabank": "1" }, body: JSON.stringify({ forcer: true }),
+    });
+    const r = await reponse.json();
+    $("synoptique-messages").textContent = reponse.ok ? (r.messages.join(" ; ") || "Aucun accord enregistré.") : r.erreur;
+    if (reponse.ok) {
+      await recharger();
+      await afficherSynoptique();
+    }
+  });
+}

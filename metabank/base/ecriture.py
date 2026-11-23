@@ -10,7 +10,8 @@ from metabank.releves.serialisation import releve_en_json
 def enregistrer_lot(connexion: sqlite3.Connection, lot: Lot, archive_id: int | None) -> int:
     """Rendre le nombre d'opérations ajoutées, de soldes et de relevés enregistrés.
 
-    Une opération déjà connue (même compte, même identifiant) est ignorée. Un compte déjà en base prend la
+    Une opération déjà connue (même compte, même identifiant) est ignorée, comme celle qu'une autre source a déjà
+    apportée (même montant, à 5 jours au plus : MODELE § 7.1 bis). Un compte déjà en base prend la
     description du lot le plus récent ; un solde du même jour et un relevé de même date aussi.
     Ne valide pas la transaction : c'est à l'appelant de le faire.
     """
@@ -35,17 +36,47 @@ def _enregistrer_comptes(connexion: sqlite3.Connection, lot: Lot) -> None:
         )  # fmt: skip
 
 
+ECART_JUMELLE_JOURS = 5
+
+
 def _enregistrer_operations(connexion: sqlite3.Connection, lot: Lot, ids: dict, archive_id: int | None) -> int:
     ajoutees = 0
     for operation in lot.operations:
-        curseur = connexion.execute(
-            "INSERT OR IGNORE INTO operations (compte_id, identifiant, jour, libelle, nature, sous_nature, "
-            "montant_centimes, devise, archive_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (ids[operation.compte_cle], operation.identifiant, operation.jour.isoformat(), operation.libelle,
-             operation.nature, operation.sous_nature, en_centimes(operation.montant), operation.devise, archive_id),
+        compte_id, centimes = ids[operation.compte_cle], en_centimes(operation.montant)
+        deja = connexion.execute(
+            "SELECT 1 FROM operations WHERE compte_id = ? AND identifiant = ? UNION ALL "
+            "SELECT 1 FROM jumelles WHERE compte_id = ? AND identifiant = ?",
+            (compte_id, operation.identifiant, compte_id, operation.identifiant),
+        ).fetchone()
+        if deja:
+            continue
+        jumelle = _jumelle(connexion, compte_id, operation.jour.isoformat(), centimes, lot.connecteur)
+        if jumelle is not None:
+            connexion.execute(
+                "INSERT INTO jumelles (operation_id, compte_id, identifiant, archive_id) VALUES (?, ?, ?, ?)",
+                (jumelle, compte_id, operation.identifiant, archive_id),
+            )
+            continue
+        connexion.execute(
+            "INSERT INTO operations (compte_id, identifiant, jour, libelle, nature, sous_nature, montant_centimes, "
+            "devise, archive_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (compte_id, operation.identifiant, operation.jour.isoformat(), operation.libelle, operation.nature,
+             operation.sous_nature, centimes, operation.devise, archive_id),
         )  # fmt: skip
-        ajoutees += curseur.rowcount
+        ajoutees += 1
     return ajoutees
+
+
+def _jumelle(connexion: sqlite3.Connection, compte_id: int, jour: str, centimes: int, connecteur: str) -> int | None:
+    """Rendre l'opération d'une autre source, même montant, à 5 jours au plus et encore libre. MODELE § 7.1 bis."""
+    ligne = connexion.execute(
+        "SELECT o.id FROM operations o JOIN imports i ON i.archive_id = o.archive_id "
+        "WHERE o.compte_id = ? AND o.montant_centimes = ? AND i.connecteur != ? "
+        "AND abs(julianday(o.jour) - julianday(?)) <= ? AND o.id NOT IN (SELECT operation_id FROM jumelles) "
+        "ORDER BY abs(julianday(o.jour) - julianday(?)), o.id LIMIT 1",
+        (compte_id, centimes, connecteur, jour, ECART_JUMELLE_JOURS, jour),
+    ).fetchone()
+    return None if ligne is None else int(ligne[0])
 
 
 def _enregistrer_soldes(connexion: sqlite3.Connection, lot: Lot, ids: dict, archive_id: int | None) -> int:
