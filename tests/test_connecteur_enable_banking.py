@@ -60,15 +60,15 @@ def _compter(dossier, requete: str) -> int:
 
 def test_seules_les_operations_nouvelles_entrent_et_les_jumelles_du_csv_sont_reconnues(relie):
     messages = synchroniser_tout(relie, AUJOURD_HUI)
-    assert any("BNP:courant:****1234 : 2 élément(s)" in m for m in messages)  # t3 et le solde
-    assert any("****9999 : pas encore en base" in m for m in messages)
+    assert messages[0].texte == "BNP:courant:****1234 : à jour, solde au 09/04/2026, 1 opération nouvelle"
+    assert (messages[0].ton, messages[-1].ton) == ("ok", "info") and "****9999" in messages[-1].texte
     assert _compter(relie, "SELECT count(*) FROM jumelles") == 2
     assert _compter(relie, "SELECT count(*) FROM operations WHERE identifiant LIKE 'eb:%'") == 1
 
 
 def test_une_seule_synchronisation_par_jour_sauf_si_on_la_force(relie):
     synchroniser_tout(relie, AUJOURD_HUI)
-    assert any("déjà mis à jour aujourd'hui" in m for m in synchroniser_tout(relie, AUJOURD_HUI))
+    assert any("déjà mis à jour aujourd'hui" in m.texte for m in synchroniser_tout(relie, AUJOURD_HUI))
     operations = _compter(relie, "SELECT count(*) FROM operations")
     synchroniser_tout(relie, AUJOURD_HUI, forcer=True)
     assert _compter(relie, "SELECT count(*) FROM operations") == operations

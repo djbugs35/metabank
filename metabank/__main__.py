@@ -149,7 +149,7 @@ def _web(dossier: Path, port: int, ouvrir: bool) -> int:
 
 def _synchroniser_au_lancement(dossier: Path) -> None:
     for message in synchroniser_tout(dossier):
-        print(f"Connexion directe : {message}")
+        print(f"Connexion directe : {message.texte}")
 
 
 def _ecrire(sortie: Path, contenu: str) -> None:
@@ -189,8 +189,8 @@ def _enable_banking(options) -> int:
             for compte in accord["comptes"]:
                 print(f"  {compte['nom']} {compte['masque']}")
         elif options.action == "synchroniser":
-            for ligne in synchroniser_tout(options.donnees, forcer=options.forcer) or ["aucun accord enregistré"]:
-                print(ligne)
+            for message in synchroniser_tout(options.donnees, forcer=options.forcer):
+                print(message.texte)
         else:
             for ligne in comparer(client, options.donnees, options.jours):
                 print(ligne)
