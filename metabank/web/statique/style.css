@@ -92,3 +92,9 @@ button.action.secondaire { background: var(--surface); color: var(--texte); bord
 #bloc-patrimoine .tuile:first-child { border-color: var(--texte-2); }
 rect.serie-4, i.serie-4 { fill: var(--serie-4); background: var(--serie-4); }
 .champ input[data-bien-valeur] { width: 150px; }
+/* Synoptique : pastille de fraîcheur (MODELE § 9) ; la couleur double le texte, jamais seule. */
+.pastille { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; }
+.pastille-ok { background: var(--serie-3); } .pastille-alerte { background: var(--alerte); }
+.pastille-ko { background: var(--erreur); } .pastille-vide { border: 1px solid var(--texte-2); }
+tr.cliquable { cursor: pointer; } tr.cliquable:hover { background: var(--surface-2); }
+tr.detail > td { background: var(--surface-2); white-space: normal; }

@@ -11,6 +11,9 @@ class CardifPdf(ConnecteurReleve):
     nom = "cardif_pdf"
     libelle = "Relevé de situation Cardif (PDF)"
     assureur = "Cardif"
+    mode_emploi = (
+        "Dans l'espace client Cardif : relevé de situation du contrat, en PDF ; le déposer dans l'onglet Relevés."
+    )
     etablissements = ("Cardif",)
     types_comptes = ("perp",)
 

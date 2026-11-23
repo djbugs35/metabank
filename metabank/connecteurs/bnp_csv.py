@@ -19,6 +19,7 @@ class BnpCsv(ConnecteurFichier):
 
     nom = "bnp_csv"
     libelle = "Export des opérations BNP Paribas (CSV)"
+    mode_emploi = "Sur le site BNP Paribas, dans le compte : « Télécharger mes opérations », format CSV ; déposer le fichier dans l'onglet Relevés. Un export recouvre le précédent sans le doubler."
     etablissements = ("BNP Paribas",)
     types_comptes = ("courant", "locatif", "livret_a", "ldd", "credit")
 
