@@ -209,7 +209,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
-| Connecteur Enable Banking | application en mode restreint au nom du titulaire, réglée depuis l'onglet Configuration ; comptes BNP (et Revolut si couvert) ; l'export CSV reste en secours | les comptes courants se mettent à jour d'un clic | à faire |
+| Connecteur Enable Banking | application en mode restreint au nom du titulaire, réglée depuis l'onglet Configuration ; comptes BNP (et Revolut si couvert) ; l'export CSV reste en secours | les comptes courants se mettent à jour d'un clic | en cours : application Enable Banking active en mode restreint (titulaire, 2026-11-23) ; client et liaison (`metabank enable-banking relier`), rapprochement avec le CSV avant toute écriture en base |
 | Mise à jour automatique | synchronisation planifiée des comptes en connexion directe (nuit sur le NAS, lancement sur le Mac), accès de secours, journal, calculs refaits ensuite ; dans les limites DSP2 | les comptes en connexion directe sont à jour chaque matin sans rien faire | à faire |
 | Renouvellement | rappel avant l'échéance de l'accord bancaire (180 jours), visible dans le synoptique | rappel affiché à temps | à faire |
 | Livrets | vérifier si la BNP les expose en DSP2 (a priori non : ce ne sont pas des comptes de paiement) ; sinon export annuel | décision notée ci-dessous | à faire |
@@ -277,6 +277,10 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
   de nouveaux inscrits ; Enable Banking propose un mode restreint gratuit pour un usage personnel sur ses propres
   comptes, déjà utilisé par Firefly III, Actual et Finanze. La DSP2 ne couvre que les comptes de paiement : assurances
   vie, PER, PERP et crédits restent sur fichiers et calcul. L'accord bancaire est à renouveler tous les 180 jours.
+- **2026-11-23 — Enable Banking : clé et accord hors du dépôt et de data/**, dans ~/.config/metabank/ (droits 600) ;
+  signature du jeton par openssl (aucune dépendance) ; adresse de retour https://localhost:8770/… (le service refuse
+  http), le code est recopié depuis la barre d'adresse. Avant d'écrire la DSP2 en base, rapprochement mesuré avec les
+  exports CSV pour fixer la règle anti-doublon.
 - **2026-11-22 — Trade Republic par l'export CSV de l'application** (disponible depuis avril 2026), pytr en secours.
 - **2026-11-22 — Agrégateurs en ligne écartés** (Finary, Zenmoney…) : données hors de la machine et abonnement.
   Aucun plugin ou skill du catalogue ne couvre la gestion de patrimoine locale.
