@@ -202,6 +202,22 @@
         faudrait verser dans chaque classe pour atteindre la cible sans rien vendre.</p></div>
     <details class="carte"><summary>Fonds détenus et leur classe</summary><div class="defile"><table id="alloc-positions"></table></div></details>
     <p><button class="action" id="enregistrer-allocation">Enregistrer classes et cible</button> <span id="etat-allocation"></span></p>
+    <h2>Simuler un arbitrage</h2>
+    <div class="carte"><div class="champs">
+      <label class="champ">Fonds à vendre <select id="arb-source"></select></label>
+      <label class="champ">Vers <select id="arb-cible"></select></label>
+      <label class="champ">Montant (€) <input type="number" id="arb-montant" min="0" step="500"></label>
+      <label class="champ">Frais du fonds vendu (% par an) <input type="number" id="arb-frais-source" min="0" max="10" step="0.05"></label>
+      <label class="champ">Frais du fonds visé (% par an) <input type="number" id="arb-frais-cible" min="0" max="10" step="0.05"></label>
+      <label class="champ">Frais d'arbitrage (%) <input type="number" id="arb-frais-arbitrage" min="0" max="5" step="0.1" value="0"></label>
+      <label class="champ">Rendement brut supposé (% par an) <input type="number" id="arb-rendement" min="-10" max="20" step="0.5" value="5"></label>
+      <label class="champ">Horizon (ans) <input type="number" id="arb-horizon" min="1" max="40" value="15"></label>
+    </div><p><button class="action" id="arb-simuler">Simuler</button></p>
+      <div id="arb-resultat"></div>
+      <figure id="arb-graphique"></figure>
+      <p class="note">Même rendement brut pour les deux fonds : seul l'effet des frais est montré. Frais : fonds et contrat,
+        lus au dernier relevé quand il les donne ; frais d'arbitrage selon votre contrat. Un arbitrage dans une assurance vie
+        ou un PER n'est pas imposable. Un fonds moins cher n'est pas pour autant un meilleur fonds (docs/MODELE.md § 14).</p></div>
   </section>
 
   <section id="synoptique" data-panneau class="cache">

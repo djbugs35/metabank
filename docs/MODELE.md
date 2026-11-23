@@ -328,3 +328,17 @@ du document d'information du fonds.
   classe c = cible_c × T' − V_c (jamais négatif) ; total à verser = T' − T. Alerte de dérive quand une classe
   s'écarte de sa cible de plus de 5 points. Les livrets et comptes courants ne sont pas
   des classes de la cible : la cible porte sur les supports des contrats.
+
+## 14. Simulateur d'arbitrage (onglet « Allocation »)
+
+Arbitrer un montant V d'un fonds de frais totaux t₁ (frais du fonds et du contrat, en % par an, 4.1) vers un fonds
+de frais t₂, avec des frais d'arbitrage a (% du montant, selon le contrat), au même rendement brut supposé r pour
+les deux, afin de n'isoler que l'effet des frais (projection de 4.3) :
+- garder : V_H = V × (1 + (r − t₁) / 100)^H ;
+- arbitrer : V'_H = V × (1 − a / 100) × (1 + (r − t₂) / 100)^H ;
+- écart à H ans = V'_H − V_H ; coût immédiat = V × a / 100 ; point mort = première année H où V'_H ≥ V_H (aucun si
+  t₂ ≥ t₁ et a > 0).
+Coût fiscal : un arbitrage à l'intérieur d'une assurance vie ou d'un PER n'est pas imposable ; rien n'est donc
+compté. Les frais d'un fonds viennent de son tableau « frais sur les supports » au dernier relevé ; inconnus (fonds en
+euros, relevé sans tableau), ils se saisissent. Le rendement est une hypothèse ; un fonds moins cher n'est pas pour
+autant un meilleur fonds.

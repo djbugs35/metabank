@@ -1,9 +1,10 @@
 """Onglet Allocation : répartition, concentration, cible et versements de rééquilibrage, en JSON. MODELE § 13."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from metabank.allocation import CLASSES, concentrations, derives, positions, reequilibrer, repartir
+from metabank.arbitrage import simuler_arbitrage
 from metabank.banque.modele import TYPES_COURANTS, TYPES_LIVRETS
 from metabank.configuration import ecrire_allocation, lire_configuration
 from metabank.corrections import appliquer_verifications
@@ -52,7 +53,8 @@ def etat_allocation(dossier: Path, titulaire: str = "") -> dict:
         "total_a_verser": _n(sum(a_verser.values(), ZERO)),
         "positions": [
             {"cle": p.cle, "libelle": p.libelle, "titulaire": p.titulaire, "contrat": p.contrat, "classe": p.classe,
-             "choisie": p.classe_choisie, "valeur": _n(p.valeur)}
+             "choisie": p.classe_choisie, "valeur": _n(p.valeur),
+             "frais_totaux": float(p.frais_totaux) if p.frais_totaux is not None else None}
             for p in supports
         ],
         "classes": CLASSES,
@@ -68,3 +70,26 @@ def enregistrer_allocation(dossier: Path, saisie: dict) -> dict:
     """
     ecrire_allocation(dossier, saisie.get("classes") or {}, saisie.get("cible") or {})
     return etat_allocation(dossier, str(saisie.get("titulaire") or ""))
+
+
+def simuler_arbitrage_saisi(_dossier: Path, saisie: dict) -> dict:
+    """Rendre garder et arbitrer année par année (euros), l'écart, le coût immédiat et le point mort. MODELE § 14.
+
+    Raises:
+        ValueError: nombre illisible ou hors bornes.
+    """
+    bornes = {"montant": (0, 10_000_000), "frais_source": (0, 10), "frais_cible": (0, 10), "frais_arbitrage": (0, 5),
+              "rendement": (-10, 20), "horizon": (1, 40)}  # fmt: skip
+    valeurs = {}
+    for cle, (mini, maxi) in bornes.items():
+        try:
+            valeur = Decimal(str(saisie.get(cle, "")))
+        except InvalidOperation as erreur:
+            raise ValueError(f"{cle} : nombre attendu") from erreur
+        if not mini <= valeur <= maxi:
+            raise ValueError(f"{cle} : entre {mini} et {maxi}")
+        valeurs[cle] = valeur
+    a = simuler_arbitrage(valeurs["montant"], valeurs["frais_source"], valeurs["frais_cible"],
+                          valeurs["frais_arbitrage"], valeurs["rendement"], int(valeurs["horizon"]))  # fmt: skip
+    return {"garder": [_n(v) for v in a.garder], "arbitrer": [_n(v) for v in a.arbitrer], "ecart": _n(a.ecart),
+            "cout_immediat": _n(a.cout_immediat), "point_mort": a.point_mort}  # fmt: skip
