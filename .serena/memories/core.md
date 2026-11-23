@@ -37,6 +37,9 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   never name a helper `test*`, pytest collects it), `web/regles_vues.py`, `statique/regles.js`, API `/api/regles[/test]`.
 - `metabank/reperes.py` — sourced yearly public benchmarks (fonds euros ACPR, UC France Assureurs, Livret A, Insee
   inflation, MSCI World EUR net); None when not published/verified, never guessed. MODELE § 10. Update yearly.
+- Step 5 modules: `banque/credit_simulation.py` (§ 7.11), `banque/locatif.py` (§ 7.12), `banque/budget.py` (§ 7.13),
+  `fiscalite.py` (§ 11), `retraite.py` (§ 12), `allocation.py` (§ 13); config rubriques `objectifs`, `classes`,
+  `cible` are written by their own tabs and preserved by the Configuration tab. POST routes: `web/serveur.ENVOIS_JSON`.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

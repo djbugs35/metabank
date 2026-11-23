@@ -312,3 +312,19 @@ de départ ; versement mensuel V ; pour chaque rendement annuel net r des trois 
 - retrait mensuel possible pendant D années, le reste du capital continuant de rapporter r (sortie en capital
   fractionnée, pas une rente viagère) : W = K_réel × r_m / (1 − (1 + r_m)^(−12 D)) (K_réel / (12 D) si r_m = 0).
 Fiscalité de la sortie non comptée.
+
+## 13. Allocation (onglet « Allocation »)
+
+Valeur d'un support = sa valeur au dernier relevé de son contrat. Classe d'un support : celle choisie par le titulaire
+(onglet Allocation), sinon déduite de mots de son libellé (FCPR → capital-investissement, OBLIG, BOND, CREDIT →
+obligations, EQUITY, ACTIONS → actions…), sinon « à classer ». Le classement par mots est une aide, pas une analyse
+du document d'information du fonds.
+- **Répartition** : par classe, part du patrimoine financier = supports des contrats + livrets + comptes courants (hors
+  biens immobiliers et crédits).
+- **Concentration** : alerte pour tout support qui pèse plus de 20 % du patrimoine financier ; les supports « à
+  classer » sont listés.
+- **Cible** (parts saisies, somme 100 %) : écart = part actuelle − cible, en points. Rééquilibrage par les seuls
+  versements, sans rien vendre : T' = max des V_c / cible_c sur les classes de cible non nulle ; à verser dans la
+  classe c = cible_c × T' − V_c (jamais négatif) ; total à verser = T' − T. Alerte de dérive quand une classe
+  s'écarte de sa cible de plus de 5 points. Les livrets et comptes courants ne sont pas
+  des classes de la cible : la cible porte sur les supports des contrats.

@@ -220,7 +220,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
-| Allocation et arbitrage | classement de chaque fonds par type d'après son ISIN et sa fiche DIC ; vue globale toutes enveloppes ; alertes de concentration ; comparaison des frais avec les autres supports du contrat ; **simulateur d'arbitrage** (frais, coût fiscal, effet à 15 ans) ; **répartition cible fixée par le titulaire** et rééquilibrage par les versements ; fiche de préparation des rendez-vous. Faits et simulations seulement, aucune recommandation | la répartition globale et une simulation d'arbitrage sont visibles | à faire |
+| Allocation et arbitrage | classement de chaque fonds par type d'après son ISIN et sa fiche DIC ; vue globale toutes enveloppes ; alertes de concentration ; comparaison des frais avec les autres supports du contrat ; **simulateur d'arbitrage** (frais, coût fiscal, effet à 15 ans) ; **répartition cible fixée par le titulaire** et rééquilibrage par les versements ; fiche de préparation des rendez-vous. Faits et simulations seulement, aucune recommandation | la répartition globale et une simulation d'arbitrage sont visibles | en partie : onglet Allocation (classes déduites ou choisies, répartition, concentration, cible, dérive, rééquilibrage par versements, MODELE § 13) ; restent simulateur d'arbitrage, classement par DIC, fiche de rendez-vous |
 | Performance comparée, version complète | repère pondéré par la répartition de chaque contrat ; performance publique de chaque fonds face à sa catégorie | chaque contrat et chaque fonds a son écart au repère | à faire |
 | Fiscalité et échéances | 5 ans des PEA, 8 ans des assurances vie, abattement après 8 ans, plafond de déduction PER saisi depuis l'avis d'impôt face aux versements de l'année, frais de transfert PER et PERP et leur date de gratuité, rappels de fin d'année | chaque échéance a sa date et son rappel | en partie : 8 ans des AV et abattement (rachat couvert chiffré), gratuité du transfert des PER, 31/12 des PER (MODELE § 11) ; restent PEA (étape 3), plafond PER saisi, règles des PERP à vérifier |
 | Projection retraite | capital estimé à l'âge de départ selon plusieurs hypothèses de rendement, de versements et d'inflation ; capital ou rente | trois scénarios comparés | fait : PER et PERP (et assurances vie au choix), capital au départ, en euros d'aujourd'hui, retrait mensuel possible (MODELE § 12) ; rente viagère non calculée |
@@ -317,9 +317,9 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | à faire |
 | Mise à jour automatique des comptes en connexion directe (synchronisation planifiée) | 4 | à faire |
 | Valeur au jour des contrats par les valeurs liquidatives publiques (option) | 4 | à faire |
-| Allocation globale, alertes de concentration, simulateur d'arbitrage, répartition cible | 5 | à faire |
-| Alerte quand une enveloppe dérive de l'allocation cible au-delà d'un seuil | 5 | à faire |
-| Rééquilibrage par les versements (sans vente) plutôt que par arbitrage | 5 | à faire |
+| Allocation globale, alertes de concentration, simulateur d'arbitrage, répartition cible | 5 | en partie (sans simulateur d'arbitrage) |
+| Alerte quand une enveloppe dérive de l'allocation cible au-delà d'un seuil | 5 | fait (5 points) |
+| Rééquilibrage par les versements (sans vente) plutôt que par arbitrage | 5 | fait |
 | Compteurs fiscaux : 5 ans du PEA, 8 ans de l'assurance vie, plafond PER, gratuité des transferts | 5 | en partie (AV, PER) |
 | Projection retraite : capital à l'échéance selon plusieurs hypothèses | 5 | fait |
 | Crédits : remboursement anticipé ou placement, assurance emprunteur | 5 | fait |
