@@ -1,6 +1,7 @@
 // metabank : page unique. Les chiffres viennent tous de l'API (code Python testé) ; ici, on ne fait que les montrer.
 import { afficherComptes } from "./comptes.js";
 import { afficherConfiguration, preparerConfiguration } from "./configuration.js";
+import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique } from "./synoptique.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
@@ -38,6 +39,7 @@ async function charger() {
   afficherTableau();
   if ($("export-vues").children.length) preparerExport();
   afficherComptes(etat);
+  afficherCreditsSimulation(etat);
   afficherReleves();
   afficherCorrections();
   afficherBiens();
@@ -485,4 +487,5 @@ document.querySelector("#assistant details").addEventListener("toggle", async (e
 
 preparerConfiguration(charger);
 preparerRegles(charger);
+preparerCreditsSimulation();
 charger();

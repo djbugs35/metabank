@@ -54,7 +54,21 @@
     </div>
     <div id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="epargne"></div>
       <details class="carte"><summary>Détail par livret</summary><div id="livrets"></div></details></div>
-    <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div></div>
+    <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div>
+      <details class="carte"><summary>Rembourser par anticipation ou placer ? Tableau d'amortissement</summary>
+        <div class="champs">
+          <label class="champ">Crédit <select id="sim-credit"></select></label>
+          <label class="champ">Montant (€) <input type="number" id="sim-credit-montant" min="1" step="1000" value="10000"></label>
+          <label class="champ">Rendement net supposé du placement (% par an)
+            <input type="number" id="sim-credit-rendement" min="-10" max="20" step="0.1" value="2.5"></label>
+        </div>
+        <p><button class="action" id="sim-credit-comparer">Comparer</button></p>
+        <div id="sim-credit-resultat"></div>
+        <div class="defile"><table id="sim-credit-echeancier"></table></div>
+        <p class="note">Mensualité gardée, durée raccourcie. Indemnités : au plus le plafond légal (6 mois d'intérêts,
+          3 % du capital), votre contrat peut prévoir moins. Comparaison à la date de fin actuelle du prêt ; le rendement est
+          une hypothèse nette de frais et d'impôts, pas une prévision. Formules : docs/MODELE.md § 7.11.</p>
+      </details></div>
     <h2 id="titre-placements">Placements : assurance vie, PER, PERP</h2>
     <div class="tuiles" id="tuiles"></div>
     <div class="carte" id="bloc-annees">
