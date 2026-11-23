@@ -126,6 +126,51 @@ export function courbes(figure, { titre, abscisses, series, formater, legendeX, 
   });
 }
 
+// Barres empilées par colonne : chaque part part du haut de la précédente, vers le bas si elle est négative (classe
+// « classeNegative » alors) ; au-dessus, le total et une seconde étiquette. parts : [{classe, classeNegative, nom,
+// valeurs}] ; totaux et sous : un par colonne ; survol(rang) au survol d'une colonne.
+export function barresEmpilees(figure, { titre, abscisses, parts, totaux, sous, formater, survol }) {
+  const L = 640, H = 300, G = 64, D = 12, HAUT = 40, BAS = 26, LIGNE = 13;
+  const piles = abscisses.map((_, rang) => {
+    let base = 0;
+    return parts.map((p) => {
+      const v = p.valeurs[rang] ?? 0, depart = base;
+      base += v;
+      return { v, bas: Math.min(depart, base), haut: Math.max(depart, base) };
+    });
+  });
+  const bornes = piles.flatMap((pile) => pile.flatMap((s) => [s.bas, s.haut]));
+  const pas = pasRond(Math.max(0, ...bornes, ...totaux) - Math.min(0, ...bornes));
+  const bas = Math.floor(Math.min(0, ...bornes) / pas) * pas, haut = Math.ceil(Math.max(0, ...bornes, ...totaux) / pas) * pas || pas;
+  const y = (v) => HAUT + ((haut - v) / (haut - bas || 1)) * (H - HAUT - BAS);
+  const colonne = (L - G - D) / Math.max(abscisses.length, 1);
+  const largeur = Math.min(72, colonne * 0.6);
+  const parties = [];
+  for (let v = bas; v <= haut + pas / 2; v += pas) {
+    parties.push(`<line x1="${G}" y1="${y(v)}" x2="${L - D}" y2="${y(v)}" class="${v === 0 ? "axe" : "grille"}"/>`);
+    parties.push(`<text x="${G - 6}" y="${y(v) + 4}" class="graduation" text-anchor="end">${echapper(eurosCourts(v))}</text>`);
+  }
+  piles.forEach((pile, rang) => {
+    const centre = G + colonne * (rang + 0.5), x = centre - largeur / 2;
+    pile.forEach((s, numero) => {
+      const classe = s.v < 0 ? parts[numero].classeNegative ?? parts[numero].classe : parts[numero].classe;
+      if (s.haut > s.bas) parties.push(`<rect x="${x}" y="${y(s.haut)}" width="${largeur}" height="${Math.max(y(s.bas) - y(s.haut), 1)}" class="${classe}"/>`);
+    });
+    const sommet = y(Math.max(0, ...pile.map((s) => s.haut), totaux[rang])) - 6 - LIGNE;
+    parties.push(`<text x="${centre}" y="${sommet}" class="valeur-barre" text-anchor="middle">${echapper(formater(totaux[rang]))}`
+      + `<tspan x="${centre}" dy="${LIGNE}" class="sous">${echapper(sous[rang] ?? "")}</tspan></text>`);
+    parties.push(`<text x="${centre}" y="${H - 6}" class="graduation" text-anchor="middle">${echapper(abscisses[rang])}</text>`);
+    parties.push(`<rect x="${G + colonne * rang}" y="0" width="${colonne}" height="${H}" class="cible" data-rang="${rang}"/>`);
+  });
+  const legendes = parts.flatMap((p) => [p, ...(p.classeNegative && p.valeurs.some((v) => v < 0) ? [{ classe: p.classeNegative, nom: p.nomNegatif }] : [])]);
+  figure.innerHTML = `<figcaption>${echapper(titre)}</figcaption>${legende(legendes)}
+    <svg viewBox="0 0 ${L} ${H}" role="img" aria-label="${echapper(titre)}">${parties.join("")}</svg>`;
+  figure.querySelectorAll("rect.cible").forEach((r) => {
+    r.addEventListener("mouseenter", () => survol?.(Number(r.dataset.rang)));
+    r.addEventListener("mouseleave", () => survol?.(null));
+  });
+}
+
 // Barres horizontales triées : une ligne par catégorie, montant et part écrits à droite de la barre.
 export function barresHorizontales(figure, { titre, lignes, formater }) {
   const L = 640, LIGNE = 26, G = 190, D = 150;

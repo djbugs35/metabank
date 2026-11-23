@@ -33,6 +33,10 @@ class AnneeSynthese:
     duree_mois: int | None = None
     en_cours_au: date | None = None
     capital: Decimal | None = None
+    # MODELE § 6.4, en euros : valeurs de début et de fin de l'année, rachats de l'année.
+    valeur_debut: Decimal = ZERO
+    valeur_fin: Decimal = ZERO
+    rachats: Decimal = ZERO
 
     @property
     def rendement_frais(self) -> Decimal | None:
@@ -51,6 +55,20 @@ class AnneeSynthese:
 
 
 @dataclass(frozen=True)
+class Progression:
+    """Une fin d'année : valeur, variation, versé net et gagné cumulés (euros). MODELE § 6.4."""
+
+    annee: int
+    valeur: Decimal
+    variation: Decimal
+    verse_cumule: Decimal
+    gain_cumule: Decimal
+    en_cours_au: date | None
+    verse_net_annee: Decimal = ZERO
+    gain_annee: Decimal = ZERO
+
+
+@dataclass(frozen=True)
 class Synthese:
     """Chiffres d'un ensemble de contrats ; les relevés de situation n'entrent que dans les totaux."""
 
@@ -66,6 +84,7 @@ class Synthese:
     versements_incertains: bool = False
     # Versé lu moins versé refait par les mouvements, sur les contrats où les deux existent (euros). MODELE § 2.3.
     ecart_verse: Decimal = ZERO
+    progression: tuple[Progression, ...] = ()
 
     @property
     def frais_par_an(self) -> Decimal | None:
@@ -92,6 +111,7 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         sans_historique=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if not b.annees),
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
+        progression=tuple(progresser(suivis, annees)),
         ecart_verse=sum((b.apports_cumules - b.verse_mouvements for b in bilans
                          if b.apports_cumules is not None and b.verse_mouvements is not None), ZERO),
     )  # fmt: skip
@@ -130,7 +150,22 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
         rendement_max=rendement_max,
         duree_mois=durees.pop() if len(durees) == 1 else None,
         en_cours_au=max((a.en_cours_au for _, a in lignes if a.en_cours_au), default=None),
+        valeur_debut=debut,
+        valeur_fin=sum((a.valeur_fin for _, a in lignes), ZERO),
+        rachats=sum((a.rachats for _, a in lignes), ZERO),
     )
+
+
+def progresser(bilans: list[BilanContrat], annees: tuple[AnneeSynthese, ...]) -> list[Progression]:
+    """Rendre la valeur des placements fin d'année par fin d'année, et ce qui l'a fait varier. MODELE § 6.4."""
+    # Valeur de départ d'un contrat antérieur à ses relevés : comptée comme du versé, l'origine étant inconnue.
+    verse = sum((b.annees[0].valeur_debut for b in bilans if b.annees), ZERO)
+    resultat = []
+    for a in annees:
+        verse += a.verse - a.rachats
+        resultat.append(Progression(a.annee, a.valeur_fin, a.valeur_fin - a.valeur_debut, verse, a.valeur_fin - verse,
+                                    a.en_cours_au, a.verse - a.rachats, a.gain))  # fmt: skip
+    return resultat
 
 
 def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:

@@ -130,6 +130,19 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
         "frais_par_an": _taux(s.frais_par_an) if frais_connus else None,
         "frais_sur_partie": bool(s.sans_historique) and frais_connus,
         "sans_historique": list(s.sans_historique),
+        "progression": [
+            {
+                "annee": p.annee,
+                "valeur": _nombre(p.valeur),
+                "variation": _nombre(p.variation),
+                "verse_cumule": _nombre(p.verse_cumule),
+                "gain_cumule": _nombre(p.gain_cumule),
+                "verse_net_annee": _nombre(p.verse_net_annee),
+                "gain_annee": _nombre(p.gain_annee),
+                "en_cours_au": p.en_cours_au.isoformat() if p.en_cours_au else None,
+            }
+            for p in s.progression
+        ],
         "annees": [
             {
                 "annee": a.annee,
