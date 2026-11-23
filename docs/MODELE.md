@@ -301,3 +301,14 @@ l'échéance est « à saisir »).
   gratuité = ouverture + 5 ans. PERP et autres anciens contrats : règles de transfert propres, non chiffrées ici.
 - **PER, versements déductibles** : rappel du 31 décembre de l'année en cours.
 Échéances listées par date ; une échéance passée de moins d'un an reste affichée comme « atteinte ».
+
+## 12. Projection retraite (onglet « Simulation »)
+
+Hypothèses saisies, jamais une prévision. Contrats retenus : les PER et PERP du titulaire, et ses assurances vie si
+la case est cochée ; K0 = somme de leurs valeurs au dernier relevé. n = mois d'aujourd'hui au 1er janvier de l'année
+de départ ; versement mensuel V ; pour chaque rendement annuel net r des trois scénarios, r_m = (1 + r)^(1/12) − 1 :
+- capital au départ K = K0 × (1 + r_m)^n + V × ((1 + r_m)^n − 1) / r_m (V × n si r_m = 0) ;
+- en euros d'aujourd'hui, avec une inflation annuelle π : K_réel = K / (1 + π)^(n / 12) ;
+- retrait mensuel possible pendant D années, le reste du capital continuant de rapporter r (sortie en capital
+  fractionnée, pas une rente viagère) : W = K_réel × r_m / (1 − (1 + r_m)^(−12 D)) (K_réel / (12 D) si r_m = 0).
+Fiscalité de la sortie non comptée.
