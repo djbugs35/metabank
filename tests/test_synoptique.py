@@ -77,3 +77,9 @@ def test_seul_l_assistant_sort_de_la_machine_et_son_etat_suit_la_configuration(d
 
 def test_sans_donnees_le_synoptique_est_vide(tmp_path):
     assert etat_synoptique(tmp_path / "absent", AUJOURD_HUI)["comptes"] == []
+
+
+def test_la_derniere_mise_a_jour_est_le_dernier_import_reussi_distinct_de_la_derniere_donnee(donnees):
+    courant = _ligne(etat_synoptique(donnees, AUJOURD_HUI), COURANT)
+    assert courant["derniere_mise_a_jour"] == courant["journal"][0]["le"]
+    assert courant["derniere_mise_a_jour"][:10] != courant["derniere_donnee"]
