@@ -151,7 +151,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
-| Base SQLite et archives | `data/metabank.db` reconstruisible depuis `data/archives/` ; schéma versionné ; montants en centimes | une base effacée se reconstruit à l'identique | à faire |
+| Base SQLite et archives | `data/metabank.db` reconstruisible depuis `data/archives/` ; schéma versionné ; montants en centimes | une base effacée se reconstruit à l'identique | socle fait (`metabank/base/`) ; reste à l'alimenter par les connecteurs |
 | Contrat des connecteurs | familles fichier, direct, calcul, référence ; registre principal et secours ; journal des imports | un connecteur s'ajoute en un module | à faire |
 | Lecteurs existants en connecteurs | Suravenir PDF, Cardif PDF, BNP CSV (comptes, livrets, crédits) passés au contrat ; mêmes chiffres qu'avant | tous les tests actuels passent sur la nouvelle base | à faire |
 | Onglet Configuration | titulaires, registre des comptes, fiches des connecteurs, dossiers, paramètres ; secrets dans le trousseau | un compte se déclare et se corrige depuis la page | à faire |
@@ -222,6 +222,12 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 ## Décisions prises
 - **2026-11-22 — Base SQLite et archives brutes.** La base (stdlib, `data/metabank.db`) se reconstruit depuis
   `data/archives/` ; secrets dans le trousseau macOS, jamais en base.
+- **2026-11-22 — Ce qui est saisi reste hors de la base.** Corrections, règles de classement, registre des comptes
+  et réglages ne viennent d'aucune archive : ils restent dans leurs fichiers de `data/` (JSON, écriture atomique),
+  pour qu'effacer la base ne perde rien. La base ne contient que ce qui se refait depuis `data/archives/`, journal
+  compris (la date d'un import est celle de son archive). Archives rangées par provenance,
+  `data/archives/<titulaire>/<dossier du compte>/<fichier>`, rejouées dans l'ordre de leur date de modification ;
+  un fichier non reconnu n'est pas archivé.
 - **2026-11-22 — Imports par connecteurs (plug-ins)**, sur le modèle de metascrap : un contrat, quatre familles
   (fichier, direct, calcul, référence), un registre avec accès principal et de secours, un journal.
 - **2026-11-22 — Onglets Configuration et Synoptique** ; le synoptique montre aussi ce qui sort de la machine.
@@ -260,7 +266,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Comptes bancaires BNP (courant, locatif, Livret A, LDD) : budget, dépenses par catégorie, frais, argent qui dort | — | fait |
 | Crédits immobiliers : capital restant dû, taux, fin et intérêts restants estimés ; patrimoine net avec valeur des biens | — | fait |
 | Patrimoine complet et synthèse de l'épargne dans le tableau de bord ; onglet Budget | — | fait |
-| Base SQLite reconstruisible depuis les archives brutes | 1 | à faire |
+| Base SQLite reconstruisible depuis les archives brutes | 1 | en cours (socle fait) |
 | Connecteurs (plug-ins) fichier, direct, calcul, référence ; registre et journal | 1 | à faire |
 | Onglet Configuration (comptes, connecteurs, dossiers, paramètres) | 1 | à faire |
 | Onglet Synoptique (accès, réseau, fraîcheur, journal) | 1 | à faire |
