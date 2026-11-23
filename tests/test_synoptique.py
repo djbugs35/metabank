@@ -6,10 +6,11 @@ from datetime import date, datetime
 import pytest
 
 from metabank.base.integration import FICHIER_BASE
-from metabank.base.journal import noter_sans_archive
+from metabank.base.journal import EntreeJournal, noter_sans_archive
 from metabank.base.schema import ouvrir
 from metabank.synoptique import A_JOUR, EN_RETARD, JAMAIS, TRES_EN_RETARD, evaluer_fraicheur
-from metabank.web.synoptique_vues import etat_synoptique
+from metabank.web.synoptique_vues import _a_la_banque, etat_synoptique
+from tests.conftest import ranger
 
 pytestmark = pytest.mark.usefixtures("pdf_simules")
 
@@ -83,3 +84,13 @@ def test_la_derniere_mise_a_jour_est_le_dernier_import_reussi_distinct_de_la_der
     courant = _ligne(etat_synoptique(donnees, AUJOURD_HUI), COURANT)
     assert courant["derniere_mise_a_jour"] == courant["journal"][0]["le"]
     assert courant["derniere_mise_a_jour"][:10] != courant["derniere_donnee"]
+
+
+def test_un_compte_en_connexion_directe_montre_ce_qui_attend_a_la_banque(donnees):
+    ranger(donnees, "archives/Alice/CC - BNP - 1234/enable_banking-1234-2026-04-10.json", json.dumps({
+        "source": "enable_banking", "soldes": [{"balance_type": "XPCD", "reference_date": "2026-04-10"}],
+        "operations": [{"status": "PDNG"}, {"status": "PDNG"}, {"status": "BOOK"}]}).encode())  # fmt: skip
+    entree = EntreeJournal("2026-04-10T08:00:00", "enable_banking", COURANT, "ok", 1, "",
+                           "Alice/CC - BNP - 1234/enable_banking-1234-2026-04-10.json")  # fmt: skip
+    assert _a_la_banque(donnees, [entree]) == {"en_attente": 2, "solde_attendu_au": "2026-04-10"}
+    assert _a_la_banque(donnees, []) is None

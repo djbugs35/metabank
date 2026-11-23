@@ -1,13 +1,16 @@
 """Onglet Synoptique : une ligne par compte, de sa source jusqu'aux écrans, et ce qui sort de la machine. MODELE § 9."""
 
+import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from metabank.base.archives import DOSSIER as DOSSIER_ARCHIVES
 from metabank.base.integration import ouvrir_base
 from metabank.base.journal import EntreeJournal, lire_journal
 from metabank.base.lecture import lire_dates_des_donnees
 from metabank.configuration import lire_configuration
 from metabank.connecteurs.contrat import Connecteur
+from metabank.connecteurs.enable_banking import SOURCE
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.synoptique import evaluer_fraicheur
 from metabank.web.assistant import trouver_claude
@@ -42,12 +45,31 @@ def etat_synoptique(dossier: Path, aujourd_hui: date | None = None) -> dict:
         finally:
             connexion.close()
     depuis = (aujourd_hui - timedelta(days=FENETRE_JOURNAL_JOURS)).isoformat()
-    lignes = [_ligne(c, connecteurs, dates.get(c["cle"]), journal, depuis, aujourd_hui) for c in comptes]
+    lignes = [_ligne(c, connecteurs, dates.get(c["cle"]), journal, (depuis, aujourd_hui), dossier) for c in comptes]
     return {"comptes": lignes, "sorties": _sorties(dossier), "aujourd_hui": aujourd_hui.isoformat()}
 
 
+def _a_la_banque(dossier: Path, entrees: list[EntreeJournal]) -> dict | None:
+    """Rendre, d'après la dernière réponse DSP2 archivée, les opérations encore en attente et la date du solde attendu.
+
+    Ces opérations n'entrent pas en base tant que la banque ne les a pas comptabilisées (MODELE § 7.1 bis) ; les
+    montrer explique pourquoi la dernière donnée peut dater de quelques jours.
+    """
+    derniere = next((e for e in entrees if e.connecteur == SOURCE and e.resultat == "ok" and e.archive), None)
+    if derniere is None:
+        return None
+    try:
+        corps = json.loads((dossier / DOSSIER_ARCHIVES / derniere.archive).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    attendu = next((s.get("reference_date") for s in corps.get("soldes", []) if s.get("balance_type") == "XPCD"), None)
+    en_attente = sum(1 for o in corps.get("operations", []) if o.get("status") == "PDNG")
+    return {"en_attente": en_attente, "solde_attendu_au": (attendu or "")[:10] or None}
+
+
 def _ligne(compte: dict, connecteurs: dict[str, Connecteur], derniere: date | None, journal: list[EntreeJournal],
-           depuis: str, aujourd_hui: date) -> dict:  # fmt: skip
+           fenetre: tuple[str, date], dossier: Path) -> dict:  # fmt: skip
+    depuis, aujourd_hui = fenetre
     principal = connecteurs.get(compte["principal"])
     secours = connecteurs.get(compte["secours"])
     entrees = [e for e in journal if compte["cle"] in e.compte_cle.split(",")]
@@ -64,6 +86,7 @@ def _ligne(compte: dict, connecteurs: dict[str, Connecteur], derniere: date | No
         # Date de la donnée la plus récente (MODELE § 9) et, à part, dernier import réussi : une synchronisation
         # qui ne rapporte rien de neuf ne rajeunit pas la donnée, mais elle a bien eu lieu.
         "derniere_mise_a_jour": next((e.le for e in entrees if e.resultat == "ok"), None),
+        "a_la_banque": _a_la_banque(dossier, entrees),
         "frequence_jours": compte["frequence_jours"],
         "fraicheur": evaluer_fraicheur(derniere, compte["frequence_jours"], aujourd_hui),
         "alimente": ALIMENTE.get(compte["type_compte"], ""),

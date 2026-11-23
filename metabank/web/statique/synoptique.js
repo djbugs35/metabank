@@ -40,7 +40,9 @@ export async function afficherSynoptique() {
     const acces = `${echapper(c.principal || "aucun")}${c.secours ? ` → ${echapper(c.secours)}` : ""}`;
     return `<tr class="cliquable" data-compte="${echapper(c.cle)}"><td>${echapper(c.nom)}</td><td>${acces}</td><td>${echapper(c.reseau)}</td>
       <td><span class="pastille ${classe}" title="${texte}"></span> ${dateFr(c.derniere_donnee)} <span class="discret">${age(c.derniere_donnee, s.aujourd_hui)} · ${texte}</span>
-        ${c.derniere_mise_a_jour ? `<br><span class="note">mis à jour le ${miseAJour(c.derniere_mise_a_jour)}</span>` : ""}</td>
+        ${c.derniere_mise_a_jour ? `<br><span class="note">mis à jour le ${miseAJour(c.derniere_mise_a_jour)}</span>` : ""}
+        ${c.a_la_banque ? `<br><span class="note">à la banque : ${c.a_la_banque.en_attente} opération${c.a_la_banque.en_attente > 1 ? "s" : ""} en attente${
+          c.a_la_banque.solde_attendu_au ? `, solde attendu au ${dateFr(c.a_la_banque.solde_attendu_au)}` : ""}</span>` : ""}</td>
       <td>${echapper(c.alimente)}</td><td class="nombre">${c.reussis_30_jours} ✓ ${c.echecs_30_jours ? `<span class="ko">${c.echecs_30_jours} ✗</span>` : ""}</td></tr>${detail(c)}`;
   });
   $("synoptique-comptes").innerHTML = s.comptes.length
