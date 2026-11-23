@@ -42,7 +42,7 @@ def test_sans_fichier_la_configuration_est_vide_et_l_assistant_actif(tmp_path):
     assert lire_configuration(tmp_path) == {
         "comptes": {},
         "reglages": {},
-        "parametres": {"assistant_actif": True},
+        "parametres": {"assistant_actif": True, "imposition_commune": False},
         "dossiers": {"depot": ""},
         "objectifs": {},
     }
@@ -57,7 +57,7 @@ def test_une_configuration_valide_est_enregistree_puis_relue(tmp_path):
     assert _ecrire(tmp_path, saisie) == {
         "comptes": {COURANT: {"titulaire": "Bruno", "principal": "bnp_csv", "secours": "", "frequence_jours": 15}},
         "reglages": {"avec_reglages.dossier": "/Volumes/Depot"},
-        "parametres": {"assistant_actif": False},
+        "parametres": {"assistant_actif": False, "imposition_commune": False},
         "dossiers": {"depot": ""},
         "objectifs": {},
     }
