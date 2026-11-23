@@ -226,7 +226,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Projection retraite | capital estimé à l'âge de départ selon plusieurs hypothèses de rendement, de versements et d'inflation ; capital ou rente | trois scénarios comparés | à faire |
 | Crédits | tableau d'amortissement ; rembourser par anticipation ou placer ; coût de l'assurance emprunteur | comparaison chiffrée disponible | fait : MODELE § 7.11 ; tableau par année, « Rembourser ou placer » (IRA au plafond légal), assurance estimée |
 | Bien locatif | loyers, charges, prêt, intérêts : rendement brut et net, trésorerie mensuelle | rendement et trésorerie affichés | fait : MODELE § 7.12 ; rendement brut, net de charges, après intérêts ; trésorerie mensuelle prêt compris |
-| Budget | abonnements récurrents repérés, objectif par catégorie, comparaison d'une année sur l'autre | dépassements signalés | à faire |
+| Budget | abonnements récurrents repérés, objectif par catégorie, comparaison d'une année sur l'autre | dépassements signalés | fait : MODELE § 7.13 ; dépenses régulières repérées, objectifs saisis dans l'onglet Budget, 12 derniers mois face aux 12 précédents |
 
 ### Étape 6 — IA et confort
 

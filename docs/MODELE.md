@@ -225,6 +225,16 @@ Avec V la valeur du bien saisie et I les intérêts des 12 prochaines échéance
 - trésorerie mensuelle = (L − H − E) / 12 : ce que le bien rapporte ou coûte chaque mois, prêt compris.
 Avant impôts et prélèvements sociaux ; sans valeur saisie, seuls les montants et la trésorerie sont affichés.
 
+### 7.13 Budget : abonnements, objectifs, d'une année sur l'autre
+Sur les dépenses classées (7.2) d'un compte courant, regroupées par marchand (libellé sans date, carte ni chiffres) :
+- **abonnement ou prélèvement régulier** : un marchand débité au moins 3 mois distincts sur les 12 derniers mois
+  couverts, au plus deux fois par mois en moyenne, montants stables (le plus haut ≤ 1,2 × le plus bas). Montant
+  habituel = médiane ; coût sur 12 mois = somme des débits de la fenêtre ;
+- **objectif par catégorie** (saisi, en euros par mois) : dépassement si la dépense du dernier mois complet de la
+  catégorie dépasse l'objectif ; la moyenne des 3 derniers mois complets est donnée à côté ;
+- **d'une année sur l'autre** : par catégorie, dépenses des 12 derniers mois complets face aux 12 mois complets
+  précédents, écart en euros ; sans 24 mois complets couverts, la colonne précédente reste vide.
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : actifs = Σ valeurs des placements (assurance vie, PER, PERP, au dernier

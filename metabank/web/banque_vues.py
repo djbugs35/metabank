@@ -5,8 +5,10 @@ from pathlib import Path
 
 from metabank.banque import regrouper
 from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
-from metabank.banque.categories import lire_regles, motif_suggere
+from metabank.banque.budget import comparer_annees, depenses_par_mois, reperer_abonnements, suivre_objectifs
+from metabank.banque.categories import classer, lire_regles, motif_suggere
 from metabank.banque.modele import LIBELLES_TYPES, TYPES_COURANTS, Compte
+from metabank.configuration import lire_configuration
 
 ZERO = Decimal(0)
 DOUZE = Decimal(12)
@@ -31,12 +33,14 @@ def etat_banque(dossier: Path, comptes: list[Compte]) -> list[dict]:
         dossier: data/, pour les règles de classement des dépenses (data/categories.json).
     """
     regles = lire_regles(dossier)
+    objectifs = {c: Decimal(str(m)) for c, m in lire_configuration(dossier)["objectifs"].items()}
     analyses = [analyser(compte, regles) for compte in comptes if compte.type_compte != "credit"]
     total = sum((a.compte.solde for a in analyses), ZERO)
-    vues = [_vue(a, total) for a in analyses]
+    vues = [{**_vue(a, total), **_budget(a, regles, objectifs)} for a in analyses]
     courants = [c for c in comptes if c.type_compte in TYPES_COURANTS]
     if len(courants) > 1:
-        foyer = _vue(analyser(regrouper("Foyer", courants), regles), total)
+        consolide = analyser(regrouper("Foyer", courants), regles)
+        foyer = {**_vue(consolide, total), **_budget(consolide, regles, objectifs)}
         vues.insert(0, {**foyer, "id": "b:foyer", "nom": "Foyer · tous les comptes courants",
                         "court": "Foyer · tous les comptes courants", "consolide": True})  # fmt: skip
     return vues
@@ -112,3 +116,29 @@ def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:
         ],
         "anomalies": list(c.anomalies),
     }
+
+
+def _budget(a: AnalyseCompte, regles: list[tuple[str, str]], objectifs: dict[str, Decimal]) -> dict:
+    """Rendre abonnements, objectifs et comparaison annuelle du compte (vides hors compte courant). MODELE § 7.13."""
+    if a.compte.type_compte not in TYPES_COURANTS and a.compte.nom != "Foyer":
+        return {"abonnements": [], "objectifs": [], "comparaison": [], "categories_budget": []}
+    classees = classer(a.compte.operations, regles)
+    par_mois = depenses_par_mois(classees)
+    complets = [m.mois for m in a.mois if m.complet]
+    return {
+        "abonnements": [
+            {"marchand": x.marchand, "categorie": x.categorie, "montant": _n(x.montant_habituel), "mois": x.mois,
+             "cout_12_mois": _n(x.cout_12_mois)}
+            for x in reperer_abonnements(classees, a.compte.date_solde)
+        ],
+        "objectifs": [
+            {"categorie": o.categorie, "objectif": _n(o.objectif), "mois": o.mois, "depense_mois": _n(o.depense_mois),
+             "moyenne_3_mois": _n(o.moyenne_3_mois), "depasse": o.depasse}
+            for o in suivre_objectifs(par_mois, objectifs, complets)
+        ],
+        "comparaison": [
+            {"categorie": c, "derniers_12": _n(recent), "precedents_12": _n(avant)}
+            for c, recent, avant in comparer_annees(par_mois, complets)
+        ],
+        "categories_budget": sorted(set(par_mois) | set(objectifs)),
+    }  # fmt: skip

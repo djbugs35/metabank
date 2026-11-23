@@ -10,6 +10,7 @@ Format :
 secours nomment les connecteurs qui le mettent à jour ; la fréquence attendue (en jours) colore le synoptique.
 « reglages » : valeurs des réglages non secrets des connecteurs. Un secret n'est jamais écrit ici (coffre de la
 machine, étape 4).
+« objectifs » : dépense mensuelle visée par catégorie, en euros (onglet Budget, MODELE § 7.13).
 « dossiers » : dossier de dépôt surveillé (chemin absolu ; vide = data/depot/).
 Saisie du titulaire, hors de la base : effacer data/metabank.db ne la perd pas.
 """
@@ -48,6 +49,7 @@ def lire_configuration(dossier: Path) -> dict:
         "reglages": dict(contenu.get("reglages", {})),
         "parametres": {**PARAMETRES_PAR_DEFAUT, **contenu.get("parametres", {})},
         "dossiers": {"depot": "", **contenu.get("dossiers", {})},
+        "objectifs": dict(contenu.get("objectifs", {})),
     }
 
 
@@ -72,12 +74,34 @@ def ecrire_configuration(
         "reglages": _reglages(_rubrique(configuration, "reglages"), connecteurs),
         "parametres": _parametres(_rubrique(configuration, "parametres")),
         "dossiers": _dossiers(_rubrique(configuration, "dossiers"), dossier),
+        # Les objectifs se saisissent dans l'onglet Budget : absents de la saisie, ils sont gardés tels quels.
+        "objectifs": _objectifs(_rubrique(configuration, "objectifs"))
+        if "objectifs" in configuration
+        else lire_configuration(dossier)["objectifs"],
     }
+    _ecrire(dossier, propre)
+    return lire_configuration(dossier)
+
+
+def ecrire_objectifs(dossier: Path, objectifs: dict) -> dict:
+    """Rendre les objectifs mensuels par catégorie (euros) validés, après les avoir enregistrés seuls.
+
+    Raises:
+        ConfigurationInvalide: catégorie vide ou trop longue, montant négatif ou trop grand ; rien n'est écrit.
+    """
+    if not isinstance(objectifs, dict):
+        raise ConfigurationInvalide("objectifs : objet attendu")
+    contenu = lire_configuration(dossier)
+    contenu["objectifs"] = _objectifs(objectifs)
+    _ecrire(dossier, contenu)
+    return contenu["objectifs"]
+
+
+def _ecrire(dossier: Path, contenu: dict) -> None:
     chemin = dossier / FICHIER
     temporaire = chemin.with_suffix(".json.tmp")
-    temporaire.write_text(json.dumps(propre, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporaire.write_text(json.dumps(contenu, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporaire.replace(chemin)
-    return lire_configuration(dossier)
 
 
 def _rubrique(configuration: dict, nom: str) -> dict:
@@ -162,3 +186,20 @@ def _dossiers(dossiers: dict, dossier_data: Path) -> dict:
         if chemin.resolve().is_relative_to((dossier_data / "archives").resolve()):
             raise ConfigurationInvalide("dossier de dépôt : pas dans data/archives/, qui ne se modifie jamais")
     return {"depot": depot}
+
+
+OBJECTIF_MAX = 1_000_000
+
+
+def _objectifs(objectifs: dict) -> dict:
+    propres = {}
+    for categorie, montant in objectifs.items():
+        nom = str(categorie).strip()
+        if not nom or len(nom) > 60:
+            raise ConfigurationInvalide("objectif : catégorie vide ou trop longue")
+        if montant in (None, ""):
+            continue
+        if isinstance(montant, bool) or not isinstance(montant, int | float) or not 0 <= montant <= OBJECTIF_MAX:
+            raise ConfigurationInvalide(f"{nom} : objectif entre 0 et {OBJECTIF_MAX} € par mois")
+        propres[nom] = montant
+    return propres
