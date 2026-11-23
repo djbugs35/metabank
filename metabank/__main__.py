@@ -4,6 +4,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import webbrowser
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -11,11 +12,13 @@ from pathlib import Path
 from metabank.archivage import archiver_donnees, comparer_avec_fichiers
 from metabank.base.integration import reconstruire
 from metabank.bilan import faire_bilans
+from metabank.connecteurs._enable_banking import Client, EnableBankingIndisponible, lire_accord
 from metabank.connecteurs.registre import composer_lecteur, lister_connecteurs
 from metabank.corrections import appliquer_verifications, lire_ouvertures
 from metabank.donnees import charger
 from metabank.frais import analyser_frais
 from metabank.frais_historique import historiques_frais
+from metabank.liaison_enable_banking import comparer, relier
 from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
 from metabank.releves import ReleveRange
@@ -53,30 +56,36 @@ def main(arguments: list[str] | None = None) -> int:
     refaire.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     revue = commandes.add_parser("revue", help="écrire la revue du mois dans data/revues/AAAA-MM.md et l'afficher")
     revue.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
+    banque = commandes.add_parser(
+        "enable-banking", help="relier ses comptes par Enable Banking (DSP2), puis comparer au CSV"
+    )
+    banque.add_argument("action", choices=("relier", "comparer"))
+    banque.add_argument("--application", help="identifiant de l'application Enable Banking (nom du fichier .pem)")
+    banque.add_argument("--banque", default="BNP Paribas", help="nom de la banque")
+    banque.add_argument("--jours", type=int, default=90, help="comparer : période en jours")
+    banque.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     mcp = commandes.add_parser(
         "mcp", help="serveur MCP local en lecture seule, pour Claude Code (entrée et sortie standard)"
     )
     mcp.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     options = analyseur.parse_args(arguments)
-    if options.commande == "revue":
-        chemin = enregistrer_revue(options.donnees, faire_revue(options.donnees))
-        print(chemin.read_text(encoding="utf-8") + f"\nEnregistrée : {chemin}")
-        return 0
-    if options.commande == "mcp":
-        servir(options.donnees)
-        return 0
-    if options.commande == "archiver":
-        return _archiver(options.donnees)
-    if options.commande == "reconstruire":
-        print(f"Base refaite : {reconstruire(options.donnees, composer_lecteur(lister_connecteurs()))}")
-        return 0
-    if options.commande == "frais":
-        return _frais(options)
-    if options.commande == "web":
-        return _web(options.donnees, options.port, ouvrir=not options.sans_ouvrir)
-    if options.commande == "tableau":
-        return _tableau(options.donnees, ouvrir=not options.sans_ouvrir)
-    return _bilan(options.donnees)
+    return COMMANDES[options.commande](options)
+
+
+def _revue(options) -> int:
+    chemin = enregistrer_revue(options.donnees, faire_revue(options.donnees))
+    print(chemin.read_text(encoding="utf-8") + f"\nEnregistrée : {chemin}")
+    return 0
+
+
+def _mcp(options) -> int:
+    servir(options.donnees)
+    return 0
+
+
+def _reconstruire(options) -> int:
+    print(f"Base refaite : {reconstruire(options.donnees, composer_lecteur(lister_connecteurs()))}")
+    return 0
 
 
 def _releves(dossier: Path) -> tuple[list[ReleveRange], list[str]]:
@@ -152,6 +161,29 @@ def _archiver(dossier: Path) -> int:
     return 1 if ecarts or bilan.refus else 0
 
 
+def _enable_banking(options) -> int:
+    application = options.application or lire_accord().get("application")
+    if not application:
+        print("Indiquez --application <identifiant> (le nom du fichier .pem, sans « .pem »).")
+        return 1
+    client = Client(application)
+    try:
+        if options.action == "relier":
+            print("La page d'accord de la banque va s'ouvrir. Après votre validation dans l'application de la banque,")
+            print("le navigateur affichera une erreur sur « localhost » : c'est normal, copiez alors son adresse.")
+            accord = relier(client, options.banque, input, webbrowser.open)
+            print(f"Accord enregistré jusqu'au {accord['fin']} ; comptes autorisés :")
+            for compte in accord["comptes"]:
+                print(f"  {compte['nom']} {compte['masque']}")
+        else:
+            for ligne in comparer(client, options.donnees, options.jours):
+                print(ligne)
+    except (EnableBankingIndisponible, ValueError) as erreur:
+        print(f"Impossible : {erreur}")
+        return 1
+    return 0
+
+
 def _bilan(dossier: Path) -> int:
     releves, erreurs = _releves(dossier)
     releves = appliquer_verifications(releves, dossier)
@@ -161,6 +193,20 @@ def _bilan(dossier: Path) -> int:
     _ecrire(sortie, en_json(bilans))
     print(f"\nBilan détaillé : {sortie}")
     return 1 if erreurs else 0
+
+
+# Commande -> traitement (options d'argparse) -> code de sortie.
+COMMANDES = {
+    "bilan": lambda options: _bilan(options.donnees),
+    "frais": _frais,
+    "tableau": lambda options: _tableau(options.donnees, ouvrir=not options.sans_ouvrir),
+    "web": lambda options: _web(options.donnees, options.port, ouvrir=not options.sans_ouvrir),
+    "archiver": lambda options: _archiver(options.donnees),
+    "reconstruire": _reconstruire,
+    "revue": _revue,
+    "mcp": _mcp,
+    "enable-banking": _enable_banking,
+}
 
 
 if __name__ == "__main__":
