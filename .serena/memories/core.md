@@ -40,6 +40,8 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
 - Step 5 modules: `banque/credit_simulation.py` (§ 7.11), `banque/locatif.py` (§ 7.12), `banque/budget.py` (§ 7.13),
   `fiscalite.py` (§ 11), `retraite.py` (§ 12), `allocation.py` (§ 13); config rubriques `objectifs`, `classes`,
   `cible` are written by their own tabs and preserved by the Configuration tab. POST routes: `web/serveur.ENVOIS_JSON`.
+- MCP server: `serveur_mcp.py` (JSON-RPC over stdio, stdlib, `metabank mcp`), tools in `outils_mcp.py` built from
+  `web/vues.etat` with explicit fields; `sans_numero` strips even masked numbers (rule: AI gets no number).
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,
