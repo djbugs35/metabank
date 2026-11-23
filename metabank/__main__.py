@@ -19,6 +19,7 @@ from metabank.frais_historique import historiques_frais
 from metabank.rapport import en_json, formater_texte
 from metabank.rapport_frais import formater_frais
 from metabank.releves import ReleveRange
+from metabank.revue import enregistrer_revue, faire_revue
 from metabank.serveur_mcp import servir
 from metabank.tableau import Tableau, generer_html
 from metabank.web.serveur import PORT_DEFAUT, creer_serveur
@@ -50,11 +51,17 @@ def main(arguments: list[str] | None = None) -> int:
     archiver.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     refaire = commandes.add_parser("reconstruire", help="refaire data/metabank.db depuis data/archives/ seules")
     refaire.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
+    revue = commandes.add_parser("revue", help="écrire la revue du mois dans data/revues/AAAA-MM.md et l'afficher")
+    revue.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     mcp = commandes.add_parser(
         "mcp", help="serveur MCP local en lecture seule, pour Claude Code (entrée et sortie standard)"
     )
     mcp.add_argument("--donnees", type=Path, default=RACINE / "data", help="dossier data/")
     options = analyseur.parse_args(arguments)
+    if options.commande == "revue":
+        chemin = enregistrer_revue(options.donnees, faire_revue(options.donnees))
+        print(chemin.read_text(encoding="utf-8") + f"\nEnregistrée : {chemin}")
+        return 0
     if options.commande == "mcp":
         servir(options.donnees)
         return 0

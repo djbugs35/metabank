@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from metabank.configuration import ecrire_objectifs, lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
+from metabank.revue import SUJETS, enregistrer_revue, faire_revue
 from metabank.web.allocation_vues import enregistrer_allocation, etat_allocation
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
 from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
@@ -46,6 +47,7 @@ FICHIERS = {
     "/budget.js": ("budget.js", "text/javascript; charset=utf-8"),
     "/retraite.js": ("retraite.js", "text/javascript; charset=utf-8"),
     "/allocation.js": ("allocation.js", "text/javascript; charset=utf-8"),
+    "/revue.js": ("revue.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -134,6 +136,13 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": disponible})
         elif chemin == "/api/configuration":
             self._json(HTTPStatus.OK, etat_configuration(self.cache.dossier))
+        elif chemin == "/api/revue":
+            revue = faire_revue(self.cache.dossier)
+            # La première ouverture du mois garde une trace de la revue dans data/revues/ : « chaque mois ».
+            enregistrer_revue(self.cache.dossier, revue, remplacer=False)
+            self._json(
+                HTTPStatus.OK, {"mois": revue.mois, "sujets": SUJETS, "actions": [vars(a) for a in revue.actions]}
+            )
         elif chemin == "/api/allocation":
             titulaire = parse_qs(urlsplit(self.path).query).get("titulaire", [""])[0]
             self._json(HTTPStatus.OK, etat_allocation(self.cache.dossier, titulaire))

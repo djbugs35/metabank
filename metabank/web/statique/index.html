@@ -13,6 +13,7 @@
     <span class="marque">metabank</span>
     <nav role="tablist">
       <button role="tab" data-onglet="tableau" aria-selected="true">Tableau de bord</button>
+      <button role="tab" data-onglet="revue" aria-selected="false">Revue du mois</button>
       <button role="tab" data-onglet="comptes" aria-selected="false">Budget</button>
       <button role="tab" data-onglet="releves" aria-selected="false">Relevés</button>
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
@@ -180,6 +181,13 @@
       calculer le patrimoine net (actifs moins crédits). Laissez vide pour ne pas la compter.</p>
     <div id="liste-biens"></div>
     <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
+  </section>
+
+  <section id="revue" data-panneau class="cache">
+    <h1 id="revue-titre">Revue du mois</h1>
+    <p class="discret pas-imprime">Ce qui mérite un coup d'œil ce mois-ci, tiré des autres onglets. Gardée aussi dans
+      data/revues/, à la première ouverture du mois. <button class="action" id="revue-imprimer">Imprimer en PDF</button></p>
+    <div id="revue-actions"></div>
   </section>
 
   <section id="allocation" data-panneau class="cache">

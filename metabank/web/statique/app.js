@@ -4,6 +4,7 @@ import { afficherConfiguration, preparerConfiguration } from "./configuration.js
 import { afficherAllocation, preparerAllocation } from "./allocation.js";
 import { preparerBudget } from "./budget.js";
 import { afficherRetraite, preparerRetraite } from "./retraite.js";
+import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique } from "./synoptique.js";
@@ -58,6 +59,7 @@ document.querySelectorAll("nav [data-onglet]").forEach((bouton) =>
     document.querySelectorAll("[data-panneau]").forEach((p) => p.classList.toggle("cache", p.id !== bouton.dataset.onglet));
     if (bouton.dataset.onglet === "simulation") simuler();
     if (bouton.dataset.onglet === "comptes") afficherRegles().catch((e) => { $("regles-liste").textContent = e.message; });
+    if (bouton.dataset.onglet === "revue") afficherRevue().catch((e) => { $("revue-actions").textContent = e.message; });
     if (bouton.dataset.onglet === "allocation") afficherAllocation().catch((e) => { $("alloc-alertes").textContent = e.message; });
     if (bouton.dataset.onglet === "synoptique") afficherSynoptique().catch((e) => { $("synoptique-comptes").textContent = e.message; });
     if (bouton.dataset.onglet === "configuration") afficherConfiguration().catch((e) => { $("etat-configuration").textContent = e.message; });
@@ -529,4 +531,5 @@ preparerCreditsSimulation();
 preparerBudget(charger);
 preparerRetraite();
 preparerAllocation();
+preparerRevue();
 charger();

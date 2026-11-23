@@ -98,3 +98,8 @@ rect.serie-4, i.serie-4 { fill: var(--serie-4); background: var(--serie-4); }
 .pastille-ko { background: var(--erreur); } .pastille-vide { border: 1px solid var(--texte-2); }
 tr.cliquable { cursor: pointer; } tr.cliquable:hover { background: var(--surface-2); }
 tr.detail > td { background: var(--surface-2); white-space: normal; }
+/* Impression (revue du mois) : seul le panneau affiché, sans l'en-tête ni les boutons. */
+@media print {
+  header, .pas-imprime, button { display: none !important; }
+  body { background: #fff; color: #000; }
+}
