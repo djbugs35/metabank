@@ -13,6 +13,7 @@ from metabank.releves import ReleveRange, lire_releve
 from metabank.releves.frais_supports import FraisSupport
 from metabank.releves.suravenir_situation import est_situation_suravenir, lire_situation_suravenir
 from metabank.releves.texte import ErreurLecture
+from metabank.synthese import synthetiser
 from tests.conftest import ENTETE_PDF, EXEMPLES
 
 SITUATION = (EXEMPLES / "suravenir_situation.txt").read_text(encoding="utf-8") + "\nVIE PLUS - Filière de SURAVENIR\n"
@@ -133,14 +134,24 @@ def test_un_coupon_n_est_attendu_qu_apres_une_fois_et_demie_le_rythme_habituel(j
     assert coupon_attendu(jours, au) == attendu
 
 
-def test_depuis_l_ouverture_le_cumul_suit_les_versements_lus_et_non_le_cumul_fiscal_de_l_assureur():
-    # Relevé annuel d'ouverture (rien au 1er janvier) ; la situation annonce un cumul plus grand que les versements
-    # lus, comme après un transfert entrant compté pour sa base fiscale.
+def test_le_verse_est_celui_du_document_et_l_ecart_avec_les_mouvements_est_signale():
+    # Relevé annuel d'ouverture (rien au 1er janvier) ; la situation annonce un versé plus grand que les mouvements,
+    # comme après un transfert entrant compté pour les versements du contrat d'origine.
     annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
                      valeur_precedente=Decimal(0))  # fmt: skip
     situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero,
-                        versements_bruts_depuis_origine=Decimal(999_999))  # fmt: skip
+                        versements_bruts_depuis_origine=Decimal(30000))  # fmt: skip
     [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
-    assert bilan.apports_cumules == sum((a.apports for a in bilan.annees), Decimal(0))
-    assert bilan.gain_cumule == sum((a.gain for a in bilan.annees), Decimal(0))
-    assert any("base fiscale" in a for a in bilan.anomalies)
+    refait = sum((a.apports for a in bilan.annees), Decimal(0))
+    assert (bilan.apports_cumules, bilan.verse_mouvements) == (Decimal(30000), refait)
+    assert bilan.gain_cumule == situation.valeur - Decimal(30000)
+    assert any(f"écart {Decimal(30000) - refait} €" in a for a in bilan.anomalies)
+    synthese = synthetiser("Alice", [bilan], [])
+    assert synthese.ecart_verse == Decimal(30000) - refait
+
+
+def test_sans_les_premiers_releves_le_verse_ne_se_refait_pas():
+    annuel = lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie")
+    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero)
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    assert bilan.verse_mouvements is None and synthetiser("Alice", [bilan], []).ecart_verse == 0

@@ -53,6 +53,8 @@ class BilanContrat:
     frais_cumules: Decimal | None
     anomalies: tuple[str, ...] = field(default=())
     date_ouverture: date | None = None
+    # Versé refait par les mouvements des années (euros), contrôle du versé lu ; None s'il ne se refait pas. § 2.3.
+    verse_mouvements: Decimal | None = None
 
     @property
     def numero_masque(self) -> str:
@@ -139,20 +141,17 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
     apports: Decimal | None
     gain: Decimal | None
     frais: Decimal | None
-    if en_cours is not None and annees[0].valeur_debut == ZERO:
-        # Relevés annuels depuis l'ouverture puis situation avec historique : cumul des mêmes flux que les années.
-        # Sans les premières années, le cumul de l'assureur reste le seul complet (branche suivante). MODELE § 2.3.
-        apports = sum((a.apports for a in annees_affichees), ZERO)
-        rachats = sum((a.rachats for a in annees_affichees), ZERO)
-        frais = sum((a.frais for a in annees_affichees if a.frais is not None), ZERO)
-        gain = dernier.valeur - apports + rachats
-        _comparer_au_cumul_de_l_assureur(dernier, apports, anomalies)
-    elif annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
-        # Situation sans historique des opérations : cumuls de la situation. MODELE § 2.3.
+    verse_mouvements = None
+    if annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
+        # Relevés annuels suivis d'une situation : versé et valeur lus sur la situation. MODELE § 2.3.
         apports = dernier.versements_bruts_depuis_origine
         rachats = dernier.rachats_depuis_origine or ZERO
         gain = dernier.valeur - apports + rachats
-        frais = sum((a.frais for a in annees if a.frais is not None), ZERO)
+        frais = sum((a.frais for a in annees_affichees if a.frais is not None), ZERO)
+        if en_cours is not None and annees[0].valeur_debut == ZERO:
+            # Contrôle : le même versé refait par les mouvements de chaque année, depuis l'ouverture.
+            verse_mouvements = sum((a.apports for a in annees_affichees), ZERO)
+            _comparer_au_cumul_de_l_assureur(apports, verse_mouvements, anomalies)
     elif annees:
         apports = sum((a.apports for a in annees), ZERO)
         rachats = sum((a.rachats for a in annees), ZERO)
@@ -182,20 +181,18 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         frais_cumules=frais,
         anomalies=tuple(anomalies),
         date_ouverture=ouverture,
+        verse_mouvements=verse_mouvements,
     )
 
 
 ECART_CUMUL_TOLERE = Decimal(1)
 
 
-def _comparer_au_cumul_de_l_assureur(situation: Releve, apports: Decimal, anomalies: list[str]) -> None:
-    """Signaler un cumul des versements de l'assureur qui diffère de la somme des versements lus. MODELE § 2.3."""
-    cumul = situation.versements_bruts_depuis_origine
-    if cumul is not None and abs(cumul - apports) > ECART_CUMUL_TOLERE:
+def _comparer_au_cumul_de_l_assureur(lu: Decimal, mouvements: Decimal, anomalies: list[str]) -> None:
+    """Signaler un versé lu sur le document qui diffère du versé refait par les mouvements. MODELE § 2.3."""
+    if abs(lu - mouvements) > ECART_CUMUL_TOLERE:
         anomalies.append(
-            f"cumul des versements annoncé par l'assureur {cumul} € pour {apports} € versés d'après les relevés "
-            f"(écart {cumul - apports} € : un transfert entrant y compte souvent pour sa base fiscale, non pour la "
-            "somme reçue)"
+            f"versé : {lu} € d'après le document, {mouvements} € d'après les mouvements (écart {lu - mouvements} €)"
         )
 
 

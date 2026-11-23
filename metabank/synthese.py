@@ -64,6 +64,8 @@ class Synthese:
     sans_historique: tuple[str, ...]
     situations_dans_rendement: tuple[str, ...] = ()
     versements_incertains: bool = False
+    # Versé lu moins versé refait par les mouvements, sur les contrats où les deux existent (euros). MODELE § 2.3.
+    ecart_verse: Decimal = ZERO
 
     @property
     def frais_par_an(self) -> Decimal | None:
@@ -90,7 +92,9 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         sans_historique=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if not b.annees),
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
-    )
+        ecart_verse=sum((b.apports_cumules - b.verse_mouvements for b in bilans
+                         if b.apports_cumules is not None and b.verse_mouvements is not None), ZERO),
+    )  # fmt: skip
 
 
 def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSynthese:
