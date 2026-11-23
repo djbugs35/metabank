@@ -167,3 +167,17 @@ export function creditsHtml(credits, synthese, partActifs, { sansNumero = false 
 
 export const creditsDeVue = (etat, vue) =>
   (etat.credits ?? []).filter((c) => vue.niveau === "foyer" || c.titulaire === vue.nom);
+
+// Rendement de chaque année face aux repères publics (MODELE § 10) ; écart en points sous chaque repère.
+export function reperesHtml(annees, reperes) {
+  const cellule = (taux, votre) => taux === null || taux === undefined ? `<td class="n">—</td>`
+    : `<td class="n">${pct(taux, true)}${votre === null || votre === undefined ? "" : `<br><span class="note">${pct(votre - taux, true)} d'écart</span>`}</td>`;
+  return `<thead><tr><th>Année</th><th class="n">Votre rendement</th><th class="n">Fonds en euros</th>
+    <th class="n">Unités de compte</th><th class="n">Livret A</th><th class="n">Inflation</th><th class="n">MSCI World</th></tr></thead><tbody>${annees
+    .filter((a) => reperes?.[a.annee])
+    .map((a) => {
+      const r = reperes[a.annee];
+      return `<tr><td>${a.annee}</td><td class="n">${pct(a.gain_taux, true)}</td>${cellule(r.fonds_euros, a.gain_taux)}${cellule(r.unites_de_compte, a.gain_taux)}
+        ${cellule(r.livret_a, a.gain_taux)}${cellule(r.inflation, a.gain_taux)}${cellule(r.msci_world, a.gain_taux)}</tr>`;
+    }).join("")}</tbody>`;
+}

@@ -30,6 +30,7 @@ def test_l_initialisation_accepte_la_version_demandee_ou_propose_la_plus_recente
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": demandee}}, tmp_path
         )
         assert r["result"]["protocolVersion"] == rendue and "tools" in r["result"]["capabilities"]
+        assert r["result"]["serverInfo"]["version"][0].isdigit()
 
 
 def test_une_notification_n_a_pas_de_reponse(tmp_path):

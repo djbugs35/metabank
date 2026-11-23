@@ -39,6 +39,12 @@ function choisirCible() {
 }
 
 async function simulerArbitrage() {
+  for (const [id, quoi] of [["arb-frais-source", "du fonds vendu"], ["arb-frais-cible", "du fonds visé"]]) {
+    if ($(id).value === "") {
+      $("arb-resultat").innerHTML = `<p class="ko">Saisissez les frais ${quoi} : le relevé ne les donne pas (fonds en euros, ou relevé sans tableau des frais).</p>`;
+      return;
+    }
+  }
   const saisie = Object.fromEntries(["montant", "frais_source", "frais_cible", "frais_arbitrage", "rendement", "horizon"]
     .map((cle) => [cle, $(`arb-${cle.replace("_", "-")}`).value]));
   try {

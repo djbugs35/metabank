@@ -77,3 +77,11 @@ def test_une_classe_qui_s_ecarte_de_sa_cible_de_plus_de_cinq_points_derive():
         "Actions": Decimal("0.07"), "Obligations": Decimal("-0.07"),
     }  # fmt: skip
     assert derives(parts, {"Actions": Decimal("0.60"), "Obligations": Decimal("0.40")}) == {}
+
+
+def test_chaque_contrat_a_sa_repartition_par_classe(donnees):
+    par_contrat = etat_allocation(donnees)["par_contrat"]
+    assert par_contrat
+    for contrat in par_contrat:
+        assert sum(c["montant"] for c in contrat["classes"]) == pytest.approx(contrat["total"])
+        assert sum(c["part"] for c in contrat["classes"]) == pytest.approx(1, abs=1e-5)
