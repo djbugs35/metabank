@@ -51,18 +51,35 @@ export function barresGroupees(figure, { titre, annees, series, formater, survol
 }
 
 // Courbes sur un axe x commun (0..n) ; survol(rang) au déplacement de la souris ; un repère suit le curseur.
-export function courbes(figure, { titre, abscisses, series, formater, legendeX, survol }) {
+// Pas « rond » de l'axe (1, 2, 2,5 ou 5 × 10^n) pour environ quatre intervalles entre min et max.
+function pasRond(etendue) {
+  const brut = etendue / 4 || 1;
+  const puissance = 10 ** Math.floor(Math.log10(brut));
+  return puissance * ([1, 2, 2.5, 5, 10].find((m) => m * puissance >= brut) ?? 10);
+}
+
+// Libellé court d'une graduation, pour tenir dans la marge : « 1,25 M€ », « 850 k€ », « 300 € ».
+export function eurosCourts(v) {
+  const abs = Math.abs(v);
+  const nombre = (n, decimales) => n.toLocaleString("fr-FR", { maximumFractionDigits: decimales });
+  if (abs >= 1e6) return `${nombre(v / 1e6, 2)} M€`;
+  if (abs >= 1e4) return `${nombre(v / 1e3, 0)} k€`;
+  return `${nombre(v, 0)} €`;
+}
+
+export function courbes(figure, { titre, abscisses, series, formater, legendeX, survol, formaterAxe = null }) {
   const L = 640, H = 280, G = 64, D = 12, HAUT = 12, BAS = 28;
   const valeurs = series.flatMap((s) => s.valeurs);
-  const bas = Math.min(...valeurs) * 0.95, haut = Math.max(...valeurs) * 1.02;
+  const pas = pasRond(Math.max(...valeurs) - Math.min(...valeurs));
+  const bas = Math.floor(Math.min(...valeurs) / pas) * pas, haut = Math.ceil(Math.max(...valeurs) / pas) * pas || pas;
   const etendue = haut - bas || 1;
+  const graduation = formaterAxe ?? ((v) => (Math.abs(v) >= 1e4 ? eurosCourts(v) : formater(v)));
   const x = (rang) => G + (rang / Math.max(abscisses.length - 1, 1)) * (L - G - D);
   const y = (v) => HAUT + ((haut - v) / etendue) * (H - HAUT - BAS);
   const parties = [];
-  for (let i = 0; i <= 4; i++) {
-    const v = bas + (etendue * i) / 4;
+  for (let v = bas; v <= haut + pas / 2; v += pas) {
     parties.push(`<line x1="${G}" y1="${y(v)}" x2="${L - D}" y2="${y(v)}" class="grille"/>`);
-    parties.push(`<text x="${G - 6}" y="${y(v) + 4}" class="graduation" text-anchor="end">${echapper(formater(v))}</text>`);
+    parties.push(`<text x="${G - 6}" y="${y(v) + 4}" class="graduation" text-anchor="end">${echapper(graduation(v))}</text>`);
   }
   const etape = Math.ceil(abscisses.length / 8);
   const dernier = abscisses.length - 1;
