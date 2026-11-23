@@ -1,0 +1,25 @@
+ - 000000 - X000X0000XX0
+     Votre conseiller                                           Votre assureur
+     CABINET EXEMPLE
+
+                                            PATRIMOINE VIE PLUS
+                                            N° U2 123456789 du 30/03/2019
+                                                              Situation de votre contrat au 18/11/2026
+
+                 Performance (+/- value fiscale) en €                                           1 000,00 €
+                 Performance (+/- value fiscale) en %                                               5,00 %
+                 Cumul des versements bruts                                                    20 000,00 €
+                 Cumul des rachats bruts                                                            0,00 €
+                 Montant en cours de valorisation                                                   0,00 €
+                     1 - Compartiment 1                                                    21 000,00 € (100,00%)
+                     Gestion libre
+                                                                                          Plus ou
+                                                                        Valeur   Prix de
+                                                         Nombre de                         moins              Montant brut
+                      Supports financiers   Code ISIN               liquidative  revient            Répartition
+                                                           parts                           value               (en €)
+                                                                                         financière
+                      FONDS ACTIONS EXEMPLE C               FR0000000001        10,00   1 000,00   900,00      11,11 %      47.62 %   10 000,00
+                      OBLIGATIONS EXEMPLE R                 LU0000000002        50,00     200,00   210,00      -4,76 %      47.62 %   10 000,00
+                      ARKEA CREDIT COURT TERME T            FR00000000H3         5,00     200,00   200,00       0,00 %       4.76 %    1 000,00
+            Cette situation est établie à partir des dernières valeurs liquidatives connues.

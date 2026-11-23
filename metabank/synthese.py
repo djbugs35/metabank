@@ -7,6 +7,7 @@ from decimal import Decimal
 from metabank.bilan import BilanContrat
 from metabank.corrections import ANOMALIE_VERSEMENTS
 from metabank.frais_historique import HistoriqueFrais
+from metabank.releves.modele import cle_du_contrat
 
 ZERO = Decimal(0)
 # Au-delà de 25 % du capital de début, la date des versements change le rendement de plus d'un quart.
@@ -72,7 +73,9 @@ class Synthese:
 
 def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[HistoriqueFrais]) -> Synthese:
     """Rendre la synthèse des contrats donnés."""
-    frais_fonds = {(h.titulaire, h.numero, a.annee): a.frais_fonds for h in historiques for a in h.annees}
+    frais_fonds = {
+        (h.titulaire, cle_du_contrat(h.numero), a.annee): a.frais_fonds for h in historiques for a in h.annees
+    }
     suivis = [b for b in bilans if b.annees]
     annees = tuple(_annee(annee, suivis, frais_fonds) for annee in sorted({a.annee for b in suivis for a in b.annees}))
     return Synthese(
@@ -112,7 +115,9 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
         verse=sum((a.apports for _, a in lignes), ZERO),
         gain=gain,
         frais_releve=sum((a.frais or ZERO for _, a in lignes), ZERO),
-        frais_fonds=sum((frais_fonds.get((b.titulaire, b.numero, annee), ZERO) for b, _ in lignes), ZERO),
+        frais_fonds=sum(
+            (frais_fonds.get((b.titulaire, cle_du_contrat(b.numero), annee), ZERO) for b, _ in lignes), ZERO
+        ),
         rendement=_division(gain, fixe + flux_courant / 2),
         capital=fixe + flux_courant / 2 if fixe + flux_courant / 2 > 0 else None,
         ouverture_dans_l_annee=any(a.poids_estime for _, a in lignes),

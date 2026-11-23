@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from metabank.corrections import date_ouverture
 from metabank.releves import ReleveRange
-from metabank.releves.modele import Releve
+from metabank.releves.modele import Releve, cle_du_contrat
 
 ZERO = Decimal(0)
 MILIEU = Decimal("0.5")
@@ -66,10 +66,16 @@ def faire_bilans(releves: list[ReleveRange], ouvertures: dict[str, date] | None 
     """
     par_contrat: dict[tuple[str, str], list[Releve]] = {}
     for range_ in releves:
-        par_contrat.setdefault((range_.titulaire, range_.releve.numero), []).append(range_.releve)
+        par_contrat.setdefault((range_.titulaire, cle_du_contrat(range_.releve.numero)), []).append(range_.releve)
     return [
-        _bilan_contrat(titulaire, sorted(liste, key=lambda r: r.date_arrete), date_ouverture(numero, ouvertures or {}))
-        for (titulaire, numero), liste in sorted(par_contrat.items())
+        # Date d'ouverture cherchée sur le numéro complet des relevés : une clé de Corrections peut être plus longue
+        # que le dernier groupe (« U212345678 »).
+        _bilan_contrat(
+            titulaire,
+            sorted(liste, key=lambda r: r.date_arrete),
+            next((d for r in liste if (d := date_ouverture(r.numero, ouvertures or {}))), None),
+        )
+        for (titulaire, _), liste in sorted(par_contrat.items())
     ]
 
 
@@ -129,7 +135,13 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
     apports: Decimal | None
     gain: Decimal | None
     frais: Decimal | None
-    if annees:
+    if annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
+        # Relevés annuels suivis d'une situation plus récente : valeur et cumuls de la situation. MODELE § 2.3.
+        apports = dernier.versements_bruts_depuis_origine
+        rachats = dernier.rachats_depuis_origine or ZERO
+        gain = dernier.valeur - apports + rachats
+        frais = sum((a.frais for a in annees if a.frais is not None), ZERO)
+    elif annees:
         apports = sum((a.apports for a in annees), ZERO)
         rachats = sum((a.rachats for a in annees), ZERO)
         frais = sum((a.frais for a in annees if a.frais is not None), ZERO)

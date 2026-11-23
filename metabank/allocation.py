@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from metabank.releves import ReleveRange
+from metabank.releves.modele import cle_du_contrat
 
 ZERO = Decimal(0)
 SEUIL_CONCENTRATION = Decimal("0.20")
@@ -59,13 +60,20 @@ def positions(releves: list[ReleveRange], choisies: dict[str, str]) -> list[Posi
     """Rendre les supports du dernier relevé de chaque contrat, avec leur classe. MODELE § 13."""
     derniers: dict[tuple[str, str], ReleveRange] = {}
     for r in releves:
-        contrat_cle = (r.titulaire, r.releve.numero)
+        contrat_cle = (r.titulaire, cle_du_contrat(r.releve.numero))
         if contrat_cle not in derniers or r.releve.date_arrete > derniers[contrat_cle].releve.date_arrete:
             derniers[contrat_cle] = r
+    # Une situation récente n'a pas de tableau des frais : ils viennent du dernier relevé qui en a un. MODELE § 2.3.
+    frais_par_contrat: dict[tuple[str, str], dict[str, Decimal]] = {}
+    for r in sorted(releves, key=lambda r: r.releve.date_arrete):
+        if r.releve.frais_supports:
+            frais_par_contrat[(r.titulaire, cle_du_contrat(r.releve.numero))] = {
+                f.isin: f.frais_totaux for f in r.releve.frais_supports
+            }
     resultat = []
-    for r in derniers.values():
+    for (titulaire, numero), r in derniers.items():
         contrat = f"{r.releve.produit} …{r.releve.numero.replace(' ', '')[-4:]}"
-        frais = {f.isin: f.frais_totaux for f in r.releve.frais_supports}
+        frais = frais_par_contrat.get((titulaire, numero), {})
         for s in r.releve.supports:
             cle = cle_support(s.libelle, s.isin)
             choisie = choisies.get(cle)

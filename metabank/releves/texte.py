@@ -81,3 +81,9 @@ def extraire_texte_contenu(contenu: bytes) -> str | None:
     if resultat.returncode != 0:
         raise ErreurLecture(f"pdftotext a échoué ({resultat.stderr.decode(errors='replace').strip()})")
     return resultat.stdout.decode("utf-8", errors="replace")
+
+
+def date_numerique(texte: str) -> date:
+    """Rendre la date « JJ/MM/AAAA »."""
+    jour, mois, annee = (int(x) for x in texte.split("/"))
+    return date(annee, mois, jour)

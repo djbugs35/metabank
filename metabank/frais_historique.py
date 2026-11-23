@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from metabank.releves import ReleveRange
-from metabank.releves.modele import Releve
+from metabank.releves.modele import Releve, cle_du_contrat
 
 ZERO = Decimal(0)
 CENT = Decimal(100)
@@ -55,7 +55,7 @@ def historiques_frais(releves: list[ReleveRange]) -> list[HistoriqueFrais]:
     par_contrat: dict[tuple[str, str], list[Releve]] = {}
     for range_ in releves:
         if range_.releve.est_annuel:
-            par_contrat.setdefault((range_.titulaire, range_.releve.numero), []).append(range_.releve)
+            par_contrat.setdefault((range_.titulaire, cle_du_contrat(range_.releve.numero)), []).append(range_.releve)
     historiques = []
     for (titulaire, numero), liste in sorted(par_contrat.items()):
         liste.sort(key=lambda r: r.date_arrete)

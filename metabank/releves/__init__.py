@@ -7,6 +7,7 @@ from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.releves.cardif import est_situation_cardif, lire_situation_cardif
 from metabank.releves.modele import Releve
 from metabank.releves.suravenir import est_releve_suravenir, lire_releve_suravenir
+from metabank.releves.suravenir_situation import est_situation_suravenir, lire_situation_suravenir
 from metabank.releves.texte import ErreurLecture, extraire_texte
 
 # Préfixe du nom de dossier de contrat (« AV - Suravenir - … ») -> type de contrat.
@@ -27,6 +28,8 @@ def lire_releve(texte: str, fichier: str = "", type_indique: str | None = None) 
         return lire_releve_suravenir(texte, fichier, type_indique)
     if est_situation_cardif(texte):
         return lire_situation_cardif(texte, fichier, type_indique)
+    if est_situation_suravenir(texte):
+        return lire_situation_suravenir(texte, fichier, type_indique)
     raise ErreurLecture("assureur ou forme de relevé non reconnus")
 
 
