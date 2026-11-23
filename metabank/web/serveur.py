@@ -14,8 +14,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from metabank.configuration import lire_configuration
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.web.assistant import AssistantIndisponible, contexte, demander, trouver_claude
+from metabank.web.configuration_vues import enregistrer_configuration, etat_configuration
 from metabank.web.depot import DepotRefuse, deposer_releve
 from metabank.web.simulation import SimulationInvalide, simuler
 from metabank.web.vues import etat
@@ -30,6 +32,7 @@ FICHIERS = {
     "/style.css": ("style.css", "text/css; charset=utf-8"),
     "/rendu.js": ("rendu.js", "text/javascript; charset=utf-8"),
     "/comptes.js": ("comptes.js", "text/javascript; charset=utf-8"),
+    "/configuration.js": ("configuration.js", "text/javascript; charset=utf-8"),
     "/rapport": ("rapport.html", "text/html; charset=utf-8"),
     "/rapport.js": ("rapport.js", "text/javascript; charset=utf-8"),
     "/rapport.css": ("rapport.css", "text/css; charset=utf-8"),
@@ -61,6 +64,7 @@ class EtatEnCache:
             *self.dossier.glob("*/*/**/*.csv"),
             self.dossier / "corrections.json",
             self.dossier / "categories.json",
+            self.dossier / "configuration.json",
         ]
         return tuple(sorted((str(f), f.stat().st_mtime_ns) for f in fichiers if f.exists()))
 
@@ -76,6 +80,10 @@ def creer_serveur(dossier: Path, port: int = PORT_DEFAUT) -> ThreadingHTTPServer
     serveur = ThreadingHTTPServer((ADRESSE, port), Gestionnaire)
     Gestionnaire.hotes = {f"{ADRESSE}:{serveur.server_port}", f"localhost:{serveur.server_port}"}
     return serveur
+
+
+def _assistant_actif(dossier: Path) -> bool:
+    return bool(lire_configuration(dossier)["parametres"]["assistant_actif"])
 
 
 class _Gestionnaire(BaseHTTPRequestHandler):
@@ -94,14 +102,17 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             nom, type_ = FICHIERS[chemin]
             self._envoyer(HTTPStatus.OK, (STATIQUE / nom).read_bytes(), type_)
         elif chemin == "/api/etat":
-            self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": trouver_claude() is not None})
+            disponible = _assistant_actif(self.cache.dossier) and trouver_claude() is not None
+            self._json(HTTPStatus.OK, {**self.cache.lire(), "assistant_disponible": disponible})
+        elif chemin == "/api/configuration":
+            self._json(HTTPStatus.OK, etat_configuration(self.cache.dossier))
         elif chemin == "/api/assistant/contexte":
             self._envoyer(HTTPStatus.OK, contexte(self.cache.lire()).encode(), "text/plain; charset=utf-8")
         else:
             self._json(HTTPStatus.NOT_FOUND, {"erreur": "introuvable"})
 
     def do_POST(self) -> None:
-        """Déposer un relevé, enregistrer les corrections, simuler, interroger Claude."""
+        """Déposer un relevé, enregistrer les corrections ou la configuration, simuler, interroger Claude."""
         if not self._requete_sure():
             return
         longueur = int(self.headers.get("Content-Length") or 0)
@@ -129,7 +140,11 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             return ecrire_corrections(dossier, donnees)
         if self.path == "/api/simulation":
             return simuler(donnees)
+        if self.path == "/api/configuration":
+            return enregistrer_configuration(dossier, donnees)
         if self.path == "/api/assistant":
+            if not _assistant_actif(dossier):
+                raise AssistantIndisponible("assistant désactivé dans l'onglet Configuration")
             reponse = demander(
                 str(donnees.get("question", "")), list(donnees.get("historique") or []), self.cache.lire()
             )

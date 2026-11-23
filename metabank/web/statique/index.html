@@ -18,6 +18,7 @@
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
       <button role="tab" data-onglet="assistant" aria-selected="false">Assistant</button>
+      <button role="tab" data-onglet="configuration" aria-selected="false">Configuration</button>
     </nav>
   </div>
 </header>
@@ -128,6 +129,26 @@
       calculer le patrimoine net (actifs moins crédits). Laissez vide pour ne pas la compter.</p>
     <div id="liste-biens"></div>
     <p><button class="action" id="enregistrer-corrections">Enregistrer</button> <span id="etat-corrections"></span></p>
+  </section>
+
+  <section id="configuration" data-panneau class="cache">
+    <h1>Configuration</h1>
+    <p class="discret">Ce que metabank ne peut pas deviner. Enregistré dans data/configuration.json, sur cette machine ;
+      aucun secret n'y est écrit.</p>
+    <h2>Comptes</h2>
+    <p class="discret">Un compte par ligne, tel que les fichiers l'ont fait connaître. Le titulaire saisi remplace celui
+      déduit du dossier ; l'accès principal et celui de secours disent comment le compte se met à jour ; la fréquence
+      attendue dit au bout de combien de jours sans nouvelle donnée le compte est en retard.</p>
+    <div class="defile"><table id="config-comptes"></table></div>
+    <h2>Connecteurs</h2>
+    <p class="discret">Un connecteur est actif quand tous ses réglages sont renseignés. Réseau « local » : rien ne sort
+      de la machine.</p>
+    <div id="config-connecteurs"></div>
+    <h2>Paramètres</h2>
+    <div class="carte"><label><input type="checkbox" id="config-assistant"> Assistant Claude activé</label>
+      <p class="note">Désactivé, aucune question n'est envoyée à Claude Code et l'onglet Assistant le dit.</p></div>
+    <p class="discret" id="config-dossier"></p>
+    <p><button class="action" id="enregistrer-configuration">Enregistrer</button> <span id="etat-configuration"></span></p>
   </section>
 
   <section id="simulation" data-panneau class="cache">

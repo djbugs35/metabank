@@ -184,7 +184,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Base SQLite et archives | `data/metabank.db` reconstruisible depuis `data/archives/` ; schéma versionné ; montants en centimes | une base effacée se reconstruit à l'identique | fait (`metabank/base/`, `metabank reconstruire`) |
 | Contrat des connecteurs | familles fichier, direct, calcul, référence ; registre principal et secours ; journal des imports | un connecteur s'ajoute en un module | fait (`metabank/connecteurs/`, journal dans `metabank/base/journal.py`) |
 | Lecteurs existants en connecteurs | Suravenir PDF, Cardif PDF, BNP CSV (comptes, livrets, crédits) passés au contrat ; mêmes chiffres qu'avant | tous les tests actuels passent sur la nouvelle base | fait : connecteurs `bnp_csv`, `suravenir_pdf`, `cardif_pdf` ; écrans, ligne de commande et dépôt sur la base (`metabank/donnees.py`) ; état des écrans identique sur les vraies données le 2026-11-23 |
-| Onglet Configuration | titulaires, registre des comptes, fiches des connecteurs, dossiers, paramètres ; secrets dans le trousseau | un compte se déclare et se corrige depuis la page | à faire |
+| Onglet Configuration | titulaires, registre des comptes, fiches des connecteurs, dossiers, paramètres ; secrets dans le trousseau | un compte se déclare et se corrige depuis la page | fait : registre des comptes (titulaire, accès principal et secours, fréquence attendue), fiches des connecteurs, assistant activable (`data/configuration.json`) ; coffre à secrets et dossiers surveillé et de sauvegarde avec leurs fonctions (étapes 2, 4, 6) |
 | Onglet Synoptique | une ligne par compte : accès, réseau, fraîcheur, ce qui est alimenté, journal 30 jours | chaque compte montre comment et quand il est mis à jour | à faire |
 
 ### Étape 2 — Mises à jour sans effort
@@ -302,7 +302,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Patrimoine complet et synthèse de l'épargne dans le tableau de bord ; onglet Budget | — | fait |
 | Base SQLite reconstruisible depuis les archives brutes | 1 | fait |
 | Connecteurs (plug-ins) fichier, direct, calcul, référence ; registre et journal | 1 | fait (contrat, registre, journal ; aucun connecteur réel encore) |
-| Onglet Configuration (comptes, connecteurs, dossiers, paramètres) | 1 | à faire |
+| Onglet Configuration (comptes, connecteurs, dossiers, paramètres) | 1 | fait (dossiers et secrets avec leurs fonctions) |
 | Onglet Synoptique (accès, réseau, fraîcheur, journal) | 1 | à faire |
 | Dépôt unique avec rangement automatique et dossier surveillé | 2 | à faire |
 | Historique et courbe du patrimoine net | 2 | à faire |
