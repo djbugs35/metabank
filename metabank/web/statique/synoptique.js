@@ -9,6 +9,12 @@ const FRAICHEUR = {
 const RESULTATS = { ok: "réussi", refus: "refusé", erreur: "en erreur" };
 const dateFr = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "—");
 
+// Heure UTC du journal, affichée à l'heure de la machine : « 23/11/2026 à 18 h 49 ».
+const miseAJour = (iso) => {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("fr-FR")} à ${d.getHours()} h ${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
 function age(iso, aujourdhui) {
   if (!iso) return "";
   const jours = Math.round((Date.parse(aujourdhui) - Date.parse(iso)) / 86400000);
@@ -33,7 +39,8 @@ export async function afficherSynoptique() {
     const [texte, classe] = FRAICHEUR[c.fraicheur];
     const acces = `${echapper(c.principal || "aucun")}${c.secours ? ` → ${echapper(c.secours)}` : ""}`;
     return `<tr class="cliquable" data-compte="${echapper(c.cle)}"><td>${echapper(c.nom)}</td><td>${acces}</td><td>${echapper(c.reseau)}</td>
-      <td><span class="pastille ${classe}" title="${texte}"></span> ${dateFr(c.derniere_donnee)} <span class="discret">${age(c.derniere_donnee, s.aujourd_hui)} · ${texte}</span></td>
+      <td><span class="pastille ${classe}" title="${texte}"></span> ${dateFr(c.derniere_donnee)} <span class="discret">${age(c.derniere_donnee, s.aujourd_hui)} · ${texte}</span>
+        ${c.derniere_mise_a_jour ? `<br><span class="note">mis à jour le ${miseAJour(c.derniere_mise_a_jour)}</span>` : ""}</td>
       <td>${echapper(c.alimente)}</td><td class="nombre">${c.reussis_30_jours} ✓ ${c.echecs_30_jours ? `<span class="ko">${c.echecs_30_jours} ✗</span>` : ""}</td></tr>${detail(c)}`;
   });
   $("synoptique-comptes").innerHTML = s.comptes.length

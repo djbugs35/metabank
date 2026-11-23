@@ -61,6 +61,9 @@ def _ligne(compte: dict, connecteurs: dict[str, Connecteur], derniere: date | No
         "reseau": principal.reseau if principal else "",
         "mode_emploi": principal.mode_emploi if principal else "",
         "derniere_donnee": derniere.isoformat() if derniere else None,
+        # Date de la donnée la plus récente (MODELE § 9) et, à part, dernier import réussi : une synchronisation
+        # qui ne rapporte rien de neuf ne rajeunit pas la donnée, mais elle a bien eu lieu.
+        "derniere_mise_a_jour": next((e.le for e in entrees if e.resultat == "ok"), None),
         "frequence_jours": compte["frequence_jours"],
         "fraicheur": evaluer_fraicheur(derniere, compte["frequence_jours"], aujourd_hui),
         "alimente": ALIMENTE.get(compte["type_compte"], ""),
