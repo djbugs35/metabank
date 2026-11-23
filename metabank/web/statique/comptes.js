@@ -73,8 +73,9 @@ function afficherCourant(c) {
   });
   $("compte-frais").innerHTML = `<thead><tr><th>Frais bancaires</th><th class="n">Montant sur la période</th></tr></thead><tbody>${c.frais_detail
     .map((f) => `<tr><td>${echapper(f.libelle)}</td><td class="n">${euros(f.montant)}</td></tr>`).join("") || "<tr><td colspan='2'>Aucun.</td></tr>"}</tbody>`;
-  $("compte-non-classees").innerHTML = `<thead><tr><th>Libellé</th><th class="n">Nombre</th><th class="n">Montant</th></tr></thead><tbody>${c.non_classees
-    .map((o) => `<tr><td>${echapper(o.libelle)}</td><td class="n">${o.nombre}</td><td class="n">${euros(o.montant)}</td></tr>`).join("") || "<tr><td colspan='3'>Tout est classé.</td></tr>"}</tbody>`;
+  $("compte-non-classees").innerHTML = `<thead><tr><th>Libellé</th><th class="n">Nombre</th><th class="n">Montant</th><th></th></tr></thead><tbody>${c.non_classees
+    .map((o) => `<tr><td>${echapper(o.libelle)}</td><td class="n">${o.nombre}</td><td class="n">${euros(o.montant)}</td>
+      <td><button class="puce" data-classer="${echapper(o.motif)}">Classer</button></td></tr>`).join("") || "<tr><td colspan='4'>Tout est classé.</td></tr>"}</tbody>`;
 }
 
 function afficherSolde(c) {

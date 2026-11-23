@@ -96,9 +96,17 @@
             export ajouté.</p></div>
         <details class="carte"><summary>Frais bancaires</summary><div class="defile"><table id="compte-frais"></table></div></details>
         <details class="carte"><summary>Dépenses non classées, de la plus coûteuse à la moins coûteuse</summary>
-          <p class="note">Pour les classer, ajoutez une règle dans data/categories.json, par exemple
-            {"regles": [{"motif": "TY VORN", "categorie": "Restaurants"}]}.</p>
-          <div class="defile"><table id="compte-non-classees"></table></div></details>
+          <p class="note">« Classer » propose une règle : testez combien d'opérations elle reconnaît, choisissez la
+            catégorie, enregistrez. Les règles sont gardées dans data/categories.json.</p>
+          <div class="defile"><table id="compte-non-classees"></table></div>
+          <div class="champs">
+            <label class="champ">Motif (expression régulière) <input id="regle-motif" maxlength="200"></label>
+            <label class="champ">Catégorie <input id="regle-categorie" list="regle-categories" maxlength="60"></label>
+            <datalist id="regle-categories"></datalist>
+          </div>
+          <p><button class="action" id="regle-tester">Tester</button> <button class="action" id="regle-enregistrer">Enregistrer la règle</button>
+            <span id="regle-resultat"></span></p></details>
+        <details class="carte"><summary>Mes règles, dans leur ordre d'application</summary><div id="regles-liste"></div></details>
       </div>
       <p class="note">Formules : docs/MODELE.md § 7. Éléments d'aide à la décision, pas un conseil financier.</p>
     </div>

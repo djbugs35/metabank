@@ -9,6 +9,7 @@ import json
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 from metabank.banque.modele import Operation
@@ -135,3 +136,80 @@ def _emetteurs_reguliers(operations: tuple[Operation, ...]) -> set[str]:
         if emetteur and operation.montant >= MONTANT_SALAIRE_MIN:
             mois_par_emetteur[emetteur].add((operation.jour.year, operation.jour.month))
     return {e for e, mois in mois_par_emetteur.items() if len(mois) >= MOIS_SALAIRE_MIN}
+
+
+LONGUEUR_MOTIF_MAX = 200
+LONGUEUR_CATEGORIE_MAX = 60
+EXEMPLES_MAX = 5
+# Ce qui change d'une facture à l'autre chez un même marchand : date de la facture, carte masquée (et ce qui la suit,
+# le libellé étant tronqué à 60 caractères), chiffres.
+BRUIT_DU_LIBELLE = re.compile(r"FACTURE CARTE DU \d{6}|\bCARTE\b.*$|PRLV SEPA|VIR SEPA (EMIS|RECU)|\d+")
+
+
+class RegleInvalide(ValueError):
+    """Règle refusée : motif vide, trop long ou qui n'est pas une expression régulière ; catégorie vide."""
+
+
+def categories_connues(regles_perso: list[tuple[str, str]]) -> list[str]:
+    """Rendre les catégories proposées : celles du code, des règles personnelles, et « Autres dépenses »."""
+    noms = {c for _, c in REGLES_PAR_DEFAUT} | set(NATURES) | {c for _, c in regles_perso} | {"Autres dépenses"}
+    return sorted(noms)
+
+
+def motif_suggere(libelle: str) -> str:
+    """Rendre un motif qui reconnaît ce marchand : ses trois premiers mots, sans date, carte ni chiffre."""
+    mots = [m for m in BRUIT_DU_LIBELLE.sub(" ", libelle.upper()).split() if len(m) > 1][:3]
+    return r"\s+".join(re.escape(m) for m in mots) or re.escape(libelle.strip().upper()[:30])
+
+
+def essayer_motif(motif: str, operations: list[Operation]) -> dict:
+    """Rendre ce que la règle classerait : nombre d'opérations, montant net (euros) et quelques libellés.
+
+    Raises:
+        RegleInvalide: motif vide, trop long ou invalide.
+    """
+    expression = _compiler(motif)
+    trouvees = [o for o in operations if expression.search(f"{o.type_banque} {o.sous_type} {o.libelle}".upper())]
+    return {
+        "nombre": len(trouvees),
+        "montant": float(sum((o.montant for o in trouvees), Decimal(0))),
+        "exemples": sorted({o.libelle for o in trouvees})[:EXEMPLES_MAX],
+    }
+
+
+def ecrire_regles(dossier: Path, regles: list) -> list[dict]:
+    """Rendre les règles personnelles validées après les avoir enregistrées dans data/categories.json (atomique).
+
+    L'ordre compte : la première règle qui reconnaît une opération la classe.
+
+    Raises:
+        RegleInvalide: une règle est hors format ; rien n'est écrit.
+    """
+    if not isinstance(regles, list):
+        raise RegleInvalide("liste de règles attendue")
+    propres = []
+    for regle in regles:
+        if not isinstance(regle, dict):
+            raise RegleInvalide("règle : objet attendu")
+        motif, categorie = str(regle.get("motif") or "").strip(), str(regle.get("categorie") or "").strip()
+        _compiler(motif)
+        if not categorie or len(categorie) > LONGUEUR_CATEGORIE_MAX:
+            raise RegleInvalide(f"{motif} : catégorie vide ou trop longue")
+        propres.append({"motif": motif, "categorie": categorie})
+    chemin = dossier / FICHIER
+    contenu = json.loads(chemin.read_text(encoding="utf-8")) if chemin.exists() else {}
+    temporaire = chemin.with_suffix(".json.tmp")
+    temporaire.write_text(
+        json.dumps({**contenu, "regles": propres}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    temporaire.replace(chemin)
+    return propres
+
+
+def _compiler(motif: str) -> re.Pattern:
+    if not motif or len(motif) > LONGUEUR_MOTIF_MAX:
+        raise RegleInvalide(f"motif vide ou de plus de {LONGUEUR_MOTIF_MAX} caractères")
+    try:
+        return re.compile(motif, re.IGNORECASE)
+    except re.error as erreur:
+        raise RegleInvalide(f"motif illisible ({erreur.msg}) : {motif}") from erreur

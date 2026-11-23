@@ -5,7 +5,7 @@ from pathlib import Path
 
 from metabank.banque import regrouper
 from metabank.banque.analyse import PLAFONDS, TAUX_LIVRET_A, TAUX_LIVRET_A_DEPUIS, AnalyseCompte, analyser
-from metabank.banque.categories import lire_regles
+from metabank.banque.categories import lire_regles, motif_suggere
 from metabank.banque.modele import LIBELLES_TYPES, TYPES_COURANTS, Compte
 
 ZERO = Decimal(0)
@@ -95,7 +95,9 @@ def _vue(a: AnalyseCompte, total_liquidites: Decimal) -> dict:
             {"nom": nom, "montant": _n(m), "part": _part(m, a.depenses)} for nom, m in a.depenses_par_categorie
         ],
         "frais_detail": [{"libelle": l, "montant": _n(m)} for l, m in a.detail_frais],
-        "non_classees": [{"libelle": l, "montant": _n(m), "nombre": n} for l, m, n in a.non_classees],
+        "non_classees": [
+            {"libelle": l, "montant": _n(m), "nombre": n, "motif": motif_suggere(l)} for l, m, n in a.non_classees
+        ],
         "interets": [
             {
                 "annee": i.annee,

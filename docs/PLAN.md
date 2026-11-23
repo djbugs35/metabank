@@ -195,7 +195,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | fait : projection à chaque échéance passée (MODELE § 7.10), calculée à l'affichage et marquée « projeté » ; un nouvel export la remplace |
 | Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | fait : 13 points reconstitués des données en base (MODELE § 8.1), sans instantané stocké ; compte reporté à sa première valeur avant d'être connu, et nommé |
 | Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | à faire |
-| Règles de dépenses dans la page | créer, modifier, tester une règle de classement | une dépense non classée se classe en deux clics | à faire |
+| Règles de dépenses dans la page | créer, modifier, tester une règle de classement | une dépense non classée se classe en deux clics | fait : « Classer » propose un motif, « Tester » compte les opérations reconnues, « Enregistrer » range la règle en tête ; liste des règles avec retrait |
 
 ### Étape 3 — PEA
 
@@ -312,7 +312,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Dépôt unique avec rangement automatique et dossier surveillé | 2 | fait |
 | Historique et courbe du patrimoine net | 2 | fait |
 | Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | à faire |
-| Règles de classement des dépenses modifiables depuis la page | 2 | à faire |
+| Règles de classement des dépenses modifiables depuis la page | 2 | fait |
 | PEA Trade Republic : positions, plafond, compteur des 5 ans | 3 | à faire |
 | Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | à faire |
 | Mise à jour automatique des comptes en connexion directe (synchronisation planifiée) | 4 | à faire |
