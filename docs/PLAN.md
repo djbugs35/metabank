@@ -194,7 +194,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Dépôt unique | PDF et CSV glissés dans la page ou posés dans le dossier surveillé ; reconnus par les connecteurs, archivés, dédoublonnés | un fichier quelconque est pris en compte sans intervention | fait : dossier surveillé (data/depot/ ou celui de la Configuration) et dépôt dans la page sans titulaire, rangés d'après le compte reconnu ; un compte jamais vu attend son titulaire |
 | Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | fait : projection à chaque échéance passée (MODELE § 7.10), calculée à l'affichage et marquée « projeté » ; un nouvel export la remplace |
 | Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | fait : 13 points reconstitués des données en base (MODELE § 8.1), sans instantané stocké ; compte reporté à sa première valeur avant d'être connu, et nommé |
-| Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | à faire |
+| Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | fait : fonds en euros (ACPR), UC (France Assureurs), Livret A, inflation (Insee), MSCI World (EUR, net) ; écart en points ; `metabank/reperes.py`, MODELE § 10 |
 | Règles de dépenses dans la page | créer, modifier, tester une règle de classement | une dépense non classée se classe en deux clics | fait : « Classer » propose un motif, « Tester » compte les opérations reconnues, « Enregistrer » range la règle en tête ; liste des règles avec retrait |
 
 ### Étape 3 — PEA
@@ -311,7 +311,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Onglet Synoptique (accès, réseau, fraîcheur, journal) | 1 | fait |
 | Dépôt unique avec rangement automatique et dossier surveillé | 2 | fait |
 | Historique et courbe du patrimoine net | 2 | fait |
-| Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | à faire |
+| Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | première version faite (étape 2) ; version pondérée à l'étape 5 |
 | Règles de classement des dépenses modifiables depuis la page | 2 | fait |
 | PEA Trade Republic : positions, plafond, compteur des 5 ans | 3 | à faire |
 | Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | à faire |
@@ -330,6 +330,12 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Exécution sur le NAS QNAP comme metascrap (crontab, sans git, réseau local authentifié) | 6 | à faire |
 
 ## Sources consultées (2026-11-22)
+- [ACPR, n° 175 : revalorisation 2024](https://acpr.banque-france.fr/fr/publications-et-statistiques/publications/ndeg-175-revalorisation-2024-des-contrats-dassurance-vie-et-de-capitalisation)
+  et [n° 180 : revalorisation 2025](https://acpr.banque-france.fr/system/files/2026-06/20260630_AS180_revalorisation_2025.pdf) (2026-11-23)
+- [France Assureurs : l'assurance vie en unités de compte en 2025](https://www.franceassureurs.fr/nos-chiffres-cles/assurance-vie/assurance-vie-unite-de-compte-2025/) (2026-11-23)
+- [Insee : prix à la consommation en 2025](https://www.insee.fr/fr/statistiques/8726461), [2024](https://www.insee.fr/fr/statistiques/8330913),
+  [2023](https://www.insee.fr/fr/statistiques/7750173) (2026-11-23)
+- [MSCI World Index (EUR), fiche](https://www.msci.com/documents/10199/890dd84d-3750-4656-87f2-1229ed5a5d6e) (2026-11-23)
 - [GoCardless : nouvelles inscriptions fermées](https://bankaccountdata.gocardless.com/new-signups-disabled)
 - [Open Banking Tracker : API gratuites en 2026](https://www.openbankingtracker.com/guides/free-open-banking-apis)
 - [Enable Banking : comptes liés en mode restreint](https://enablebanking.com/docs/api/linked-accounts/) et

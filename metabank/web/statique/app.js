@@ -106,6 +106,7 @@ function afficherTableau() {
   $("epargne").innerHTML = epargne && livrets.length ? epargneHtml(epargne) : "";
   afficherTuiles(vue);
   afficherAnnees(vue);
+  afficherReperes(vue);
   afficherNotes(vue);
   afficherFonds(vue);
   $("points").innerHTML = etat.points.length ? `<ul>${etat.points.map((p) => `<li>${echapper(p)}</li>`).join("")}</ul>` : "<p>Aucun.</p>";
@@ -141,6 +142,21 @@ function afficherHistorique({ points, reportes }, patrimoine) {
 
 function afficherTuiles(vue) {
   $("tuiles").innerHTML = tuilesHtml(vue);
+}
+
+// Rendement de chaque année face aux repères publics (MODELE § 10) ; écart en points sous le rendement.
+function afficherReperes(vue) {
+  const annees = vue.annees.filter((a) => etat.reperes?.[a.annee]);
+  $("bloc-reperes").classList.toggle("cache", !annees.length);
+  const cellule = (taux, votre) => taux === null || taux === undefined ? `<td class="n">—</td>`
+    : `<td class="n">${pct(taux, true)}${votre === null || votre === undefined ? "" : `<br><span class="note">${pct(votre - taux, true)} d'écart</span>`}</td>`;
+  $("table-reperes").innerHTML = `<thead><tr><th>Année</th><th class="n">Votre rendement</th><th class="n">Fonds en euros</th>
+    <th class="n">Unités de compte</th><th class="n">Livret A</th><th class="n">Inflation</th><th class="n">MSCI World</th></tr></thead><tbody>${annees
+    .map((a) => {
+      const r = etat.reperes[a.annee];
+      return `<tr><td>${a.annee}</td><td class="n">${pct(a.gain_taux, true)}</td>${cellule(r.fonds_euros, a.gain_taux)}${cellule(r.unites_de_compte, a.gain_taux)}
+        ${cellule(r.livret_a, a.gain_taux)}${cellule(r.inflation, a.gain_taux)}${cellule(r.msci_world, a.gain_taux)}</tr>`;
+    }).join("")}</tbody>`;
 }
 
 function afficherAnnees(vue) {
