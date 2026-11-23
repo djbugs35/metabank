@@ -13,15 +13,18 @@ export function tuilesHtml(vue) {
     ? "inconnus (relevé de situation seul)"
     : `${vue.frais_sur_partie ? "du versé des contrats à relevés annuels" : "du versé, sur toute la période"} ; soit ${pct(vue.frais_par_an)} par an des sommes placées`;
   const tuiles = [
-    ["Versé", euros(vue.verse), pct(vue.part_verse), "du versé du foyer"],
+    ["Versé", euros(vue.verse), pct(vue.part_verse), vue.ecart_verse === null || vue.ecart_verse === undefined
+      ? "du versé du foyer, lu sur les documents"
+      : `lu sur les documents ; les mouvements donnent ${euros(vue.verse - vue.ecart_verse)} : écart ${eurosSignes(vue.ecart_verse)}`,
+      vue.ecart_verse !== null && vue.ecart_verse !== undefined],
     ["Valeur aujourd'hui", euros(vue.valeur), pct(vue.part_valeur), "des placements du foyer"],
     ["Gagné, frais déduits", eurosSignes(vue.gain), pct(vue.gain_taux, true),
       `du versé, sur toute la période${vue.gain_par_an === null ? "" : ` ; soit ${pct(vue.gain_par_an, true)} par an`}`],
     ["Frais payés", euros(vue.frais), pct(vue.frais_taux), fraisNote],
   ];
   return tuiles
-    .map(([e, v, p, n]) => `<div class="tuile"><div class="etiquette">${echapper(e)}</div><div class="valeur">${echapper(v)}</div>
-      <div class="pct">${echapper(p)}</div><div class="note">${echapper(n)}</div></div>`)
+    .map(([e, v, p, n, ecart]) => `<div class="tuile"><div class="etiquette">${echapper(e)}</div><div class="valeur">${echapper(v)}</div>
+      <div class="pct">${echapper(p)}</div><div class="note${ecart ? " alerte" : ""}">${echapper(n)}</div></div>`)
     .join("");
 }
 

@@ -118,6 +118,7 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
         "parent": parent,
         "nom": s.nom,
         "verse": _nombre(s.verse),
+        "ecart_verse": _nombre(s.ecart_verse) if abs(s.ecart_verse) > 1 else None,
         "valeur": _nombre(s.valeur),
         "gain": _nombre(s.gain),
         "frais": _nombre(s.frais_cumules) if frais_connus else None,
