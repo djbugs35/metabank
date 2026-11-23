@@ -152,6 +152,14 @@ Elle porte sur le même versé que le gain affiché : quand le versé lu sur le 
 mouvements (§ 2.3), l'écart est un flux négatif de plus, placé à l'ouverture du contrat (1er janvier de la première
 année si la date d'ouverture n'est pas saisie) ; le taux est alors un minimum (comme § 6.3).
 
+### 6.4 Progression des placements, fin d'année par fin d'année
+Sur les contrats à relevés annuels de l'ensemble (les contrats à situation seule n'ont pas d'historique et n'y
+sont pas), pour chaque année n : valeur V_n = Σ valeurs au 31/12 (ou à la date de la situation pour l'année en
+cours) ; variation de l'année = V_n − Σ valeurs de début de l'année n ; versé net cumulé = Σ valeurs de début de la
+première année de chaque contrat (0 à l'ouverture) + Σ (versé − rachats) jusqu'à n ; gagné cumulé = V_n − versé net
+cumulé. La variation se décompose en versé net de l'année + gagné de l'année. Ce sont les mouvements des années :
+si le versé lu sur le document en diffère (§ 2.3), l'écart reste affiché sous le versé.
+
 ### 6.3 Contrats à relevé de situation seul (PERP Cardif)
 Avec une date d'ouverture saisie, ils entrent dans la rentabilité annualisée : tout le versé depuis l'origine est
 supposé placé à l'ouverture (seule date connue), valeur de rachat à la date du relevé. Si des versements ont eu lieu

@@ -65,3 +65,22 @@ def test_gros_versements_rendement_approximatif_avec_fourchette():
 def test_petits_versements_rendement_sans_fourchette():
     releves = [_annee(2024, "10600", "1000", "10000", "A")]
     assert not synthetiser("A", faire_bilans(releves), []).annees[0].approximatif
+
+
+def test_la_progression_donne_valeur_variation_verse_et_gagne_cumules_fin_d_annee():
+    """A ouvre en 2023 (10 000 versés, vaut 10 250), verse 2 000 en 2024 et vaut 11 900 : perte de 350 en 2024."""
+    releves = [_annee(2023, "10250", "10000", None, "A"), _annee(2024, "11900", "2000", "10250", "A")]
+    [fin_2023, fin_2024] = synthetiser("Foyer", faire_bilans(releves), []).progression
+    assert (fin_2023.valeur, fin_2023.variation, fin_2023.verse_cumule, fin_2023.gain_cumule) == (
+        Decimal(10250), Decimal(10250), Decimal(10000), Decimal(250),
+    )  # fmt: skip
+    assert (fin_2024.variation, fin_2024.verse_net_annee, fin_2024.gain_annee) == (Decimal(1650), Decimal(2000),
+                                                                                  Decimal(-350))  # fmt: skip
+    assert (fin_2024.verse_cumule, fin_2024.gain_cumule) == (Decimal(12000), Decimal(-100))
+
+
+def test_un_contrat_anterieur_a_ses_releves_part_de_sa_valeur_de_debut():
+    releves = [_annee(2024, "10500", "0", "10000", "A"), _annee(2024, "5100", "0", "5000", "B")]
+    [fin_2024] = synthetiser("Foyer", faire_bilans(releves), []).progression
+    assert (fin_2024.valeur, fin_2024.verse_cumule, fin_2024.gain_cumule) == (Decimal(15600), Decimal(15000),
+                                                                             Decimal(600))  # fmt: skip

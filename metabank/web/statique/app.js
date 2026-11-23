@@ -9,7 +9,7 @@ import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique, preparerSynoptique } from "./synoptique.js";
-import { barresGroupees, courbes, echapper } from "./graphiques.js";
+import { barresEmpilees, barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
   creditsDeVue, creditsHtml, epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
   reperesHtml, tableAnneesHtml, tableFondsHtml, tuilesHtml,
@@ -104,7 +104,7 @@ function afficherTableau() {
     afficherHistorique(etat.historique?.[vue.id] ?? { points: [], reportes: [] }, patrimoine);
   }
   const avecPlacements = vue.verse > 0 || vue.valeur > 0;
-  for (const id of ["titre-placements", "tuiles", "bloc-annees", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
+  for (const id of ["titre-placements", "tuiles", "bloc-progression", "bloc-annees", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
   $("titre-placements").textContent = vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP";
   const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
   $("bloc-livrets").classList.toggle("cache", !livrets.length);
@@ -117,6 +117,7 @@ function afficherTableau() {
   afficherLocatif(vue);
   afficherEcheances(vue);
   afficherTuiles(vue);
+  afficherProgression(vue);
   afficherAnnees(vue);
   afficherReperes(vue);
   afficherGraphiques(etat, vue);
@@ -193,6 +194,35 @@ function afficherReperes(vue) {
   const annees = vue.annees.filter((a) => etat.reperes?.[a.annee]);
   $("bloc-reperes").classList.toggle("cache", !annees.length);
   $("table-reperes").innerHTML = reperesHtml(annees, etat.reperes);
+}
+
+// Valeur des placements fin d'année par fin d'année, versé net et gagné cumulés (MODELE § 6.4).
+function afficherProgression(vue) {
+  const p = vue.progression ?? [];
+  $("bloc-progression").classList.toggle("cache", !p.length || $("tuiles").classList.contains("cache"));
+  if (!p.length) return;
+  const fin = (x) => (x.en_cours_au ? `${x.annee} (au ${x.en_cours_au.slice(8, 10)}/${x.en_cours_au.slice(5, 7)})` : `fin ${x.annee}`);
+  barresEmpilees($("graphique-progression"), {
+    titre: "Valeur des placements en fin d'année, et variation de l'année",
+    abscisses: p.map(fin),
+    parts: [
+      { classe: "serie-1", nom: "Versé net cumulé", valeurs: p.map((x) => x.verse_cumule) },
+      { classe: "serie-3", classeNegative: "serie-2", nom: "Gagné cumulé", nomNegatif: "Perdu cumulé", valeurs: p.map((x) => x.gain_cumule) },
+    ],
+    totaux: p.map((x) => x.valeur),
+    sous: p.map((x) => `${eurosSignes(x.variation)} sur l'année`),
+    formater: euros,
+    survol: (rang) => {
+      const x = rang === null ? null : p[rang];
+      $("infobulle-progression").textContent = x
+        ? `${fin(x)} : valeur ${euros(x.valeur)} · variation ${eurosSignes(x.variation)} = versé net ${eurosSignes(x.verse_net_annee)} + gagné ${eurosSignes(x.gain_annee)} · depuis le début : versé net ${euros(x.verse_cumule)}, gagné ${eurosSignes(x.gain_cumule)}`
+        : "";
+    },
+  });
+  const notes = [];
+  if (vue.sans_historique.length) notes.push(`Sans historique annuel, hors graphique : ${vue.sans_historique.join(", ")}.`);
+  if (vue.ecart_verse !== null && vue.ecart_verse !== undefined) notes.push(`D'après les mouvements de chaque année ; le versé lu sur les documents en diffère de ${eurosSignes(vue.ecart_verse)} (voir « Versé »).`);
+  $("note-progression").textContent = notes.join(" ");
 }
 
 function afficherAnnees(vue) {
