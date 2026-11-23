@@ -213,6 +213,18 @@ Point de départ : le crédit au mois en cours (7.10), capital C, taux mensuel i
 - **Assurance emprunteur** : coût mensuel estimé = mensualité prélevée sur le compte courant − P ; coût restant
   ≈ ce coût × n. Inconnu sans échéance prélevée retrouvée.
 
+### 7.12 Bien locatif : rendement et trésorerie
+Le bien locatif est le bien saisi dans Corrections dont le nom contient « locatif » ; son crédit est celui de même
+clé ; ses flux sont ceux des comptes de type « locatif ». Sur la période couverte par les exports du compte (m mois,
+7.4), ramenée à l'année (× 12 / m) :
+- loyers L = entrées de nature « revenu » (les virements depuis ses propres comptes n'en sont pas) ;
+- échéances E = sorties de la catégorie « Crédits » (mensualités prélevées, assurance comprise) ;
+- charges H = autres sorties de nature « dépense » (taxe foncière, copropriété, travaux, assurance du bien…).
+Avec V la valeur du bien saisie et I les intérêts des 12 prochaines échéances du crédit (7.11) :
+- rendement brut = L / V ; rendement net de charges = (L − H) / V ; après intérêts d'emprunt = (L − H − I) / V ;
+- trésorerie mensuelle = (L − H − E) / 12 : ce que le bien rapporte ou coûte chaque mois, prêt compris.
+Avant impôts et prélèvements sociaux ; sans valeur saisie, seuls les montants et la trésorerie sont affichés.
+
 ## 8. Patrimoine complet (tableau de bord)
 
 Pour le foyer et pour chaque personne : actifs = Σ valeurs des placements (assurance vie, PER, PERP, au dernier

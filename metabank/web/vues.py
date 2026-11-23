@@ -7,7 +7,10 @@ code testé (synthese, frais) ; la page ne fait que les mettre en forme.
 from datetime import date, datetime
 from decimal import Decimal
 
-from metabank.banque.credit import projeter_credit
+from metabank.banque.analyse import analyser
+from metabank.banque.categories import lire_regles
+from metabank.banque.credit import analyser_credit, projeter_credit
+from metabank.banque.locatif import analyser_locatif
 from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.bilan import BilanContrat, faire_bilans
 from metabank.configuration import lire_configuration
@@ -64,6 +67,7 @@ def etat(dossier, aujourd_hui: date | None = None) -> dict:
         "patrimoine": patrimoine,
         "historique": historique,
         "reperes": _reperes(vues),
+        "locatif": _locatif(dossier, comptes, corrections["biens"]),
         "sources_reperes": SOURCES,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": corrections,
@@ -212,3 +216,27 @@ def _reperes(vues: list[dict]) -> dict[str, dict]:
     annees = sorted({a["annee"] for v in vues for a in v["annees"]})
     champs = ("fonds_euros", "unites_de_compte", "livret_a", "inflation", "msci_world")
     return {str(annee): {c: _taux(getattr(reperes_de(annee), c)) for c in champs} for annee in annees}
+
+
+def _locatif(dossier, comptes, biens: dict) -> dict | None:
+    """Rendre le bien locatif sur un an (MODELE § 7.12), ou None sans compte de type « locatif »."""
+    locatifs = [c for c in comptes if c.type_compte == "locatif"]
+    if not locatifs:
+        return None
+    vide: dict = {}
+    cle, bien = next(((k, b) for k, b in biens.items() if "locatif" in str(b.get("nom", "")).lower()), ("", vide))
+    credit = next((c for c in comptes if c.type_compte == "credit" and cle and c.numero_masque.endswith(cle)), None)
+    regles = lire_regles(dossier)
+    b = analyser_locatif(
+        bien.get("nom") or "Bien locatif",
+        [analyser(c, regles) for c in locatifs],
+        analyser_credit(credit, comptes) if credit else None,
+        Decimal(str(bien["valeur"])) if bien.get("valeur") else None,
+    )
+    return {
+        "nom": b.nom, "titulaires": sorted({c.titulaire for c in locatifs}), "valeur": _nombre(b.valeur),
+        "loyers": _nombre(b.loyers), "charges": _nombre(b.charges), "echeances": _nombre(b.echeances),
+        "interets": _nombre(b.interets), "rendement_brut": _taux(b.rendement_brut), "rendement_net": _taux(b.rendement_net),
+        "rendement_apres_interets": _taux(b.rendement_apres_interets), "tresorerie_mensuelle": _nombre(b.tresorerie_mensuelle),
+        "mois_couverts": round(float(b.mois_couverts), 1),
+    }  # fmt: skip

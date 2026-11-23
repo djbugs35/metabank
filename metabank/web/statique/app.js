@@ -106,6 +106,7 @@ function afficherTableau() {
   if (credits.length) $("credits").innerHTML = creditsHtml(credits, etat.synthese_credits, patrimoine?.part_credits);
   const epargne = etat.epargne?.[vue.id];
   $("epargne").innerHTML = epargne && livrets.length ? epargneHtml(epargne) : "";
+  afficherLocatif(vue);
   afficherTuiles(vue);
   afficherAnnees(vue);
   afficherReperes(vue);
@@ -140,6 +141,25 @@ function afficherHistorique({ points, reportes }, patrimoine) {
         + (avecCredits ? `, crédits ${euros(p.credits)}` : "") + (patrimoine.credits_sans_bien ? "" : `, net ${euros(p.net)}`);
     },
   });
+}
+
+// Bien locatif (MODELE § 7.12) : au foyer et à la personne qui en tient le compte.
+function afficherLocatif(vue) {
+  const b = etat.locatif;
+  const visible = Boolean(b) && (vue.niveau === "foyer" || (vue.niveau === "personne" && b.titulaires.includes(vue.nom)));
+  $("bloc-locatif").classList.toggle("cache", !visible);
+  if (!visible) return;
+  const tuile = (etiquette, valeur, taux, note) => `<div class="tuile"><div class="etiquette">${etiquette}</div>
+    <div class="valeur">${valeur}</div>${taux === null || taux === undefined ? "" : `<div class="pct">${pct(taux, true)}</div>`}<div class="note">${note}</div></div>`;
+  const sansValeur = "saisissez la valeur du bien dans Corrections";
+  $("locatif").innerHTML = `<div class="tuiles">${[
+    tuile("Loyers par an", euros(b.loyers), b.rendement_brut, b.valeur ? "rendement brut, de la valeur du bien" : sansValeur),
+    tuile("Charges par an", euros(b.charges), b.rendement_net, b.valeur ? "rendement net de charges" : "hors mensualités du prêt"),
+    tuile("Intérêts d'emprunt, 12 mois", b.interets === null ? "—" : euros(b.interets), b.rendement_apres_interets,
+      b.interets === null ? "crédit du bien non retrouvé" : "rendement après intérêts"),
+    tuile("Trésorerie par mois", eurosSignes(b.tresorerie_mensuelle), null,
+      `loyers − charges − mensualités (${euros(b.echeances)} par an) ; sur ${b.mois_couverts} mois d'exports`),
+  ].join("")}</div>`;
 }
 
 function afficherTuiles(vue) {
