@@ -54,6 +54,8 @@ class Compte:
     solde: Decimal
     operations: tuple[Operation, ...]
     anomalies: tuple[str, ...] = field(default=())
+    # Date du dernier export quand le solde est projeté au mois en cours (crédits, MODELE § 7.10), sinon None.
+    projete_depuis: date | None = None
 
     @property
     def libelle(self) -> str:

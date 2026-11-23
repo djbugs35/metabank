@@ -192,7 +192,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
 | Dépôt unique | PDF et CSV glissés dans la page ou posés dans le dossier surveillé ; reconnus par les connecteurs, archivés, dédoublonnés | un fichier quelconque est pris en compte sans intervention | fait : dossier surveillé (data/depot/ ou celui de la Configuration) et dépôt dans la page sans titulaire, rangés d'après le compte reconnu ; un compte jamais vu attend son titulaire |
-| Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | à faire |
+| Crédits tenus à jour | capital restant dû projeté chaque mois (connecteur « calcul ») | le capital affiché suit le mois en cours | fait : projection à chaque échéance passée (MODELE § 7.10), calculée à l'affichage et marquée « projeté » ; un nouvel export la remplace |
 | Historique du patrimoine | instantané à chaque mise à jour ; 13 derniers mois reconstitués ; courbe du patrimoine net | courbe mensuelle au tableau de bord | à faire |
 | Performance comparée, première version | repères annuels publics : fonds en euros, unités de compte, Livret A, inflation, MSCI World | chaque rendement annuel est affiché face à ses repères | à faire |
 | Règles de dépenses dans la page | créer, modifier, tester une règle de classement | une dépense non classée se classe en deux clics | à faire |
@@ -262,6 +262,9 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 - **2026-11-22 — metabank tourne aussi sur le NAS QNAP**, comme metascrap, et met à jour seul les comptes en
   connexion directe. Conséquence dès maintenant : cœur en Python standard sans dépendance au Mac, secrets demandés
   à un coffre abstrait (trousseau sur le Mac, autre coffre sur le NAS).
+- **2026-11-23 — Projection des crédits calculée à l'affichage**, pas par un connecteur « calcul » : elle dépend de
+  la date du jour et non d'une archive ; l'écrire en base casserait la reconstruction à l'identique. La famille
+  « calcul » reste au contrat pour un futur besoin qui produirait des données datées.
 - **2026-11-22 — Imports par connecteurs (plug-ins)**, sur le modèle de metascrap : un contrat, quatre familles
   (fichier, direct, calcul, référence), un registre avec accès principal et de secours, un journal.
 - **2026-11-22 — Onglets Configuration et Synoptique** ; le synoptique montre aussi ce qui sort de la machine.
