@@ -131,3 +131,16 @@ def test_le_fonds_donne_sa_plus_value_latente_ses_coupons_et_le_coupon_attendu_n
 )  # fmt: skip
 def test_un_coupon_n_est_attendu_qu_apres_une_fois_et_demie_le_rythme_habituel(jours, au, attendu):
     assert coupon_attendu(jours, au) == attendu
+
+
+def test_depuis_l_ouverture_le_cumul_suit_les_versements_lus_et_non_le_cumul_fiscal_de_l_assureur():
+    # Relevé annuel d'ouverture (rien au 1er janvier) ; la situation annonce un cumul plus grand que les versements
+    # lus, comme après un transfert entrant compté pour sa base fiscale.
+    annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
+                     valeur_precedente=Decimal(0))  # fmt: skip
+    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero,
+                        versements_bruts_depuis_origine=Decimal(999_999))  # fmt: skip
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    assert bilan.apports_cumules == sum((a.apports for a in bilan.annees), Decimal(0))
+    assert bilan.gain_cumule == sum((a.gain for a in bilan.annees), Decimal(0))
+    assert any("base fiscale" in a for a in bilan.anomalies)

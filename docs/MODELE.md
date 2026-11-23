@@ -54,9 +54,16 @@ Gain = valeur de rachat − total brut versé depuis l'origine + total racheté,
 Ni frais ni rendement annuel : il faut les relevés annuels.
 
 ### 2.3 Relevés annuels suivis d'une situation plus récente (Suravenir, « Situation de votre contrat au … »)
-Valeur et date de valeur : celles de la situation. Apports cumulés = cumul des versements bruts depuis l'origine ;
-rachats = cumul des rachats bruts ; gain = valeur − apports + rachats (comme 2.2), les années restant celles des
-relevés annuels (une situation n'a ni mouvements de l'année ni frais). Contrôles : gain calculé face à la
+Valeur et date de valeur : celles de la situation. Quand les relevés annuels partent de l'ouverture (V₀ = 0) et que la
+situation donne l'année en cours (§ 2.4), les cumuls sont ceux des mêmes flux que les années : apports = Σ A des
+relevés annuels + versé de l'année en cours ; rachats et frais de même ; gain = valeur − apports + rachats, qui égale
+la somme des gains annuels. Le « cumul des
+versements bruts » de la situation n'est alors qu'un contrôle : un transfert entrant d'un autre PER y compte pour sa
+base fiscale (les versements faits sur le contrat d'origine), non pour la somme reçue ; un écart de plus de 1 € est
+signalé. Sinon (premières années absentes, ou situation sans historique) : apports = cumul des versements bruts depuis l'origine ; rachats = cumul des
+rachats bruts ; gain = valeur − apports + rachats (comme 2.2). Corrigé le 2026-11-23 : la première version prenait
+toujours le cumul de la situation, et un PER ayant reçu un transfert montrait une perte cumulée pour des années en
+gain. Contrôles : gain calculé face à la
 « Performance (+/- value fiscale) en € » de l'assureur, et somme des fonds face au total ; écart de plus de 1 €
 signalé. Les frais des fonds (§ 4) restent ceux du dernier relevé annuel qui les donne.
 
@@ -69,7 +76,7 @@ la situation :
 - gain = valeur de la situation − valeur au 31/12 précédent − versé + rachats ;
 - rendement de la période (non annualisé) = gain / (valeur au 31/12 + (versé − rachats) / 2).
 Corrigé le 2026-11-23 : la première version prenait « cumul des versements − primes non remboursées au 31/12 » pour
-l'assurance vie ; ce montant fiscal n'est pas le cumul des versements (20 000 € comptés à tort en 2026).
+l'assurance vie ; ce montant fiscal n'est pas le cumul des versements (un versement de l'année précédente y comptait à tort).
 Pour la rentabilité annualisée (§ 6.2), les versements de la période sont placés à son milieu et la valeur finale à
 la date de la situation.
 

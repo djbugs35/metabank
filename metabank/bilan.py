@@ -139,8 +139,16 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
     apports: Decimal | None
     gain: Decimal | None
     frais: Decimal | None
-    if annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
-        # Relevés annuels suivis d'une situation plus récente : valeur et cumuls de la situation. MODELE § 2.3.
+    if en_cours is not None and annees[0].valeur_debut == ZERO:
+        # Relevés annuels depuis l'ouverture puis situation avec historique : cumul des mêmes flux que les années.
+        # Sans les premières années, le cumul de l'assureur reste le seul complet (branche suivante). MODELE § 2.3.
+        apports = sum((a.apports for a in annees_affichees), ZERO)
+        rachats = sum((a.rachats for a in annees_affichees), ZERO)
+        frais = sum((a.frais for a in annees_affichees if a.frais is not None), ZERO)
+        gain = dernier.valeur - apports + rachats
+        _comparer_au_cumul_de_l_assureur(dernier, apports, anomalies)
+    elif annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
+        # Situation sans historique des opérations : cumuls de la situation. MODELE § 2.3.
         apports = dernier.versements_bruts_depuis_origine
         rachats = dernier.rachats_depuis_origine or ZERO
         gain = dernier.valeur - apports + rachats
@@ -175,6 +183,20 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         anomalies=tuple(anomalies),
         date_ouverture=ouverture,
     )
+
+
+ECART_CUMUL_TOLERE = Decimal(1)
+
+
+def _comparer_au_cumul_de_l_assureur(situation: Releve, apports: Decimal, anomalies: list[str]) -> None:
+    """Signaler un cumul des versements de l'assureur qui diffère de la somme des versements lus. MODELE § 2.3."""
+    cumul = situation.versements_bruts_depuis_origine
+    if cumul is not None and abs(cumul - apports) > ECART_CUMUL_TOLERE:
+        anomalies.append(
+            f"cumul des versements annoncé par l'assureur {cumul} € pour {apports} € versés d'après les relevés "
+            f"(écart {cumul - apports} € : un transfert entrant y compte souvent pour sa base fiscale, non pour la "
+            "somme reçue)"
+        )
 
 
 def _annees(releves: list[Releve], anomalies: list[str], ouverture: date | None) -> list[Annee]:
