@@ -13,6 +13,8 @@ _to_delete/
 # Base Wealthfolio, secrets chiffrés, exports et relevés : données personnelles, jamais dans le dépôt.
 data/
 *.csv
+# Exports fictifs des tests (Alice, Bruno) : sans eux, la CI ne peut pas lire les comptes bancaires.
+!tests/exemples/*.csv
 *.pdf
 *.db
 *.sqlite
