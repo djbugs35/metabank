@@ -93,6 +93,38 @@ def comparer_sources(operations_dsp2: list[dict], operations_csv: list, debut: d
         resultat["dsp2"] = max(resultat["dsp2"], sum(cles.values()))
         resultat[f"apparies_{champ}"] = sum((cles & csv).values())
     resultat["en_attente"] = sum(1 for o in operations_dsp2 if o.get("status") == "PDNG")
+    resultat.update(_ecarts_de_jours(dans, csv, debut, fin))
+    return resultat
+
+
+ECART_MAX_JOURS = 7
+
+
+def _ecarts_de_jours(dsp2: list[dict], csv: Counter, debut: date, fin: date) -> dict[str, int]:
+    """Rendre, pour les opérations sans jumelle exacte, combien en trouvent une au même montant à n jours près.
+
+    Appariement glouton par écart croissant : chaque opération CSV ne sert qu'une fois. Les clés « decale_n » comptent
+    les paires trouvées à n jours ; « montant_absent » les opérations DSP2 dont le montant n'existe pas côté CSV.
+    """
+    cles = Counter((j, montant_signe(o)) for o in dsp2 if (j := _jour(o, "booking_date")) and debut < j <= fin)
+    reste_dsp2, reste_csv = cles - csv, csv - cles
+    resultat: dict[str, int] = {}
+    for ecart in range(1, ECART_MAX_JOURS + 1):
+        trouves = 0
+        for jour, montant in list(reste_dsp2):
+            for sens in (-1, 1):
+                autre = (jour + timedelta(days=sens * ecart), montant)
+                pris = min(reste_dsp2[(jour, montant)], reste_csv[autre])
+                if pris > 0:
+                    reste_csv[autre] -= pris
+                    reste_dsp2[(jour, montant)] -= pris
+                    trouves += pris
+        if trouves:
+            resultat[f"decale_{ecart}"] = trouves
+    montants_csv = {montant for _, montant in +reste_csv}
+    restants = +reste_dsp2
+    resultat["montant_absent"] = sum(n for (_, montant), n in restants.items() if montant not in montants_csv)
+    resultat["sans_jumelle"] = sum(restants.values())
     return resultat
 
 

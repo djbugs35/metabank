@@ -147,3 +147,14 @@ def test_le_rapprochement_suit_la_date_choisie():
     r = comparer_sources([_dsp2("2026-01-06", "10", "DBIT")], [Op(date(2026, 1, 6), "-10")],
                          date(2026, 1, 1), date(2026, 1, 31))  # fmt: skip
     assert (r["csv"], r["dsp2"], r["apparies_booking_date"]) == (1, 1, 1)
+
+
+def test_une_operation_decalee_de_deux_jours_est_comptee_comme_telle():
+    class Op:
+        def __init__(self, jour, montant):
+            self.jour, self.montant = jour, Decimal(montant)
+
+    dsp2 = [_dsp2("2026-01-06", "10", "DBIT"), _dsp2("2026-01-09", "25", "DBIT"), _dsp2("2026-01-10", "7", "DBIT")]
+    csv = [Op(date(2026, 1, 6), "-10"), Op(date(2026, 1, 7), "-25")]
+    r = comparer_sources(dsp2, csv, date(2026, 1, 1), date(2026, 1, 31))
+    assert (r["apparies_booking_date"], r["decale_2"], r["sans_jumelle"], r["montant_absent"]) == (1, 1, 1, 1)
