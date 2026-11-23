@@ -31,10 +31,13 @@ export const seriesAnnees = (annees) => [
   { classe: "serie-2", nom: "Frais payés", valeurs: annees.map((a) => a.frais), sous: annees.map((a) => pct(a.frais_taux)) },
 ];
 
+// « 2026 (au 23/11) » pour l'année en cours, d'après une situation (MODELE § 2.4).
+export const anneeLibelle = (a) => (a.en_cours_au ? `${a.annee} (au ${a.en_cours_au.slice(8, 10)}/${a.en_cours_au.slice(5, 7)})` : String(a.annee));
+
 export function tableAnneesHtml(annees) {
   return `<thead><tr><th>Année</th><th class="n">Versé</th><th class="n">Gagné</th><th class="n">Gagné %</th>
     <th class="n">Frais</th><th class="n">Frais %</th><th class="n">Sommes placées</th></tr></thead><tbody>${annees
-      .map((a) => `<tr><td>${a.annee}</td><td class="n">${euros(a.verse)}</td><td class="n">${eurosSignes(a.gain)}</td>
+      .map((a) => `<tr><td>${anneeLibelle(a)}</td><td class="n">${euros(a.verse)}</td><td class="n">${eurosSignes(a.gain)}</td>
         <td class="n">${pct(a.gain_taux, true)}</td><td class="n">${euros(a.frais)}</td><td class="n">${pct(a.frais_taux)}</td>
         <td class="n">${euros(a.capital)}</td></tr>`)
       .join("")}</tbody>`;

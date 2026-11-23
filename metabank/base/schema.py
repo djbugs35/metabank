@@ -96,6 +96,10 @@ MIGRATIONS: tuple[str, ...] = (
         UNIQUE (compte_id, identifiant)
     );
     """,
+    # 4 : version des lecteurs qui ont rempli la base ; quand elle change, la base se refait depuis les archives.
+    """
+    CREATE TABLE meta (cle TEXT PRIMARY KEY, valeur TEXT NOT NULL);
+    """,
 )
 
 VERSION = len(MIGRATIONS)

@@ -138,6 +138,7 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
                 "capital": _nombre(a.capital),
                 "gain_taux": _taux(a.rendement),
                 "frais_taux": _taux(a.rendement_frais),
+                "en_cours_au": a.en_cours_au.isoformat() if a.en_cours_au else None,
             }
             for a in s.annees
         ],

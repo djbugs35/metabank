@@ -82,6 +82,7 @@ def lire_releve_suravenir(texte: str, fichier: str = "", type_indique: str | Non
         if est_per
         else None,
         versements_bruts_depuis_origine=_versements_volontaires(plat, r"DEPUIS L.ORIGINE") if est_per else None,
+        primes_non_remboursees=None if est_per else _primes_non_remboursees(plat),
         fichier=fichier,
     )
     anomalies += controler(releve)
@@ -239,3 +240,13 @@ def _versements_volontaires(plat: str, titre_bloc: str) -> Decimal | None:
 
 def _avec_anomalies(releve: Releve, anomalies: list[str]) -> Releve:
     return replace(releve, anomalies=tuple(f"{releve.fichier} : {a}" if releve.fichier else a for a in anomalies))
+
+
+def _primes_non_remboursees(plat: str) -> Decimal | None:
+    """Rendre la somme des primes versées et non remboursées au 31/12 (avant et après le 27/09/2017), ou None."""
+    lignes = re.findall(
+        rf"primes versées (?:avant le|à compter du) \d\d/\d\d/\d{{4}} et non remboursées\s*({MOTIF_MONTANT})?", plat
+    )
+    if not lignes:
+        return None
+    return sum((en_decimal(m) for m in lignes if m), Decimal(0))

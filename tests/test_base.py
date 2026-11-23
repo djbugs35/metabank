@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from metabank.base import integration
 from metabank.base.archives import CheminRefuse, lister_archives
 from metabank.base.integration import FICHIER_BASE, FichierNonReconnu, importer_fichier, ouvrir_base, reconstruire
 from metabank.base.lot import CompteLu, LectureImpossible, Lot, OperationLue, SoldeLu
@@ -177,4 +178,17 @@ def test_le_solde_d_un_jour_deja_connu_prend_la_valeur_du_dernier_import(tmp_pat
     _importer(tmp_path, "corrige.txt", b"FICTIF\nsolde;2026-01-31;2900.00\n")
     connexion = ouvrir(tmp_path / FICHIER_BASE)
     assert connexion.execute("SELECT montant_centimes FROM soldes").fetchall() == [(290000,)]
+    connexion.close()
+
+
+def test_une_nouvelle_version_des_lecteurs_refait_la_base_depuis_les_archives(tmp_path, monkeypatch):
+    _importer(tmp_path, "janvier.txt", JANVIER)
+    connexion = ouvrir(tmp_path / FICHIER_BASE)
+    with connexion:
+        connexion.execute("DELETE FROM operations")
+    connexion.close()
+    monkeypatch.setattr(integration, "VERSION_DES_LECTEURS", "99")
+    connexion = ouvrir_base(tmp_path, lire_fictif)
+    assert connexion.execute("SELECT count(*) FROM operations").fetchone()[0] == 2
+    assert connexion.execute("SELECT valeur FROM meta").fetchone()[0] == "99"
     connexion.close()

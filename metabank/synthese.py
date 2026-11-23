@@ -31,6 +31,7 @@ class AnneeSynthese:
     rendement_min: Decimal | None = None
     rendement_max: Decimal | None = None
     duree_mois: int | None = None
+    en_cours_au: date | None = None
     capital: Decimal | None = None
 
     @property
@@ -124,6 +125,7 @@ def _annee(annee: int, bilans: list[BilanContrat], frais_fonds: dict) -> AnneeSy
         rendement_min=rendement_min,
         rendement_max=rendement_max,
         duree_mois=durees.pop() if len(durees) == 1 else None,
+        en_cours_au=max((a.en_cours_au for _, a in lignes if a.en_cours_au), default=None),
     )
 
 
@@ -155,8 +157,12 @@ def _flux_annuels(bilan: BilanContrat) -> list[tuple[date, float]]:
     for annee in bilan.annees:
         ouverture = bilan.date_ouverture
         jour = ouverture if annee.valeur_debut == 0 and ouverture and ouverture.year == annee.annee else None
+        if annee.en_cours_au is not None:
+            # Année en cours (MODELE § 2.4) : versements au milieu de la période, pas au 1er juillet.
+            debut = date(annee.annee, 1, 1)
+            jour = jour or debut + (annee.en_cours_au - debut) / 2
         flux.append((jour or date(annee.annee, 7, 1), -float(annee.apports - annee.rachats)))
-    flux.append((date(derniere.annee, 12, 31), float(derniere.valeur_fin)))
+    flux.append((derniere.en_cours_au or date(derniere.annee, 12, 31), float(derniere.valeur_fin)))
     return flux
 
 
