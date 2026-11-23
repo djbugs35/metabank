@@ -7,7 +7,7 @@ import { afficherRetraite, preparerRetraite } from "./retraite.js";
 import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
-import { afficherSynoptique } from "./synoptique.js";
+import { afficherSynoptique, preparerSynoptique } from "./synoptique.js";
 import { barresGroupees, courbes, echapper } from "./graphiques.js";
 import {
   creditsDeVue, creditsHtml, epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct, seriesAnnees,
@@ -524,4 +524,5 @@ preparerBudget(charger);
 preparerRetraite();
 preparerAllocation();
 preparerRevue();
+preparerSynoptique(charger);
 charger();

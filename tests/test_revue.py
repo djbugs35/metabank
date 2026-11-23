@@ -7,7 +7,7 @@ import pytest
 
 from metabank.__main__ import main
 from metabank.configuration import ecrire_objectifs
-from metabank.revue import SUJETS, Action, Revue, en_texte, enregistrer_revue, faire_revue
+from metabank.revue import SUJETS, Action, Revue, _accord_bancaire, en_texte, enregistrer_revue, faire_revue
 from metabank.web import vues
 from tests.conftest import ranger
 
@@ -57,3 +57,10 @@ def test_le_dossier_des_revues_n_est_pas_un_titulaire(donnees):
     enregistrer_revue(donnees, faire_revue(donnees, AUJOURD_HUI))
     assert "revues" not in vues.etat(donnees)["titulaires"]
     assert json.dumps(vues.etat(donnees)["erreurs"]).count("revues") == 0
+
+
+def test_l_accord_bancaire_proche_de_sa_fin_est_rappele():
+    assert _accord_bancaire({"fin": "2026-12-10T00:00:00"}, AUJOURD_HUI)[0].sujet == "Connexion directe"
+    assert _accord_bancaire({"fin": "2027-05-01T00:00:00"}, AUJOURD_HUI) == []
+    assert "a pris fin" in _accord_bancaire({"fin": "2026-11-01"}, AUJOURD_HUI)[0].texte
+    assert _accord_bancaire({}, AUJOURD_HUI) == []

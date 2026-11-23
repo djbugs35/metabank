@@ -15,7 +15,6 @@ from decimal import Decimal
 from pathlib import Path
 
 from metabank.connecteurs._enable_banking import (
-    ACCORD,
     REDIRECTION,
     Client,
     code_de_retour,
@@ -43,7 +42,7 @@ def trouver_banque(client: Client, nom: str, pays: str = "FR") -> str:
 
 
 def relier(client: Client, banque: str, demander: Callable[[str], str], ouvrir: Callable[[str], object],
-           chemin: Path = ACCORD, retour: str = REDIRECTION) -> dict:  # fmt: skip
+           chemin: Path | None = None, retour: str = REDIRECTION) -> dict:  # fmt: skip
     """Rendre l'accord enregistré : demande l'accord à la banque, lit l'adresse de retour collée, ouvre la session.
 
     Args:

@@ -6,13 +6,15 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from metabank.connecteurs._enable_banking import lire_accord
 from metabank.synoptique import EN_RETARD, JAMAIS, TRES_EN_RETARD
 from metabank.web import vues
 from metabank.web.allocation_vues import etat_allocation
 from metabank.web.synoptique_vues import etat_synoptique
 
 HORIZON_ECHEANCES_JOURS = 90
-SUJETS = ("Fichiers à déposer", "Échéances", "Budget", "Allocation", "Fichiers non lus")
+SUJETS = ("Fichiers à déposer", "Échéances", "Budget", "Allocation", "Fichiers non lus", "Connexion directe")
+PREAVIS_ACCORD_JOURS = 30
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,7 @@ def faire_revue(dossier: Path, aujourd_hui: date | None = None) -> Revue:
         + _budget(etat["banque"])
         + _allocation(etat_allocation(dossier))
         + [Action("Fichiers non lus", e) for e in etat["erreurs"]]
+        + _accord_bancaire(lire_accord(), aujourd_hui)
     )
     return Revue(f"{aujourd_hui:%Y-%m}", actions)
 
@@ -87,6 +90,21 @@ def _allocation(allocation: dict) -> list[Action]:
     if a_classer:
         actions.append(Action("Allocation", f"{a_classer} fonds à classer dans l'onglet Allocation"))
     return actions
+
+
+def _accord_bancaire(accord: dict, aujourd_hui: date) -> list[Action]:
+    """Rendre le rappel de renouvellement de l'accord DSP2, dans les 30 jours qui précèdent sa fin (ou après)."""
+    fin = accord.get("fin", "")[:10]
+    if not fin or date.fromisoformat(fin) > aujourd_hui + timedelta(days=PREAVIS_ACCORD_JOURS):
+        return []
+    quand = "a pris fin" if date.fromisoformat(fin) < aujourd_hui else "prend fin"
+    return [
+        Action(
+            "Connexion directe",
+            f"L'accord donné à la banque {quand} le {fin}",
+            "Le renouveler : « uv run python -m metabank enable-banking relier », puis validation dans MesComptes.",
+        )
+    ]
 
 
 DOSSIER_REVUES = "revues"

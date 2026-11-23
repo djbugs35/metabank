@@ -139,6 +139,15 @@ Une opération est identifiée par (jour, libellé, montant). Présente n fois d
 présente dans deux exports, elle n'est pas doublée (on garde le plus grand n). S et D viennent de l'export le plus
 récent. Contrôle : pour chaque autre export (S', D'), S − Σ m (D' < jour ≤ D) doit valoir S'.
 
+### 7.1 bis Même opération reçue par deux sources (export CSV et connexion directe)
+Mesuré le 2026-11-23 sur 90 jours et quatre comptes : mêmes nombres d'opérations des deux côtés ; 85 % à date
+comptable égale, toutes les autres au même montant à 1 à 5 jours près, aucune sans jumelle.
+Règle : une opération d'une source n'est pas ajoutée quand le compte a déjà, venue d'une autre source, une opération
+de même montant dont la date est à 5 jours au plus, et pas encore appariée ; la plus proche en date est retenue (puis
+la plus ancienne en base). L'appariement est gardé en base (table jumelles) : chaque opération ne sert qu'une fois, et
+une nouvelle synchronisation qui rend la même opération la reconnaît à son identifiant. Entre deux exports de la même
+source, seule compte l'identifiant (7.1). Les opérations « en attente » de la banque ne sont pas importées.
+
 ### 7.2 Classement
 Chaque opération reçoit une catégorie par règles sur « type sous-type libellé » (règles personnelles de
 data/categories.json d'abord, puis celles du code), et une nature :

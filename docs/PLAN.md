@@ -209,9 +209,9 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 
 | Fonction | Détail | Fait quand | État |
 |---|---|---|---|
-| Connecteur Enable Banking | application en mode restreint au nom du titulaire, réglée depuis l'onglet Configuration ; comptes BNP (et Revolut si couvert) ; l'export CSV reste en secours | les comptes courants se mettent à jour d'un clic | en cours : application Enable Banking active en mode restreint (titulaire, 2026-11-23) ; client et liaison (`metabank enable-banking relier`), rapprochement avec le CSV avant toute écriture en base |
-| Mise à jour automatique | synchronisation planifiée des comptes en connexion directe (nuit sur le NAS, lancement sur le Mac), accès de secours, journal, calculs refaits ensuite ; dans les limites DSP2 | les comptes en connexion directe sont à jour chaque matin sans rien faire | à faire |
-| Renouvellement | rappel avant l'échéance de l'accord bancaire (180 jours), visible dans le synoptique | rappel affiché à temps | à faire |
+| Connecteur Enable Banking | application en mode restreint au nom du titulaire, réglée depuis l'onglet Configuration ; comptes BNP (et Revolut si couvert) ; l'export CSV reste en secours | les comptes courants se mettent à jour d'un clic | fait : connecteur `enable_banking` (4 comptes BNP), anti-doublon avec le CSV (MODELE § 7.1 bis), bouton du synoptique |
+| Mise à jour automatique | synchronisation planifiée des comptes en connexion directe (nuit sur le NAS, lancement sur le Mac), accès de secours, journal, calculs refaits ensuite ; dans les limites DSP2 | les comptes en connexion directe sont à jour chaque matin sans rien faire | fait sur le Mac (au lancement, une fois par jour) ; la nuit sur le NAS viendra avec l'installation |
+| Renouvellement | rappel avant l'échéance de l'accord bancaire (180 jours), visible dans le synoptique | rappel affiché à temps | fait : revue du mois, 30 jours avant la fin de l'accord |
 | Livrets | vérifier si la BNP les expose en DSP2 (a priori non : ce ne sont pas des comptes de paiement) ; sinon export annuel | décision notée ci-dessous | à faire |
 | Connecteur « référence » | valeurs liquidatives par ISIN et indices, depuis une source publique, en option ; cache en base | assurance vie, PER et PEA affichent une valeur estimée datée | à faire |
 | Téléchargement assisté | récupération guidée des relevés Suravenir, Cardif et Trade Republic dans le navigateur, titulaire présent | un relevé se récupère sans chercher où il est | à évaluer |
@@ -318,8 +318,8 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Performance comparée aux repères publics (fonds en euros, unités de compte, indices, Livret A, inflation) | 2, 5 | première version faite (étape 2) ; version pondérée à l'étape 5 |
 | Règles de classement des dépenses modifiables depuis la page | 2 | fait |
 | PEA Trade Republic : positions, plafond, compteur des 5 ans | 3 | à faire |
-| Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | à faire |
-| Mise à jour automatique des comptes en connexion directe (synchronisation planifiée) | 4 | à faire |
+| Connexion directe DSP2 (Enable Banking) et rappel des 180 jours | 4 | fait |
+| Mise à jour automatique des comptes en connexion directe (synchronisation planifiée) | 4 | fait (au lancement) |
 | Valeur au jour des contrats par les valeurs liquidatives publiques (option) | 4 | à faire |
 | Allocation globale, alertes de concentration, simulateur d'arbitrage, répartition cible | 5 | fait (classes par libellé, pas encore par DIC) |
 | Alerte quand une enveloppe dérive de l'allocation cible au-delà d'un seuil | 5 | fait (5 points) |

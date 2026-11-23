@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import metabank.connecteurs._enable_banking as enable_banking
 import metabank.connecteurs._releves as socle_releves
 from metabank import releves
 from tests.test_credit import _export_credit
@@ -11,6 +12,14 @@ from tests.test_credit import _export_credit
 EXEMPLES = Path(__file__).parent / "exemples"
 # Un faux PDF : cet en-tête suivi du texte que pdftotext rendrait (tests/exemples/*.txt).
 ENTETE_PDF = b"%PDF-fictif\n"
+
+
+@pytest.fixture(autouse=True)
+def secrets_isoles(tmp_path_factory, monkeypatch):
+    """Ne jamais lire ni écrire la vraie clé ni le vrai accord Enable Banking (~/.config/metabank) dans un test."""
+    dossier = tmp_path_factory.mktemp("secrets")
+    monkeypatch.setattr(enable_banking, "ACCORD", dossier / "enable_banking.json")
+    monkeypatch.setattr(enable_banking, "CLE", dossier / "enable_banking.pem")
 
 
 @pytest.fixture

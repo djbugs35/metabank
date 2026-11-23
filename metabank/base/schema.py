@@ -86,6 +86,16 @@ MIGRATIONS: tuple[str, ...] = (
         PRIMARY KEY (releve_id, rang)
     );
     """,
+    # 3 : une opération déjà reçue par une autre source (CSV et DSP2) n'est pas ajoutée deux fois. MODELE § 7.1 bis.
+    """
+    CREATE TABLE jumelles (
+        operation_id INTEGER PRIMARY KEY REFERENCES operations(id),
+        compte_id INTEGER NOT NULL REFERENCES comptes(id),
+        identifiant TEXT NOT NULL,
+        archive_id INTEGER REFERENCES archives(id),
+        UNIQUE (compte_id, identifiant)
+    );
+    """,
 )
 
 VERSION = len(MIGRATIONS)
