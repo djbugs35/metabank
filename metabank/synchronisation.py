@@ -5,6 +5,7 @@ compte de l'accord Enable Banking déjà connu de la base (par un export CSV) es
 moins 10 jours ; les opérations déjà connues, par l'une ou l'autre source, ne sont pas doublées (MODELE § 7.1 bis).
 """
 
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -68,20 +69,50 @@ def _a_faire(dossier: Path, aujourd_hui: date, forcer: bool) -> tuple[list[Acces
     return acces, messages, depuis
 
 
-def synchroniser_tout(dossier: Path, aujourd_hui: date | None = None, forcer: bool = False) -> list[str]:
-    """Rendre un message par compte : éléments ajoutés, déjà à jour, ou raison de l'échec (sans montant)."""
+@dataclass(frozen=True)
+class Message:
+    """Le compte rendu d'un compte : texte en français et ton (« ok », « info » ou « erreur ») pour l'affichage."""
+
+    texte: str
+    ton: str
+
+
+def _bilan_du_compte(dossier: Path, cle: str) -> tuple[int, str]:
+    """Rendre le nombre d'opérations du compte et la date de son dernier solde (« JJ/MM/AAAA »)."""
+    connexion = ouvrir_base(dossier, composer_lecteur(lister_connecteurs()))
+    try:
+        nombre, jour = connexion.execute(
+            "SELECT (SELECT count(*) FROM operations o WHERE o.compte_id = c.id), "
+            "(SELECT max(s.jour) FROM soldes s WHERE s.compte_id = c.id) FROM comptes c WHERE c.cle = ?",
+            (cle,),
+        ).fetchone()
+    finally:
+        connexion.close()
+    return nombre, date.fromisoformat(jour).strftime("%d/%m/%Y") if jour else "?"
+
+
+def synchroniser_tout(dossier: Path, aujourd_hui: date | None = None, forcer: bool = False) -> list[Message]:
+    """Rendre un compte rendu par compte : comptes mis à jour d'abord, puis échecs, puis informations (sans montant)."""
     aujourd_hui = aujourd_hui or datetime.now().astimezone().date()
     if not lire_accord().get("session"):
         return []
-    acces, messages, depuis = _a_faire(dossier, aujourd_hui, forcer)
+    acces, ecartes, depuis = _a_faire(dossier, aujourd_hui, forcer)
     connecteurs = lister_connecteurs()
+    messages = []
     for a in acces:
+        avant, _ = _bilan_du_compte(dossier, a.compte_cle)
         try:
-            resultat = synchroniser_compte(dossier, connecteurs, {}, a, depuis[a.compte_cle])
+            synchroniser_compte(dossier, connecteurs, {}, a, depuis[a.compte_cle])
         except AucunAccesDirect as erreur:
-            messages.append(f"{a.compte_cle} : non mis à jour ({erreur})")
+            messages.append(Message(f"{a.compte_cle} : non mis à jour ({erreur})", "erreur"))
             continue
-        messages.append(
-            f"{a.compte_cle} : {'réponse identique à la précédente' if resultat.deja_present else f'{resultat.elements} élément(s) ajouté(s)'}"
+        apres, solde = _bilan_du_compte(dossier, a.compte_cle)
+        nouvelles = apres - avant
+        detail = (
+            "aucune opération nouvelle"
+            if not nouvelles
+            else f"{nouvelles} opération{'s' if nouvelles > 1 else ''} nouvelle{'s' if nouvelles > 1 else ''}"
         )
-    return messages
+        messages.append(Message(f"{a.compte_cle} : à jour, solde au {solde}, {detail}", "ok"))
+    messages += [Message(texte, "info") for texte in ecartes]
+    return sorted(messages, key=lambda m: ("ok", "erreur", "info").index(m.ton))

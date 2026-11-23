@@ -113,7 +113,7 @@ ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
     "/api/allocation": enregistrer_allocation,
     "/api/arbitrage": simuler_arbitrage_saisi,
     "/api/synchroniser": lambda dossier, saisie: {
-        "messages": synchroniser_tout(dossier, forcer=bool(saisie.get("forcer")))
+        "messages": [vars(m) for m in synchroniser_tout(dossier, forcer=bool(saisie.get("forcer")))]
     },
 }
 
