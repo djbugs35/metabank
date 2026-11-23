@@ -158,6 +158,11 @@ def _flux_annuels(bilan: BilanContrat) -> list[tuple[date, float]]:
     flux = []
     if premiere.valeur_debut > 0:
         flux.append((date(premiere.annee - 1, 12, 31), -float(premiere.valeur_debut)))
+    if bilan.apports_cumules is not None and bilan.verse_mouvements is not None:
+        # Même versé que le gain affiché : l'écart (versé lu moins mouvements) est supposé versé à l'ouverture, seule
+        # date sûre ; le taux est alors un minimum, comme pour une situation seule. MODELE § 6.2.
+        debut_connu = bilan.date_ouverture or date(premiere.annee, 1, 1)
+        flux.append((debut_connu, -float(bilan.apports_cumules - bilan.verse_mouvements)))
     for annee in bilan.annees:
         ouverture = bilan.date_ouverture
         jour = ouverture if annee.valeur_debut == 0 and ouverture and ouverture.year == annee.annee else None
