@@ -18,6 +18,7 @@ from metabank.frais import AnalyseFrais, analyser_frais
 from metabank.frais_historique import historiques_frais
 from metabank.historique import historique_patrimoine
 from metabank.rapport import nom_contrat
+from metabank.reperes import SOURCES, reperes_de
 from metabank.synthese import Synthese, synthetiser
 from metabank.web.banque_vues import etat_banque
 from metabank.web.credits_vues import etat_credits
@@ -62,6 +63,8 @@ def etat(dossier, aujourd_hui: date | None = None) -> dict:
         "banque": banque,
         "patrimoine": patrimoine,
         "historique": historique,
+        "reperes": _reperes(vues),
+        "sources_reperes": SOURCES,
         "epargne": syntheses_epargne(comptes, {cle: p["total"] for cle, p in patrimoine.items()}),
         "corrections": corrections,
         "dossier_depot": str(dossier_depot(dossier, lire_configuration(dossier))),
@@ -202,3 +205,10 @@ def _historique(releves, comptes, biens: dict, aujourd_hui: date, patrimoine: di
             "reportes": historique.reportes,
         }  # fmt: skip
     return resultat
+
+
+def _reperes(vues: list[dict]) -> dict[str, dict]:
+    """Rendre les repères publics de chaque année présente dans une vue, en fractions. MODELE § 10."""
+    annees = sorted({a["annee"] for v in vues for a in v["annees"]})
+    champs = ("fonds_euros", "unites_de_compte", "livret_a", "inflation", "msci_world")
+    return {str(annee): {c: _taux(getattr(reperes_de(annee), c)) for c in champs} for annee in annees}

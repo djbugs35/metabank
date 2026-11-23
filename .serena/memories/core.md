@@ -35,6 +35,8 @@ with tested code, serves a local web app. Repo `djbugs35/metabank`; runs on the 
   back-filled with their first known value before coverage; credits projected (`banque/credit.projeter_credit`, § 7.10).
 - Spending rules from the page: `banque/categories.py` (`ecrire_regles`, `essayer_motif`, `motif_suggere`;
   never name a helper `test*`, pytest collects it), `web/regles_vues.py`, `statique/regles.js`, API `/api/regles[/test]`.
+- `metabank/reperes.py` — sourced yearly public benchmarks (fonds euros ACPR, UC France Assureurs, Livret A, Insee
+  inflation, MSCI World EUR net); None when not published/verified, never guessed. MODELE § 10. Update yearly.
 - `metabank/corrections.py` — `data/corrections.json` (opening dates, verified payments, property values).
 - `metabank/web/` — `serveur.py` (stdlib HTTP server, host/origin guard), `vues.py` (state JSON), `banque_vues.py`,
   `credits_vues.py`, `epargne.py`, `patrimoine.py`, `depot.py` (upload), `simulation.py`, `assistant.py` (`claude -p`,

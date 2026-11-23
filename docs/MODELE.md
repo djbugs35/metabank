@@ -233,3 +233,19 @@ sinon celle du type de compte (30 jours pour un compte courant, 90 pour un créd
 - **jamais** : aucune donnée.
 Sans fréquence connue, le compte est « à jour » dès qu'il a une donnée. Le journal compte, sur les 30 derniers jours,
 les imports réussis et ceux en erreur ou refusés qui visaient ce compte.
+
+## 10. Performance comparée aux repères publics (première version)
+
+Pour chaque année d'une vue (foyer, personne, contrat), le rendement de l'année (§ 6.1, gagné rapporté aux sommes
+placées, frais déduits) est affiché face aux repères publics de la même année, sans autre calcul que l'écart en
+points (rendement − repère). Repères, dans metabank/reperes.py avec leur source :
+- **fonds en euros** : taux de revalorisation moyen des contrats individuels (ACPR, Analyses et synthèses
+  « Revalorisation des contrats d'assurance-vie »), net de frais sur encours, avant prélèvements sociaux ;
+- **unités de compte** : performance globale des supports en UC (France Assureurs), brute des frais des contrats et
+  nette des frais des fonds : un contrat la bat d'autant moins que ses frais de gestion sont élevés ;
+- **Livret A** : moyenne des taux en vigueur le 1er de chaque mois (§ 7.6) ;
+- **inflation** : hausse moyenne annuelle de l'indice des prix à la consommation (Insee) ;
+- **MSCI World** : rendement annuel en euros, dividendes nets réinvestis (fiche MSCI World Index (EUR)), sans aucun
+  frais.
+Une année sans repère publié ou vérifié reste vide. Les repères se mettent à jour une fois par an, à la publication.
+La comparaison pondérée par la répartition de chaque contrat viendra à l'étape 5.
