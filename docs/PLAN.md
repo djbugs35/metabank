@@ -225,7 +225,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Fiscalité et échéances | 5 ans des PEA, 8 ans des assurances vie, abattement après 8 ans, plafond de déduction PER saisi depuis l'avis d'impôt face aux versements de l'année, frais de transfert PER et PERP et leur date de gratuité, rappels de fin d'année | chaque échéance a sa date et son rappel | à faire |
 | Projection retraite | capital estimé à l'âge de départ selon plusieurs hypothèses de rendement, de versements et d'inflation ; capital ou rente | trois scénarios comparés | à faire |
 | Crédits | tableau d'amortissement ; rembourser par anticipation ou placer ; coût de l'assurance emprunteur | comparaison chiffrée disponible | fait : MODELE § 7.11 ; tableau par année, « Rembourser ou placer » (IRA au plafond légal), assurance estimée |
-| Bien locatif | loyers, charges, prêt, intérêts : rendement brut et net, trésorerie mensuelle | rendement et trésorerie affichés | à faire |
+| Bien locatif | loyers, charges, prêt, intérêts : rendement brut et net, trésorerie mensuelle | rendement et trésorerie affichés | fait : MODELE § 7.12 ; rendement brut, net de charges, après intérêts ; trésorerie mensuelle prêt compris |
 | Budget | abonnements récurrents repérés, objectif par catégorie, comparaison d'une année sur l'autre | dépassements signalés | à faire |
 
 ### Étape 6 — IA et confort
@@ -323,7 +323,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Compteurs fiscaux : 5 ans du PEA, 8 ans de l'assurance vie, plafond PER, gratuité des transferts | 5 | à faire |
 | Projection retraite : capital à l'échéance selon plusieurs hypothèses | 5 | à faire |
 | Crédits : remboursement anticipé ou placement, assurance emprunteur | 5 | fait |
-| Bien locatif : rendement et trésorerie | 5 | à faire |
+| Bien locatif : rendement et trésorerie | 5 | fait |
 | Serveur MCP local en lecture seule pour l'assistant | 6 | à faire |
 | Revue mensuelle automatique (PDF et liste d'actions) | 6 | à faire |
 | Sauvegarde chiffrée de `data/` sur le NAS | 6 | à faire |
