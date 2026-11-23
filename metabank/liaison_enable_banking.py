@@ -16,6 +16,7 @@ from pathlib import Path
 
 from metabank.connecteurs._enable_banking import (
     ACCORD,
+    REDIRECTION,
     Client,
     code_de_retour,
     enregistrer_accord,
@@ -42,7 +43,7 @@ def trouver_banque(client: Client, nom: str, pays: str = "FR") -> str:
 
 
 def relier(client: Client, banque: str, demander: Callable[[str], str], ouvrir: Callable[[str], object],
-           jours: int = JOURS_ACCORD, chemin: Path = ACCORD) -> dict:  # fmt: skip
+           chemin: Path = ACCORD, retour: str = REDIRECTION) -> dict:  # fmt: skip
     """Rendre l'accord enregistré : demande l'accord à la banque, lit l'adresse de retour collée, ouvre la session.
 
     Args:
@@ -51,18 +52,18 @@ def relier(client: Client, banque: str, demander: Callable[[str], str], ouvrir: 
     """
     nom = trouver_banque(client, banque)
     etat = secrets.token_urlsafe(16)
-    adresse = client.demander_accord(nom, "FR", jours, etat)
+    adresse = client.demander_accord(nom, "FR", JOURS_ACCORD, etat, retour)
     ouvrir(adresse)
-    retour = demander("Adresse de la page d'arrivée (copiez-la depuis la barre d'adresse) : ")
-    if f"state={etat}" not in retour:
+    arrivee = demander("Adresse de la page d'arrivée (copiez-la depuis la barre d'adresse) : ")
+    if f"state={etat}" not in arrivee:
         raise ValueError("cette adresse ne vient pas de l'accord qui vient d'être demandé : recommencez")
-    session = client.ouvrir_session(code_de_retour(retour))
+    session = client.ouvrir_session(code_de_retour(arrivee))
     comptes = [
         {"uid": c["uid"], "masque": masquer_iban((c.get("account_id") or {}).get("iban", "")), "nom": c.get("name", ""),
          "devise": c.get("currency", "EUR")}
         for c in session.get("accounts", [])
     ]  # fmt: skip
-    accord = {"application": client.application, "banque": nom, "session": session.get("session_id", ""),
+    accord = {"application": client.application, "banque": nom, "retour": retour, "session": session.get("session_id", ""),
               "fin": (session.get("access") or {}).get("valid_until", ""), "comptes": comptes}  # fmt: skip
     enregistrer_accord(accord, chemin)
     return accord
