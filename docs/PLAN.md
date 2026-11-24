@@ -331,6 +331,7 @@ simplicité d'usage, puis le pilotage. Chaque étape est livrable seule.
 | Serveur MCP local en lecture seule pour l'assistant | 6 | fait |
 | Revue mensuelle automatique (PDF et liste d'actions) | 6 | fait |
 | Plus-value de chaque fonds face à son prix de revient, coupons reçus, coupon attendu non venu | 5 | fait |
+| Fiche CSV unique par contrat et par année, écrite à côté des PDF et seule lue par l'application | 2 | fait |
 | Sauvegarde chiffrée de `data/` sur le NAS | 6 | à faire |
 | Exécution sur le NAS QNAP comme metascrap (crontab, sans git, réseau local authentifié) | 6 | à faire |
 

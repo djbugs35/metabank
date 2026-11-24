@@ -107,6 +107,7 @@ def test_l_onglet_propose_le_dernier_connecteur_et_la_frequence_du_type_par_defa
         "bnp_csv",
         "cardif_pdf",
         "enable_banking",
+        "fiche_csv",
         "suravenir_pdf",
         "suravenir_situation_pdf",
     ]

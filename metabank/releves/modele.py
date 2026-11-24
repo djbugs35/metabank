@@ -24,6 +24,20 @@ class Support:
 
 
 @dataclass(frozen=True)
+class Operation:
+    """Une ligne de l'historique des opérations d'un document : jour, nature imprimée, support nommé, montant (€).
+
+    isin : celui du fonds détenu que la ligne nomme, sinon None. Le montant est celui imprimé (signe compris).
+    """
+
+    jour: date
+    nature: str
+    libelle: str
+    isin: str | None
+    montant: Decimal
+
+
+@dataclass(frozen=True)
 class Distribution:
     """Coupon versé par un fonds (ligne « DISTRIBUTION » de l'historique), en euros. MODELE § 13.1."""
 
@@ -92,6 +106,8 @@ class Releve:
     performance_annoncee: Decimal | None = None
     # Situation : coupons de l'historique, clé du support (ISIN, sinon libellé en majuscules). MODELE § 13.1.
     distributions: tuple[Distribution, ...] = field(default=())
+    # Historique des opérations imprimé par le document (situation Suravenir), tel quel. MODELE § 0.
+    operations: tuple[Operation, ...] = field(default=())
     anomalies: tuple[str, ...] = field(default=())
     fichier: str = ""
 

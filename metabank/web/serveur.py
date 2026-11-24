@@ -16,8 +16,10 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 from metabank.configuration import ecrire_objectifs, lire_configuration
+from metabank.connecteurs.registre import lister_connecteurs
 from metabank.corrections import CorrectionInvalide, ecrire_corrections
 from metabank.depot_unique import dossier_depot
+from metabank.fiches import preparer_fiches
 from metabank.revue import SUJETS, enregistrer_revue, faire_revue
 from metabank.synchronisation import synchroniser_tout
 from metabank.web.allocation_vues import enregistrer_allocation, etat_allocation, simuler_arbitrage_saisi
@@ -113,6 +115,7 @@ ENVOIS_JSON: dict[str, Callable[[Path, dict], dict]] = {
     "/api/retraite": simuler_retraite,
     "/api/allocation": enregistrer_allocation,
     "/api/arbitrage": simuler_arbitrage_saisi,
+    "/api/fiches/relire": lambda dossier, _saisie: vars(preparer_fiches(dossier, lister_connecteurs(), relire=True)),
     "/api/synchroniser": lambda dossier, saisie: {
         "messages": [vars(m) for m in synchroniser_tout(dossier, forcer=bool(saisie.get("forcer")))]
     },

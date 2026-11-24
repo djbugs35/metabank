@@ -24,8 +24,9 @@ def test_l_application_affiche_les_memes_chiffres_que_les_anciens_lecteurs(donne
 
 def test_un_fichier_range_a_la_main_apparait_au_chargement_suivant(donnees):
     avant = len(charger(donnees).releves)
-    # Même relevé de situation que celui de Bruno, mais chez Alice et d'un octet différent (empreinte distincte).
-    ranger(donnees, "Alice/PERP - Cardif - Perp 987654/situation.pdf", pdf("cardif_situation.txt") + b"\n")
+    # Situation d'un autre contrat Cardif, rangée chez Alice : sa fiche CSV est écrite puis lue au chargement.
+    autre = pdf("cardif_situation.txt").replace(b"(N\xc2\xb0 12345678)", b"(N\xc2\xb0 12345679)")
+    ranger(donnees, "Alice/PERP - Cardif - Perp 987654/situation.pdf", autre)
     assert len(charger(donnees).releves) == avant + 1
 
 

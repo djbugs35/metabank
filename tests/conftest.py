@@ -6,7 +6,7 @@ import pytest
 
 import metabank.connecteurs._enable_banking as enable_banking
 import metabank.connecteurs._releves as socle_releves
-from metabank import releves
+from metabank import fiches, releves
 from tests.test_credit import _export_credit
 
 EXEMPLES = Path(__file__).parent / "exemples"
@@ -30,6 +30,7 @@ def pdf_simules(monkeypatch):
         return contenu.removeprefix(ENTETE_PDF).decode() if contenu.startswith(ENTETE_PDF) else None
 
     monkeypatch.setattr(socle_releves, "extraire_texte_contenu", texte)
+    monkeypatch.setattr(fiches, "extraire_texte_contenu", texte)
     monkeypatch.setattr(releves, "extraire_texte", lambda pdf: texte(pdf.read_bytes()))
 
 

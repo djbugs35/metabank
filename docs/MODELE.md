@@ -3,6 +3,22 @@
 Toutes les grandeurs sont en euros. Les formules ci-dessous sont celles du code (`metabank/bilan.py`),
 qui cite le paragraphe concerné.
 
+## 0. Fiche CSV d'un contrat : ce que metabank lit
+
+Chaque PDF de contrat (relevé annuel Suravenir, situation Suravenir, situation Cardif) est lu par son lecteur, et ce
+qu'il dit est écrit dans une fiche « metabank-<année>.csv », à côté des PDF, une par compte et par année (année de la
+date du document). L'application ne lit que ces fiches ; un PDF ne donne plus que l'identité du contrat.
+- Format Excel français : séparateur « ; », virgule décimale, dates JJ/MM/AAAA, UTF-8 avec BOM. Colonnes : type, date,
+  rubrique, libelle, isin, quantite, prix, prix_de_revient, montant, source (nom du PDF).
+- Lignes : contrat (assureur, produit, numero, type_contrat), synthese (valeur, valeur_au_1er_janvier,
+  versements_annee, cumul_versements, cumul_rachats, performance_annoncee, primes_non_remboursees,
+  taux_frais_fonds_euros, mouvements.*, frais.*), support (fonds détenu), frais_support (taux du tableau des frais
+  d'un fonds), operation (historique : jour, nature imprimée, fonds nommé, montant), anomalie (remarque du lecteur).
+- Une fiche existante n'est jamais réécrite : une correction faite à la main y reste. Un PDF que la fiche ne cite pas
+  encore y est ajouté à la fin. « Relire les PDF » (onglet Relevés) réécrit toutes les fiches depuis les PDF.
+- La synthèse fait foi (document légal) ; versé de l'année en cours (§ 2.4) et coupons (§ 13.1) sont refaits depuis
+  les lignes operation de la fiche, corrections comprises.
+
 ## 1. Année d'un contrat, à partir d'un relevé annuel
 
 Notations pour l'année *n* :
