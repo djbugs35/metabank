@@ -275,21 +275,24 @@ function afficherProgression(vue) {
 // lignes des contrats, cumul par personne, total. Le graphique montre la ligne cliquée (le total d'abord).
 // « +8,1 k€ » : étiquettes courtes, trois barres par année tiennent sans se chevaucher.
 const kiloEuros = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} k€` : euros(Math.abs(v))}`;
-const CHAMPS_TABLEAU = [["verse", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"]];
+const CHAMPS_TABLEAU = [["verse", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"], ["valeur", "Valeur"]];
 
 function afficherTableauContrats(vue, annees) {
   const lignes = vue.tableau ?? [];
   if (!lignes.length) return;
   const choisie = lignes.find((l) => l.nom === ligneChoisie) ?? lignes[lignes.length - 1];
   const cumul = (l, champ) => annees.reduce((t, a) => t + (l.annees[a.annee]?.[champ] ?? 0), 0);
-  const cellule = (v, champ) => `<td class="n">${v === undefined ? "—" : champ === "verse" || champ === "frais" ? euros(v) : eurosSignes(v)}</td>`;
+  const cellule = (v, champ) => `<td class="n">${v === undefined ? "—" : ["verse", "frais", "valeur"].includes(champ) ? euros(v) : eurosSignes(v)}</td>`;
   const groupes = [...annees.map((a) => anneeLibelle(a)), "Cumul"];
-  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${groupes.map((g) => `<th colspan="3" class="n">${echapper(g)}</th>`).join("")}</tr>
-    <tr>${groupes.map(() => CHAMPS_TABLEAU.map(([, titre]) => `<th class="n">${titre}</th>`).join("")).join("")}</tr></thead>
+  // Cumul : versé, gain et frais sommés sur les années ; la valeur, elle, est celle d'aujourd'hui.
+  const vide = (l) => !Object.keys(l.annees).length;
+  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${groupes.map((g) => `<th colspan="4" class="n">${echapper(g)}</th>`).join("")}</tr>
+    <tr>${groupes.map((g) => CHAMPS_TABLEAU.map(([champ, titre]) => `<th class="n">${g === "Cumul" && champ === "valeur" ? "Valeur aujourd'hui" : titre}</th>`).join("")).join("")}</tr></thead>
     <tbody>${lignes.map((l) => `<tr class="cliquable ligne-${l.niveau}${l === choisie ? " ligne-choisie" : ""}" data-ligne="${echapper(l.nom)}">
       <td>${echapper(l.nom)}</td>${annees.map((a) => CHAMPS_TABLEAU.map(([champ]) => cellule(l.annees[a.annee]?.[champ], champ)).join("")).join("")}
-      ${CHAMPS_TABLEAU.map(([champ]) => cellule(cumul(l, champ), champ)).join("")}</tr>`).join("")}</tbody>`;
+      ${CHAMPS_TABLEAU.map(([champ]) => cellule(champ === "valeur" ? l.valeur_actuelle : vide(l) ? undefined : cumul(l, champ), champ)).join("")}</tr>`).join("")}</tbody>`;
   $("table-annees").querySelectorAll("tr[data-ligne]").forEach((tr) => tr.addEventListener("click", () => {
+    if (vide(lignes.find((l) => l.nom === tr.dataset.ligne))) return;
     ligneChoisie = tr.dataset.ligne;
     afficherTableauContrats(vue, annees);
   }));

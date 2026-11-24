@@ -147,7 +147,10 @@ Le gain G, lui, est exact. Les relevés de situation n'entrent que dans la valeu
 Une ligne par contrat à relevés annuels ; pour chaque année : versé A, gain hors frais = G + F, frais F (frais du
 relevé + frais des fonds, comme § 6.1), gagné net G. Une ligne par personne (s'il y en a plusieurs) et une ligne
 « Total » somment les contrats, année par année ; la colonne « Cumul » somme les années affichées. Le total de chaque
-année égale l'année de l'ensemble (§ 6.1). Les contrats à situation seule n'ont pas d'années : ils n'y figurent pas.
+année égale l'année de l'ensemble (§ 6.1). Chaque année montre aussi la valeur au 31/12 (à la date de la situation pour l'année en cours) ; une ligne de cumul
+y somme, pour chaque contrat, sa dernière valeur connue (§ 6.4). La colonne « Cumul » donne la valeur d'aujourd'hui.
+Un contrat à situation seule n'a pas d'années : sa ligne ne porte que sa valeur d'aujourd'hui, et la valeur du total
+égale celle des tuiles.
 Rapprochement avec les tuiles, toutes années affichées : versé de la tuile = cumul versé du total + versé des contrats
 à situation seule + écart de versé (§ 2.3) ; gagné de la tuile = cumul gagné net du total + gagné des contrats à
 situation seule − écart de versé.
