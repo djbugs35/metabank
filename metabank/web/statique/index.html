@@ -13,13 +13,17 @@
     <span class="marque">metabank</span>
     <nav role="tablist">
       <button role="tab" data-onglet="tableau" aria-selected="true">Tableau de bord</button>
-      <button role="tab" data-onglet="revue" aria-selected="false">Revue du mois</button>
+      <button role="tab" data-onglet="onglet-placements" aria-selected="false">Placements</button>
+      <button role="tab" data-onglet="onglet-epargne" aria-selected="false">Épargne</button>
+      <button role="tab" data-onglet="onglet-credits" aria-selected="false">Crédits</button>
+      <button role="tab" data-onglet="onglet-locatif" aria-selected="false">Bien locatif</button>
       <button role="tab" data-onglet="comptes" aria-selected="false">Budget</button>
+      <button role="tab" data-onglet="allocation" aria-selected="false">Allocation</button>
+      <button role="tab" data-onglet="revue" aria-selected="false">Revue du mois</button>
       <button role="tab" data-onglet="releves" aria-selected="false">Relevés</button>
       <button role="tab" data-onglet="corrections" aria-selected="false">Corrections</button>
       <button role="tab" data-onglet="simulation" aria-selected="false">Simulation des frais</button>
       <button role="tab" data-onglet="assistant" aria-selected="false">Assistant</button>
-      <button role="tab" data-onglet="allocation" aria-selected="false">Allocation</button>
       <button role="tab" data-onglet="synoptique" aria-selected="false">Synoptique</button>
       <button role="tab" data-onglet="configuration" aria-selected="false">Configuration</button>
     </nav>
@@ -28,7 +32,7 @@
 <main>
   <p id="chargement" class="discret">Lecture des relevés…</p>
 
-  <section id="tableau" data-panneau>
+  <div id="entete-vues">
     <div class="entete-vue">
       <div class="puces" id="choix-niveau"></div>
       <button class="action secondaire" id="exporter">Exporter en PDF</button>
@@ -45,8 +49,10 @@
       </div>
       <p><button class="action" id="creer-pdf">Créer le PDF</button> <span class="discret" id="etat-export"></span></p>
     </div>
-    <div class="puces" id="choix-contrat"></div>
     <h1 id="titre-vue"></h1>
+  </div>
+
+  <section id="tableau" data-panneau>
     <div id="bloc-patrimoine">
       <h2>Patrimoine</h2>
       <div id="patrimoine"></div>
@@ -55,31 +61,11 @@
         <p class="note">Fins de mois reconstituées depuis vos exports et relevés (docs/MODELE.md § 8.1) ; les placements
           avancent par paliers, d'un relevé annuel au suivant.</p></div>
     </div>
-    <div id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="epargne"></div>
-      <div class="carte"><figure id="graphique-livrets"></figure><div class="infobulle" id="infobulle-livrets"></div></div>
-      <details class="carte"><summary>Détail par livret</summary><div id="livrets"></div></details></div>
-    <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div>
-      <div class="carte"><figure id="graphique-credits"></figure><div class="infobulle" id="infobulle-credits"></div></div>
-      <details class="carte"><summary>Rembourser par anticipation ou placer ? Tableau d'amortissement</summary>
-        <div class="champs">
-          <label class="champ">Crédit <select id="sim-credit"></select></label>
-          <label class="champ">Montant (€) <input type="number" id="sim-credit-montant" min="1" step="1000" value="10000"></label>
-          <label class="champ">Rendement net supposé du placement (% par an)
-            <input type="number" id="sim-credit-rendement" min="-10" max="20" step="0.1" value="2.5"></label>
-        </div>
-        <p><button class="action" id="sim-credit-comparer">Comparer</button></p>
-        <div id="sim-credit-resultat"></div>
-        <div class="defile"><table id="sim-credit-echeancier"></table></div>
-        <p class="note">Mensualité gardée, durée raccourcie. Indemnités : au plus le plafond légal (6 mois d'intérêts,
-          3 % du capital), votre contrat peut prévoir moins. Comparaison à la date de fin actuelle du prêt ; le rendement est
-          une hypothèse nette de frais et d'impôts, pas une prévision. Formules : docs/MODELE.md § 7.11.</p>
-      </details></div>
-    <div id="bloc-echeances" class="cache"><h2>Échéances et fiscalité</h2><div class="carte"><ul id="echeances"></ul>
-      <p class="note">Faits datés (docs/MODELE.md § 11), pas un conseil. Couple soumis à imposition commune : onglet Configuration.</p></div></div>
-    <div id="bloc-locatif" class="cache"><h2>Bien locatif</h2><div id="locatif"></div>
-      <div class="carte"><figure id="graphique-locatif"></figure><div class="infobulle" id="infobulle-locatif"></div></div>
-      <p class="note">Sur la période des exports du compte locatif, ramenée à l'année ; avant impôts. Loyers : entrées hors
-        virements de vos comptes ; charges : sorties hors mensualités du prêt. Formules : docs/MODELE.md § 7.12.</p></div>
+    <div class="carte"><h2>Points d'attention</h2><div id="points"></div></div>
+  </section>
+
+  <section id="onglet-placements" data-panneau class="cache">
+    <div class="puces" id="choix-contrat"></div>
     <h2 id="titre-placements">Placements : assurance vie, PER, PERP</h2>
     <div class="tuiles" id="tuiles"></div>
     <div class="carte" id="bloc-progression">
@@ -108,10 +94,43 @@
       <div class="defile"><table id="table-fonds"></table></div>
       <p class="note">Frais totaux = frais du fonds + frais du contrat. Les rétrocessions, entre parenthèses, font partie des
         frais du fonds : la part que le fonds reverse à l'assureur et au distributeur, déjà comptée, pas un frais de plus.</p></details>
-    <div class="carte"><h2>Points d'attention</h2><div id="points"></div></div>
+    <div id="bloc-echeances" class="cache"><h2>Échéances et fiscalité</h2><div class="carte"><ul id="echeances"></ul>
+      <p class="note">Faits datés (docs/MODELE.md § 11), pas un conseil. Couple soumis à imposition commune : onglet Configuration.</p></div></div>
     <p class="note">Gagné : valeur aujourd'hui moins versé, tous frais déjà déduits. Pourcentages de l'année : par
       rapport aux sommes placées dans l'année. Par an : moyenne annuelle depuis l'ouverture. Frais des fonds : estimés.
       Formules : docs/MODELE.md. Éléments d'aide à la décision, pas un conseil financier.</p>
+  </section>
+
+  <section id="onglet-epargne" data-panneau class="cache">
+    <div id="bloc-livrets"><h2>Épargne disponible : livrets</h2><div id="epargne"></div>
+      <div class="carte"><figure id="graphique-livrets"></figure><div class="infobulle" id="infobulle-livrets"></div></div>
+      <details class="carte"><summary>Détail par livret</summary><div id="livrets"></div></details></div>
+  </section>
+
+  <section id="onglet-credits" data-panneau class="cache">
+    <div id="bloc-credits"><h2>Crédits immobiliers</h2><div id="credits"></div>
+      <div class="carte"><figure id="graphique-credits"></figure><div class="infobulle" id="infobulle-credits"></div></div>
+      <details class="carte"><summary>Rembourser par anticipation ou placer ? Tableau d'amortissement</summary>
+        <div class="champs">
+          <label class="champ">Crédit <select id="sim-credit"></select></label>
+          <label class="champ">Montant (€) <input type="number" id="sim-credit-montant" min="1" step="1000" value="10000"></label>
+          <label class="champ">Rendement net supposé du placement (% par an)
+            <input type="number" id="sim-credit-rendement" min="-10" max="20" step="0.1" value="2.5"></label>
+        </div>
+        <p><button class="action" id="sim-credit-comparer">Comparer</button></p>
+        <div id="sim-credit-resultat"></div>
+        <div class="defile"><table id="sim-credit-echeancier"></table></div>
+        <p class="note">Mensualité gardée, durée raccourcie. Indemnités : au plus le plafond légal (6 mois d'intérêts,
+          3 % du capital), votre contrat peut prévoir moins. Comparaison à la date de fin actuelle du prêt ; le rendement est
+          une hypothèse nette de frais et d'impôts, pas une prévision. Formules : docs/MODELE.md § 7.11.</p>
+      </details></div>
+  </section>
+
+  <section id="onglet-locatif" data-panneau class="cache">
+    <div id="bloc-locatif" class="cache"><h2>Bien locatif</h2><div id="locatif"></div>
+      <div class="carte"><figure id="graphique-locatif"></figure><div class="infobulle" id="infobulle-locatif"></div></div>
+      <p class="note">Sur la période des exports du compte locatif, ramenée à l'année ; avant impôts. Loyers : entrées hors
+        virements de vos comptes ; charges : sorties hors mensualités du prêt. Formules : docs/MODELE.md § 7.12.</p></div>
   </section>
 
   <section id="comptes" data-panneau class="cache">

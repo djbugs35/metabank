@@ -55,10 +55,23 @@ async function charger() {
 }
 
 // ---------- Onglets ----------
+// Onglets par catégorie : ils suivent la vue choisie (foyer, personne) ; seul « Placements » descend au contrat.
+const ONGLETS_DE_VUE = ["tableau", "onglet-placements", "onglet-epargne", "onglet-credits", "onglet-locatif"];
+let ongletOuvert = "tableau";
+
+function ouvrirOnglet(id) {
+  document.querySelector(`nav [data-onglet="${id}"]`)?.click();
+}
+
 document.querySelectorAll("nav [data-onglet]").forEach((bouton) =>
   bouton.addEventListener("click", () => {
+    ongletOuvert = bouton.dataset.onglet;
     document.querySelectorAll("nav [data-onglet]").forEach((b) => b.setAttribute("aria-selected", String(b === bouton)));
     document.querySelectorAll("[data-panneau]").forEach((p) => p.classList.toggle("cache", p.id !== bouton.dataset.onglet));
+    $("entete-vues").classList.toggle("cache", !ONGLETS_DE_VUE.includes(ongletOuvert));
+    const vue = etat?.vues.find((v) => v.id === vueChoisie);
+    if (ONGLETS_DE_VUE.includes(ongletOuvert) && ongletOuvert !== "onglet-placements" && vue?.niveau === "contrat") choisirVue(vue.parent);
+    else if (etat) afficherTableau();
     if (bouton.dataset.onglet === "simulation") simuler();
     if (bouton.dataset.onglet === "comptes") afficherRegles().catch((e) => { $("regles-liste").textContent = e.message; });
     if (bouton.dataset.onglet === "revue") afficherRevue().catch((e) => { $("revue-actions").textContent = e.message; });
@@ -99,10 +112,12 @@ function afficherTableau() {
     ),
   );
   $("titre-vue").textContent = vue.nom;
+  contrats.classList.toggle("cache", ongletOuvert !== "onglet-placements");
   const patrimoine = etat.patrimoine?.[vue.id];
   $("bloc-patrimoine").classList.toggle("cache", !patrimoine);
   if (patrimoine) {
-    $("patrimoine").innerHTML = patrimoineHtml(patrimoine);
+    $("patrimoine").innerHTML = patrimoineHtml(patrimoine, { onglets: { ...ONGLETS_DES_FAMILLES, ...(etat.locatif ? {} : { Immobilier: null }) }, comptesReplies: true });
+    $("patrimoine").querySelectorAll("[data-aller]").forEach((t) => t.addEventListener("click", () => ouvrirOnglet(t.dataset.aller)));
     afficherHistorique(etat.historique?.[vue.id] ?? { points: [], reportes: [] }, patrimoine);
   }
   const avecPlacements = vue.verse > 0 || vue.valeur > 0;
@@ -126,6 +141,32 @@ function afficherTableau() {
   afficherNotes(vue);
   afficherFonds(vue);
   $("points").innerHTML = etat.points.length ? `<ul>${etat.points.map((p) => `<li>${echapper(p)}</li>`).join("")}</ul>` : "<p>Aucun.</p>";
+  marquerOngletsVides();
+}
+
+// Famille du patrimoine -> onglet qui la détaille (tuiles cliquables du tableau de bord).
+const ONGLETS_DES_FAMILLES = { "Placements": "onglet-placements", "Épargne disponible": "onglet-epargne",
+  "Comptes courants": "comptes", "Immobilier": "onglet-locatif", "Crédits restant dus": "onglet-credits" };
+
+// Onglet d'une catégorie absente du foyer : masqué ; vide pour la vue choisie : une phrase le dit.
+function marquerOngletsVides() {
+  const foyer = etat.vues.find((v) => v.niveau === "foyer");
+  const presents = { "onglet-placements": foyer.verse > 0 || foyer.valeur > 0,
+    "onglet-epargne": livretsDeVue(etat, foyer).length > 0, "onglet-credits": creditsDeVue(etat, foyer).length > 0,
+    "onglet-locatif": Boolean(etat.locatif) };
+  for (const [onglet, present] of Object.entries(presents)) {
+    document.querySelector(`nav [data-onglet="${onglet}"]`).classList.toggle("cache", !present);
+    const section = $(onglet);
+    const visibles = [...section.children].filter((e) => !e.classList.contains("cache") && !e.classList.contains("vide") && e.id !== "choix-contrat");
+    let vide = section.querySelector(".vide");
+    if (!vide) {
+      vide = document.createElement("p");
+      vide.className = "discret vide";
+      vide.textContent = "Rien à afficher pour cette vue : choisissez le foyer ou une autre personne.";
+      section.append(vide);
+    }
+    vide.classList.toggle("cache", visibles.length > 0);
+  }
 }
 
 const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
