@@ -33,6 +33,7 @@ h1 { font-size: 24px; margin: 8px 0 4px; } h2 { font-size: 17px; margin: 24px 0 
 .puces .titre-puces { color: var(--texte-2); font-size: 13px; align-self: center; margin-right: 4px; }
 .tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
 .tuile { background: var(--surface); border: 1px solid var(--trait); border-radius: 12px; padding: 14px 16px; }
+.tuile.cliquable { cursor: pointer; } .tuile.cliquable:hover { border-color: var(--accent); }
 .tuile .etiquette { color: var(--texte-2); font-size: 13px; }
 .tuile .valeur { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .tuile .pct { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }

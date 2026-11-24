@@ -192,7 +192,7 @@ def _comparer_au_cumul_de_l_assureur(lu: Decimal, mouvements: Decimal, anomalies
     """Signaler un versé lu sur le document qui diffère du versé refait par les mouvements. MODELE § 2.3."""
     if abs(lu - mouvements) > ECART_CUMUL_TOLERE:
         anomalies.append(
-            f"versé : {lu} € d'après le document, {mouvements} € d'après les mouvements (écart {lu - mouvements} €)"
+            f"versé {lu} € d'après le document, {mouvements} € d'après les mouvements (écart {lu - mouvements} €)"
         )
 
 

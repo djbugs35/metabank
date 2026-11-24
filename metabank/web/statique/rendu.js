@@ -78,7 +78,8 @@ const CLASSES_FAMILLES = { "Placements": "serie-1", "Épargne disponible": "seri
 const dateCourte = (iso) => new Date(iso).toLocaleDateString("fr-FR");
 
 // Patrimoine d'une vue : total, une tuile par famille, barre de répartition, liste de tous les comptes.
-export function patrimoineHtml(p, { sansNumero = false } = {}) {
+// onglets : famille -> onglet, pour des tuiles cliquables ; comptesReplies : liste des comptes dans un « détail ».
+export function patrimoineHtml(p, { sansNumero = false, onglets = null, comptesReplies = false } = {}) {
   const nom = (texte) => (sansNumero ? texte.replace(/\s*\*+\d+/g, "") : texte);
   const avecCredits = p.credits > 0;
   const tuiles = avecCredits
@@ -98,12 +99,14 @@ export function patrimoineHtml(p, { sansNumero = false } = {}) {
   const legende = p.familles.map((f) => `<span><i class="pastille ${CLASSES_FAMILLES[f.famille]}"></i>${echapper(f.famille)} ${pct(f.part)}</span>`).join("");
   const lignes = p.lignes.map((l) => `<tr><td>${echapper(nom(l.nom))}</td><td>${echapper(l.famille)}</td>
     <td class="n">${l.valeur < 0 ? `−${euros(-l.valeur)}` : euros(l.valeur)}</td><td class="n">${pct(l.part)}</td><td class="n">${dateCourte(l.date)}</td></tr>`).join("");
-  return `<div class="tuiles">${tuiles.map(([e, v, q, n]) => `<div class="tuile"><div class="etiquette">${echapper(e)}</div>
+  const lien = (e) => (onglets?.[e] ? ` cliquable" data-aller="${onglets[e]}" title="Voir l'onglet` : "");
+  const tableau = `<div class="defile"><table><thead><tr><th>Compte</th><th>Famille</th><th class="n">Valeur</th><th class="n">Part</th>
+      <th class="n">Au</th></tr></thead><tbody>${lignes}</tbody></table></div>`;
+  return `<div class="tuiles">${tuiles.map(([e, v, q, n]) => `<div class="tuile${lien(e)}"><div class="etiquette">${echapper(e)}</div>
       <div class="valeur">${echapper(v)}</div><div class="pct">${echapper(q)}</div><div class="note">${echapper(n)}</div></div>`).join("")}</div>
     <figure class="repartition"><div class="legende">${legende}</div>
       <svg viewBox="0 0 640 22" preserveAspectRatio="none" role="img" aria-label="Répartition du patrimoine">${segments}</svg></figure>
-    <div class="defile"><table><thead><tr><th>Compte</th><th>Famille</th><th class="n">Valeur</th><th class="n">Part</th>
-      <th class="n">Au</th></tr></thead><tbody>${lignes}</tbody></table></div>`;
+    ${comptesReplies ? `<details class="carte"><summary>Tous les comptes</summary>${tableau}</details>` : tableau}`;
 }
 
 // Livrets d'une vue : solde, intérêts de la dernière année versée, intérêts attendus, plafond.
