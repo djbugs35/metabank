@@ -105,16 +105,15 @@ def lire_situation_suravenir(texte: str, fichier: str = "", type_indique: str | 
     valeur = en_decimal(total.group(1)) if total else sum(compartiments, Decimal(0)) if compartiments else somme
     versements = _montant_apres("Cumul des versements bruts", texte)
     rachats = _montant_apres("Cumul des rachats bruts", texte)
-    anomalies = _controles(
-        valeur, somme, versements, rachats, _montant_apres("Performance (+/- value fiscale) en €", texte)
-    )
+    performance = _montant_apres("Performance (+/- value fiscale) en €", texte)
+    anomalies = _controles(valeur, somme, versements, rachats, performance)
     type_contrat = type_indique or ("per" if "RETRAITE" in produit.upper() else "assurance_vie")
     jour = date_numerique(titre.group(1))
     verse_annee, rachats_annee, frais_annee = flux_de_l_annee(texte, jour.year)
     return Releve("Suravenir", produit, numero.group(1), type_contrat, jour, valeur, tuple(supports),
                   versements_bruts_depuis_origine=versements, rachats_depuis_origine=rachats,
                   versements_annee_en_cours=verse_annee, rachats_annee_en_cours=rachats_annee,
-                  frais_annee_en_cours=frais_annee, distributions=lire_distributions(texte, supports), anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
+                  frais_annee_en_cours=frais_annee, performance_annoncee=performance, distributions=lire_distributions(texte, supports), anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
                   fichier=fichier)  # fmt: skip
 
 

@@ -281,13 +281,20 @@ function afficherTableauContrats(vue, annees) {
   const lignes = vue.tableau ?? [];
   if (!lignes.length) return;
   const choisie = lignes.find((l) => l.nom === ligneChoisie) ?? lignes[lignes.length - 1];
-  const cellule = (v, champ) => `<td class="n">${v === undefined || v === null ? "—" : ["verse", "frais", "valeur", "ecart"].includes(champ) ? euros(v) : eurosSignes(v)}</td>`;
-  // Depuis l'ouverture (MODELE § 6.5) : versé et gagné du document ; gain hors frais − frais − écart = gagné.
-  const DEPUIS = [["verse", "Versé (document)"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"],
-    ["ecart", "Écart de versé"], ["gain", "Gagné"], ["valeur", "Valeur aujourd'hui"]];
+  const cellule = (v, champ) => {
+    if (v === undefined || v === null) return `<td class="n">—</td>`;
+    const ecart = champ.startsWith("ecart");
+    const texte = ecart ? (Math.abs(v) < 1 ? "0 €" : eurosSignes(v)) : ["verse", "verse_operations", "frais", "valeur"].includes(champ) ? euros(v) : eurosSignes(v);
+    return `<td class="n${ecart && Math.abs(v) >= 1 ? " alerte" : ""}">${texte}</td>`;
+  };
+  // Depuis l'ouverture (MODELE § 6.5) : le document fait foi ; les opérations le contrôlent ; l'écart est montré.
+  const DEPUIS = [["verse", "Versé"], ["gain", "Gagné"], ["valeur", "Valeur"],
+    ["verse_operations", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"], ["gain_operations", "Gagné"],
+    ["ecart_verse", "Versé"], ["ecart_gain", "Gagné"]];
   const vide = (l) => !Object.keys(l.annees).length;
   $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${annees.map((a) => `<th colspan="4" class="n">${echapper(anneeLibelle(a))}</th>`).join("")}
-      <th colspan="6" class="n">Depuis l'ouverture</th></tr>
+      <th colspan="3" class="n">Depuis l'ouverture : document</th><th colspan="4" class="n">Opérations (contrôle)</th>
+      <th colspan="2" class="n">Écart document − opérations</th></tr>
     <tr>${annees.map(() => CHAMPS_TABLEAU.map(([, titre]) => `<th class="n">${titre}</th>`).join("")).join("")}${DEPUIS.map(([, titre]) => `<th class="n">${titre}</th>`).join("")}</tr></thead>
     <tbody>${lignes.map((l) => `<tr class="cliquable ligne-${l.niveau}${l === choisie ? " ligne-choisie" : ""}" data-ligne="${echapper(l.nom)}">
       <td>${echapper(l.nom)}</td>${annees.map((a) => CHAMPS_TABLEAU.map(([champ]) => cellule(l.annees[a.annee]?.[champ], champ)).join("")).join("")}
@@ -316,10 +323,9 @@ function afficherTableauContrats(vue, annees) {
     },
   });
   $("infobulle-annees").textContent = "Cliquez une ligne du tableau pour la voir ici.";
-  $("rapprochement").textContent = lignes.some((l) => l.depuis_ouverture.ecart)
-    ? "Écart de versé : ce que le document compte en plus des versements lus dans les mouvements de chaque année, "
-      + "par exemple un transfert entrant compté pour les versements faits sur l'ancien contrat. Gagné = valeur − versé du document."
-    : "";
+  $("rapprochement").textContent = "Le document de l'assureur fait foi (versé, gagné ou performance annoncée, valeur). "
+    + "Les opérations refont ces chiffres année par année pour les contrôler ; un écart s'affiche en couleur. Exemple : "
+    + "un transfert entrant compté dans le versé du document pour les versements faits sur l'ancien contrat.";
 }
 
 function afficherAnnees(vue) {

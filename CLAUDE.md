@@ -38,6 +38,9 @@ Plan, architecture et jalons : docs/PLAN.md.
 - Avant d'écrire un convertisseur, relever le format réel attendu par Wealthfolio et produit par la source,
   sur de vraies données, en local, sans les copier dans le dépôt.
 - Un import ne doit jamais créer de doublon : identifiant stable par opération source, testé.
+- **La synthèse d'un document de l'assureur ou de la banque fait foi** (document légal) : ses chiffres (valeur,
+  cumul des versements, performance annoncée…) sont lus et affichés en priorité ; les calculs sur les opérations les
+  contrôlent et l'écart est montré, jamais substitué en silence.
 - Toute valeur calculée vient du code testé, **jamais du modèle de langage** ; le rapport IA commente des chiffres
   déjà calculés et n'en invente aucun. Chaque formule d'analyse est écrite dans docs/MODELE.md avant d'entrer
   dans le code et cite son paragraphe.

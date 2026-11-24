@@ -150,11 +150,19 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
                 "valeur_actuelle": _nombre(ligne.valeur_actuelle),
                 "depuis_ouverture": {
                     "verse": _nombre(ligne.verse),
-                    "gain_avant_frais": None if ligne.gain_avant_frais is None else _nombre(ligne.gain_avant_frais),
-                    "frais": None if ligne.frais is None else _nombre(ligne.frais),
-                    "ecart": _nombre(ligne.ecart),
                     "gain": _nombre(ligne.gain),
                     "valeur": _nombre(ligne.valeur_actuelle),
+                    **{
+                        champ: None if getattr(ligne, champ) is None else _nombre(getattr(ligne, champ))
+                        for champ in (
+                            "verse_operations",
+                            "gain_avant_frais",
+                            "frais",
+                            "gain_operations",
+                            "ecart_verse",
+                            "ecart_gain",
+                        )
+                    },
                 },
             }
             for ligne in s.tableau

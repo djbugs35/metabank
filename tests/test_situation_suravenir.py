@@ -140,10 +140,11 @@ def test_le_verse_est_celui_du_document_et_l_ecart_avec_les_mouvements_est_signa
     annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
                      valeur_precedente=Decimal(0))  # fmt: skip
     situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero,
-                        versements_bruts_depuis_origine=Decimal(30000))  # fmt: skip
+                        versements_bruts_depuis_origine=Decimal(30000), performance_annoncee=None)  # fmt: skip
     [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
     refait = sum((a.apports for a in bilan.annees), Decimal(0))
     assert (bilan.apports_cumules, bilan.verse_mouvements) == (Decimal(30000), refait)
+    # Sans performance imprimée : gagné = valeur moins versé du document.
     assert bilan.gain_cumule == situation.valeur - Decimal(30000)
     assert any(f"écart {Decimal(30000) - refait} €" in a for a in bilan.anomalies)
     synthese = synthetiser("Alice", [bilan], [])
@@ -154,8 +155,21 @@ def test_le_verse_est_celui_du_document_et_l_ecart_avec_les_mouvements_est_signa
     assert sans_ecart.rendement_annualise > 0
     # Tableau, depuis l'ouverture : versé du document, et gain hors frais moins frais moins écart = gagné.
     ligne = synthese.tableau[0]
-    assert (ligne.verse, ligne.ecart, ligne.gain) == (Decimal(30000), Decimal(30000) - refait, bilan.gain_cumule)
-    assert ligne.gain_avant_frais - ligne.frais - ligne.ecart == ligne.gain
+    assert (ligne.verse, ligne.ecart_verse, ligne.gain) == (Decimal(30000), Decimal(30000) - refait, bilan.gain_cumule)
+    assert (
+        ligne.gain_avant_frais - ligne.frais == ligne.gain_operations == sum((a.gain for a in bilan.annees), Decimal(0))
+    )
+    assert ligne.ecart_gain == ligne.gain - ligne.gain_operations
+
+
+def test_la_performance_imprimee_sur_la_situation_fait_foi_pour_le_gagne():
+    annuel = replace(lire_releve((EXEMPLES / "suravenir_av_2025.txt").read_text(encoding="utf-8"), "", "assurance_vie"),
+                     valeur_precedente=Decimal(0))  # fmt: skip
+    situation = replace(lire_situation_suravenir(SITUATION, "s.pdf"), numero=annuel.numero,
+                        performance_annoncee=Decimal(980))  # fmt: skip
+    [bilan] = faire_bilans([ReleveRange("Alice", annuel), ReleveRange("Alice", situation)])
+    assert bilan.gain_cumule == Decimal(980)
+    assert lire_situation_suravenir(SITUATION, "s.pdf").performance_annoncee is not None
 
 
 def test_sans_les_premiers_releves_le_verse_ne_se_refait_pas():
