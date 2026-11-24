@@ -77,6 +77,8 @@ class ChiffresAnnee:
     gain_avant_frais: Decimal
     frais: Decimal
     gain: Decimal
+    # Valeur au 31/12, ou à la date de la situation pour l'année en cours.
+    valeur: Decimal = ZERO
 
 
 @dataclass(frozen=True)
@@ -86,6 +88,8 @@ class LigneContrats:
     nom: str
     niveau: str
     annees: dict[int, ChiffresAnnee]
+    # Valeur au dernier relevé ou à la dernière situation (euros) : l'argent qui y est aujourd'hui.
+    valeur_actuelle: Decimal = ZERO
 
 
 @dataclass(frozen=True)
@@ -137,7 +141,7 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
         progression=tuple(progresser(suivis, annees)),
-        tableau=tuple(tableau_par_contrat(suivis, frais_fonds)),
+        tableau=tuple(tableau_par_contrat(bilans, frais_fonds)),
         valeur_sans_historique=sum((b.valeur for b in bilans if not b.annees), ZERO),
         verse_sans_historique=sum((b.apports_cumules or ZERO for b in bilans if not b.annees), ZERO),
         gain_sans_historique=sum((b.gain_cumule or ZERO for b in bilans if not b.annees), ZERO),
@@ -209,6 +213,9 @@ def progresser(bilans: list[BilanContrat], annees: tuple[AnneeSynthese, ...]) ->
 def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[LigneContrats]:
     """Rendre une ligne par contrat, le cumul de chaque personne (s'il y en a plusieurs) et le total. MODELE § 6.5.
 
+    Un contrat à situation seule a une ligne sans années, avec sa seule valeur actuelle : le total retombe sur la
+    valeur de l'ensemble.
+
     Args:
         frais_fonds: frais des fonds par (titulaire, contrat, année), en euros, comme pour l'année du foyer (§ 6.1).
     """
@@ -217,8 +224,8 @@ def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[L
         annees = {}
         for a in b.annees:
             frais = (a.frais or ZERO) + frais_fonds.get((b.titulaire, cle_du_contrat(b.numero), a.annee), ZERO)
-            annees[a.annee] = ChiffresAnnee(a.apports, a.gain + frais, frais, a.gain)
-        contrats.append((b.titulaire, LigneContrats(nom_contrat(b), "contrat", annees)))
+            annees[a.annee] = ChiffresAnnee(a.apports, a.gain + frais, frais, a.gain, a.valeur_fin)
+        contrats.append((b.titulaire, LigneContrats(nom_contrat(b), "contrat", annees, b.valeur)))
     lignes: list[LigneContrats] = []
     titulaires = list(dict.fromkeys(t for t, _ in contrats))
     for titulaire in titulaires:
@@ -230,17 +237,19 @@ def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[L
 
 
 def _sommer(nom: str, niveau: str, lignes: list[LigneContrats]) -> LigneContrats:
+    def somme(annee: int, champ: str) -> Decimal:
+        return sum((getattr(ligne.annees[annee], champ) for ligne in lignes if annee in ligne.annees), ZERO)
+
     annees = sorted({an for ligne in lignes for an in ligne.annees})
-    somme = {
-        an: ChiffresAnnee(
-            *(
-                sum((getattr(ligne.annees[an], champ) for ligne in lignes if an in ligne.annees), ZERO)
-                for champ in ("verse", "gain_avant_frais", "frais", "gain")
-            )
-        )
-        for an in annees
-    }
-    return LigneContrats(nom, niveau, somme)
+    sommes = {an: ChiffresAnnee(somme(an, "verse"), somme(an, "gain_avant_frais"), somme(an, "frais"), somme(an, "gain"),
+                                sum((_valeur_en(ligne, an) for ligne in lignes), ZERO)) for an in annees}  # fmt: skip
+    return LigneContrats(nom, niveau, sommes, sum((ligne.valeur_actuelle for ligne in lignes), ZERO))
+
+
+def _valeur_en(ligne: LigneContrats, annee: int) -> Decimal:
+    """Rendre la valeur du contrat en fin d'année : sa dernière connue (§ 6.4), 0 avant ses relevés."""
+    connues = [an for an in ligne.annees if an <= annee]
+    return ligne.annees[max(connues)].valeur if connues else ZERO
 
 
 def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:

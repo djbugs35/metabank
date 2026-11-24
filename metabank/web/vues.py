@@ -143,9 +143,11 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
                         "gain_avant_frais": _nombre(c.gain_avant_frais),
                         "frais": _nombre(c.frais),
                         "gain": _nombre(c.gain),
+                        "valeur": _nombre(c.valeur),
                     }
                     for an, c in ligne.annees.items()
                 },
+                "valeur_actuelle": _nombre(ligne.valeur_actuelle),
             }
             for ligne in s.tableau
         ],
