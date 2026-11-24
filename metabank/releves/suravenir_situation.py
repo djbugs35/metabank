@@ -5,10 +5,10 @@ de versements et de rachats depuis l'origine. Montants en euros.
 """
 
 import re
-from datetime import date
 from decimal import Decimal
 
-from metabank.releves.modele import Distribution, Releve, Support
+from metabank.releves.modele import Operation, Releve, Support
+from metabank.releves.operations import distributions_des_operations, flux_des_operations
 from metabank.releves.texte import MOTIF_ISIN, MOTIF_MONTANT, ErreurLecture, date_numerique, en_decimal
 
 TITRE = re.compile(r"Situation de votre contrat au (\d{2}/\d{2}/\d{4})")
@@ -21,49 +21,21 @@ TOTAL = re.compile(rf"^\s*TOTAL\s+({MOTIF_MONTANT})\s*$", re.MULTILINE)
 COMPARTIMENT = re.compile(rf"\d+\s*-\s*Compartiment\s+\d+\s+({MOTIF_MONTANT})\s*€")
 ECART_TOLERE = Decimal(1)
 OPERATION = re.compile(rf"^\s*(\d\d/\d\d/(\d{{4}}))\s+(\S.*?)\s{{2,}}.*?({MOTIF_MONTANT})\s*$")
-VERSEMENTS = ("VERSEMENT", "SOUSCRIPTION", "ADHESION")
 
 
-def flux_de_l_annee(texte: str, annee: int) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
-    """Rendre (versé, rachats, frais) de l'année d'après l'historique des opérations, en euros. MODELE § 2.4.
-
-    Tout vaut None quand le document n'imprime pas d'historique : l'année en cours ne se calcule pas.
-    """
-    verse = rachats = Decimal(0)
-    frais = None
-    historique = False
+def lire_operations(texte: str, supports: list[Support]) -> tuple[Operation, ...]:
+    """Rendre l'historique des opérations tel qu'imprimé, chaque ligne rattachée au fonds qu'elle nomme. § 2.4."""
+    operations = []
     for ligne in texte.splitlines():
         trouve = OPERATION.match(ligne)
-        historique = historique or trouve is not None
-        if not trouve or int(trouve.group(2)) != annee:
-            continue
-        nature, montant = trouve.group(3).upper(), abs(en_decimal(trouve.group(4)))
-        if nature.startswith(VERSEMENTS):
-            verse += montant
-        elif nature.startswith("RACHAT"):
-            rachats += montant
-        elif nature.startswith(f"FRAIS ANNEE {annee}"):
-            frais = (frais or Decimal(0)) + montant
-    return (verse, rachats, frais) if historique else (None, None, None)
-
-
-def lire_distributions(texte: str, supports: list[Support]) -> tuple[Distribution, ...]:
-    """Rendre les coupons de l'historique, chacun rattaché au fonds que sa ligne nomme. MODELE § 13.1.
-
-    La ligne porte « DISTRIBUTION », un nom court puis le libellé complet du fonds : c'est ce libellé qui désigne le
-    support. Une ligne qui ne nomme aucun fonds détenu garde son texte en majuscules comme clé.
-    """
-    vues: dict[tuple[date, str, Decimal], None] = {}
-    for ligne in texte.splitlines():
-        trouve = OPERATION.match(ligne)
-        if not trouve or not trouve.group(3).upper().startswith("DISTRIBUTION"):
+        if not trouve:
             continue
         texte_ligne = " ".join(ligne.split()).upper()
         support = next((s for s in supports if s.libelle.upper() in texte_ligne), None)
-        cle = (support.isin or support.libelle.upper()) if support else texte_ligne
-        # Les pages répètent parfois une ligne : un même coupon (jour, fonds, montant) n'est compté qu'une fois.
-        vues[(date_numerique(trouve.group(1)), cle, en_decimal(trouve.group(4)))] = None
-    return tuple(Distribution(jour, cle, montant) for jour, cle, montant in vues)
+        operations.append(Operation(date_numerique(trouve.group(1)), " ".join(trouve.group(3).split()),
+                                    " ".join(ligne[trouve.end(3):trouve.start(4)].split()),
+                                    support.isin if support else None, en_decimal(trouve.group(4))))  # fmt: skip
+    return tuple(operations)
 
 
 def est_situation_suravenir(texte: str) -> bool:
@@ -109,11 +81,12 @@ def lire_situation_suravenir(texte: str, fichier: str = "", type_indique: str | 
     anomalies = _controles(valeur, somme, versements, rachats, performance)
     type_contrat = type_indique or ("per" if "RETRAITE" in produit.upper() else "assurance_vie")
     jour = date_numerique(titre.group(1))
-    verse_annee, rachats_annee, frais_annee = flux_de_l_annee(texte, jour.year)
+    operations = lire_operations(texte, supports)
+    verse_annee, rachats_annee, frais_annee = flux_des_operations(operations, jour.year)
     return Releve("Suravenir", produit, numero.group(1), type_contrat, jour, valeur, tuple(supports),
                   versements_bruts_depuis_origine=versements, rachats_depuis_origine=rachats,
                   versements_annee_en_cours=verse_annee, rachats_annee_en_cours=rachats_annee,
-                  frais_annee_en_cours=frais_annee, performance_annoncee=performance, distributions=lire_distributions(texte, supports), anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
+                  frais_annee_en_cours=frais_annee, performance_annoncee=performance, distributions=distributions_des_operations(operations), operations=operations, anomalies=tuple(f"{fichier} : {a}" for a in anomalies),
                   fichier=fichier)  # fmt: skip
 
 

@@ -44,14 +44,17 @@ class ConnecteurReleve(ConnecteurFichier):
         )
 
     def lire(self, provenance: str, nom: str, contenu: bytes) -> Lot:
-        """Rendre le lot du relevé : le contrat, et le relevé complet. Le type vient du préfixe du dossier."""
+        """Rendre le lot du PDF : le contrat seul. Ses chiffres viennent de la fiche CSV écrite à côté (MODELE § 0).
+
+        Le type vient du préfixe du dossier.
+        """
         texte = _texte(contenu) or ""
         titulaire, morceaux = morceaux_provenance(provenance)
         try:
             releve = self.lire_texte(texte, nom, TYPES_PAR_PREFIXE.get(morceaux[0].upper()))
         except ErreurLecture as erreur:
             raise LectureImpossible(f"{nom} : {erreur}") from erreur
-        return lot_du_releve(self.nom, titulaire, releve)
+        return Lot(self.nom, lot_du_releve(self.nom, titulaire, releve).comptes)
 
 
 def lot_du_releve(connecteur: str, titulaire: str, releve: Releve) -> Lot:

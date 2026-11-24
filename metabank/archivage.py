@@ -13,6 +13,7 @@ from metabank.base.integration import importer_fichier, ouvrir_base
 from metabank.base.lecture import lire_comptes_bancaires, lire_releves
 from metabank.connecteurs.contrat import Connecteur
 from metabank.connecteurs.registre import composer_lecteur
+from metabank.fiches import preparer_fiches
 from metabank.releves import lire_dossier
 
 EXTENSIONS = (".pdf", ".csv")
@@ -33,7 +34,8 @@ def archiver_donnees(dossier_data: Path, connecteurs: list[Connecteur]) -> Bilan
     Ordre des chemins : celui des anciens lecteurs, pour que le dernier export d'un compte en donne la description.
     """
     lire = composer_lecteur(connecteurs)
-    bilan = BilanArchivage()
+    # Les fiches CSV des contrats d'abord, à côté de leurs PDF : l'archivage les prend avec eux. MODELE § 0.
+    bilan = BilanArchivage(refus=preparer_fiches(dossier_data, connecteurs).illisibles)
     fichiers = sorted(
         f
         for f in dossier_data.glob("*/*/**/*")

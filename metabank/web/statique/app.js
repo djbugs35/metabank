@@ -392,6 +392,26 @@ $("creer-pdf").addEventListener("click", () => {
 });
 
 // ---------- Relevés ----------
+// « Relire les PDF » : réécrit toutes les fiches CSV depuis les PDF (MODELE § 0), corrections à la main perdues.
+async function relirePdf() {
+  if (!window.confirm("Réécrire toutes les fiches CSV depuis les PDF ? Les corrections faites à la main dans ces fiches seront perdues.")) return;
+  const message = $("etat-relire");
+  message.className = "discret";
+  message.textContent = "Lecture des PDF…";
+  try {
+    const reponse = await fetch("/api/fiches/relire", { method: "POST", headers: { "Content-Type": "application/json", "X-Metabank": "1" }, body: "{}" });
+    const r = await reponse.json();
+    if (!reponse.ok) throw new Error(r.erreur || `erreur ${reponse.status}`);
+    message.className = r.illisibles.length ? "ko" : "ok";
+    message.textContent = `${r.ecrites.length} fiche(s) réécrite(s)` + (r.illisibles.length ? ` ; illisibles : ${r.illisibles.join(" ; ")}` : ".");
+    await charger();
+  } catch (erreur) {
+    message.className = "ko";
+    message.textContent = `Échec : ${erreur.message}`;
+  }
+}
+$("relire-pdf").addEventListener("click", relirePdf);
+
 function afficherReleves() {
   const choix = $("depot-titulaire");
   const actuel = choix.value;

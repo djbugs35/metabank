@@ -30,7 +30,8 @@ def lire_comptes_bancaires_fichiers(dossier: Path) -> list:
 
 def test_chaque_fichier_existant_trouve_son_connecteur(donnees):
     bilan = archiver_donnees(donnees, CONNECTEURS)
-    assert (bilan.archives, bilan.deja_presents, bilan.refus) == (6, 0, [])
+    # 6 fichiers rangés et les 3 fiches CSV écrites à côté des 3 PDF de contrats.
+    assert (bilan.archives, bilan.deja_presents, bilan.refus) == (9, 0, [])
 
 
 def test_la_base_donne_les_memes_chiffres_que_les_anciens_lecteurs(donnees):
@@ -41,7 +42,7 @@ def test_la_base_donne_les_memes_chiffres_que_les_anciens_lecteurs(donnees):
 def test_archiver_deux_fois_ne_double_rien_et_laisse_les_fichiers_d_origine(donnees):
     archiver_donnees(donnees, CONNECTEURS)
     bilan = archiver_donnees(donnees, CONNECTEURS)
-    assert (bilan.archives, bilan.deja_presents) == (0, 6)
+    assert (bilan.archives, bilan.deja_presents) == (0, 9)
     assert (donnees / "Alice/CC - BNP - 1234/export.csv").exists()
     assert comparer_avec_fichiers(donnees, CONNECTEURS) == []
 

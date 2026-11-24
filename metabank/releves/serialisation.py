@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import Any
 
 from metabank.releves.frais_supports import FraisSupport
-from metabank.releves.modele import Distribution, Frais, Mouvements, Releve, Support
+from metabank.releves.modele import Distribution, Frais, Mouvements, Operation, Releve, Support
 
 
 def releve_en_json(releve: Releve) -> str:
@@ -56,6 +56,10 @@ def releve_depuis_json(texte: str) -> Releve:
         distributions=tuple(
             Distribution(date.fromisoformat(x["jour"]), x["support"], Decimal(x["montant"]))
             for x in d.get("distributions", [])
+        ),
+        operations=tuple(
+            Operation(date.fromisoformat(o["jour"]), o["nature"], o["libelle"], o["isin"], Decimal(o["montant"]))
+            for o in d.get("operations", [])
         ),
         anomalies=tuple(d["anomalies"]),
         fichier=d["fichier"],

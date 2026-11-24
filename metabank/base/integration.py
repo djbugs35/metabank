@@ -25,7 +25,7 @@ from metabank.base.schema import ouvrir
 FICHIER_BASE = "metabank.db"
 # À augmenter quand un lecteur (connecteur) comprend mieux un document déjà archivé : à l'ouverture suivante, la base
 # se refait depuis les archives, sans rien demander. 3 : flux de l'année lus dans l'historique des situations (MODELE § 2.4).
-VERSION_DES_LECTEURS = "5"
+VERSION_DES_LECTEURS = "6"
 
 # (provenance, nom du fichier archivé, contenu) -> lot, ou None si aucun connecteur ne reconnaît le fichier.
 # Lève LectureImpossible quand le fichier est reconnu mais illisible.

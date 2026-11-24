@@ -202,6 +202,11 @@
       <ul id="depot-resultats"></ul>
     </div>
     <div class="carte"><h2>Contrats connus</h2><div class="defile"><table id="table-contrats"></table></div></div>
+    <div class="carte"><h2>Fiches CSV des contrats</h2>
+      <p class="discret">Pour chaque contrat et chaque année, ce qui a été lu dans les PDF est écrit dans
+        « metabank-&lt;année&gt;.csv », à côté des PDF : c'est ce fichier que metabank lit. Il s'ouvre dans Excel ; une
+        correction faite à la main y est gardée. Format et règles : docs/MODELE.md § 0.</p>
+      <p><button class="action secondaire" id="relire-pdf">Relire les PDF</button> <span id="etat-relire"></span></p></div>
     <div class="carte" id="bloc-erreurs"></div>
   </section>
 
