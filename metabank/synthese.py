@@ -90,6 +90,13 @@ class LigneContrats:
     annees: dict[int, ChiffresAnnee]
     # Valeur au dernier relevé ou à la dernière situation (euros) : l'argent qui y est aujourd'hui.
     valeur_actuelle: Decimal = ZERO
+    # Depuis l'ouverture (euros), MODELE § 6.5 : versé et gagné lus sur le document (gagné = valeur moins versé
+    # + rachats), gain hors frais et frais des années (None sans historique), écart versé lu moins mouvements.
+    verse: Decimal = ZERO
+    gain_avant_frais: Decimal | None = None
+    frais: Decimal | None = None
+    ecart: Decimal = ZERO
+    gain: Decimal = ZERO
 
 
 @dataclass(frozen=True)
@@ -225,7 +232,14 @@ def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[L
         for a in b.annees:
             frais = (a.frais or ZERO) + frais_fonds.get((b.titulaire, cle_du_contrat(b.numero), a.annee), ZERO)
             annees[a.annee] = ChiffresAnnee(a.apports, a.gain + frais, frais, a.gain, a.valeur_fin)
-        contrats.append((b.titulaire, LigneContrats(nom_contrat(b), "contrat", annees, b.valeur)))
+        ecart = ZERO
+        if b.apports_cumules is not None and b.verse_mouvements is not None:
+            ecart = b.apports_cumules - b.verse_mouvements
+        contrats.append((b.titulaire, LigneContrats(
+            nom_contrat(b), "contrat", annees, b.valeur, b.apports_cumules or ZERO,
+            sum((c.gain_avant_frais for c in annees.values()), ZERO) if annees else None,
+            sum((c.frais for c in annees.values()), ZERO) if annees else None, ecart, b.gain_cumule or ZERO,
+        )))  # fmt: skip
     lignes: list[LigneContrats] = []
     titulaires = list(dict.fromkeys(t for t, _ in contrats))
     for titulaire in titulaires:
@@ -243,7 +257,12 @@ def _sommer(nom: str, niveau: str, lignes: list[LigneContrats]) -> LigneContrats
     annees = sorted({an for ligne in lignes for an in ligne.annees})
     sommes = {an: ChiffresAnnee(somme(an, "verse"), somme(an, "gain_avant_frais"), somme(an, "frais"), somme(an, "gain"),
                                 sum((_valeur_en(ligne, an) for ligne in lignes), ZERO)) for an in annees}  # fmt: skip
-    return LigneContrats(nom, niveau, sommes, sum((ligne.valeur_actuelle for ligne in lignes), ZERO))
+
+    def total(champ: str) -> Decimal:
+        return sum((getattr(ligne, champ) or ZERO for ligne in lignes), ZERO)
+
+    return LigneContrats(nom, niveau, sommes, total("valeur_actuelle"), total("verse"), total("gain_avant_frais"),
+                         total("frais"), total("ecart"), total("gain"))  # fmt: skip
 
 
 def _valeur_en(ligne: LigneContrats, annee: int) -> Decimal:

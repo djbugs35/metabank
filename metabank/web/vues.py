@@ -148,6 +148,14 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
                     for an, c in ligne.annees.items()
                 },
                 "valeur_actuelle": _nombre(ligne.valeur_actuelle),
+                "depuis_ouverture": {
+                    "verse": _nombre(ligne.verse),
+                    "gain_avant_frais": None if ligne.gain_avant_frais is None else _nombre(ligne.gain_avant_frais),
+                    "frais": None if ligne.frais is None else _nombre(ligne.frais),
+                    "ecart": _nombre(ligne.ecart),
+                    "gain": _nombre(ligne.gain),
+                    "valeur": _nombre(ligne.valeur_actuelle),
+                },
             }
             for ligne in s.tableau
         ],

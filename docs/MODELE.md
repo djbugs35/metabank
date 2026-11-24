@@ -148,9 +148,12 @@ Une ligne par contrat à relevés annuels ; pour chaque année : versé A, gain 
 relevé + frais des fonds, comme § 6.1), gagné net G. Une ligne par personne (s'il y en a plusieurs) et une ligne
 « Total » somment les contrats, année par année ; la colonne « Cumul » somme les années affichées. Le total de chaque
 année égale l'année de l'ensemble (§ 6.1). Chaque année montre aussi la valeur au 31/12 (à la date de la situation pour l'année en cours) ; une ligne de cumul
-y somme, pour chaque contrat, sa dernière valeur connue (§ 6.4). La colonne « Cumul » donne la valeur d'aujourd'hui.
-Un contrat à situation seule n'a pas d'années : sa ligne ne porte que sa valeur d'aujourd'hui, et la valeur du total
-égale celle des tuiles.
+y somme, pour chaque contrat, sa dernière valeur connue (§ 6.4).
+Colonnes « Depuis l'ouverture » : versé lu sur le document (§ 2.3), gain hors frais et frais sommés sur toutes les
+années, écart de versé (versé lu − versé des mouvements, § 2.3), gagné = valeur − versé lu + rachats, valeur
+d'aujourd'hui. Pour un contrat à historique complet : gagné = gain hors frais − frais − écart. Un contrat à situation
+seule n'a ni années ni gain hors frais : versé, gagné et valeur seulement. Les lignes de total somment ces colonnes et
+retombent sur les tuiles (versé, valeur, gagné).
 Rapprochement avec les tuiles, toutes années affichées : versé de la tuile = cumul versé du total + versé des contrats
 à situation seule + écart de versé (§ 2.3) ; gagné de la tuile = cumul gagné net du total + gagné des contrats à
 situation seule − écart de versé.
