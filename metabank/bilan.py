@@ -55,6 +55,8 @@ class BilanContrat:
     date_ouverture: date | None = None
     # Versé refait par les mouvements des années (euros), contrôle du versé lu ; None s'il ne se refait pas. § 2.3.
     verse_mouvements: Decimal | None = None
+    # Gagné refait par les mouvements des années (Σ gains), contrôle du gagné lu ; None s'il ne se refait pas. § 2.3.
+    gain_operations: Decimal | None = None
 
     @property
     def numero_masque(self) -> str:
@@ -141,16 +143,20 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
     apports: Decimal | None
     gain: Decimal | None
     frais: Decimal | None
-    verse_mouvements = None
+    verse_mouvements = gain_operations = None
     if annees and not dernier.est_annuel and dernier.versements_bruts_depuis_origine is not None:
-        # Relevés annuels suivis d'une situation : versé et valeur lus sur la situation. MODELE § 2.3.
+        # Relevés annuels suivis d'une situation : versé, valeur et performance lus sur la situation, qui font foi.
+        # Sans performance imprimée : gagné = valeur moins versé plus rachats. MODELE § 2.3.
         apports = dernier.versements_bruts_depuis_origine
         rachats = dernier.rachats_depuis_origine or ZERO
-        gain = dernier.valeur - apports + rachats
+        gain = dernier.performance_annoncee
+        if gain is None:
+            gain = dernier.valeur - apports + rachats
         frais = sum((a.frais for a in annees_affichees if a.frais is not None), ZERO)
         if en_cours is not None and annees[0].valeur_debut == ZERO:
-            # Contrôle : le même versé refait par les mouvements de chaque année, depuis l'ouverture.
+            # Contrôle : versé et gagné refaits par les mouvements de chaque année, depuis l'ouverture.
             verse_mouvements = sum((a.apports for a in annees_affichees), ZERO)
+            gain_operations = sum((a.gain for a in annees_affichees), ZERO)
             _comparer_au_cumul_de_l_assureur(apports, verse_mouvements, anomalies)
     elif annees:
         apports = sum((a.apports for a in annees), ZERO)
@@ -160,6 +166,9 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         if annees[0].valeur_debut > ZERO:
             anomalies.append(f"cumul depuis {annees[0].annee} seulement : relevés antérieurs absents")
             gain -= annees[0].valeur_debut
+        else:
+            # Relevés annuels seuls : le versé et le gagné du document sont ceux des années ; écart nul.
+            verse_mouvements, gain_operations = apports, sum((a.gain for a in annees), ZERO)
     else:
         # Relevé de situation seul : cumul depuis l'origine tel que donné par l'assureur. MODELE § 2.
         apports = dernier.versements_bruts_depuis_origine
@@ -182,6 +191,7 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         anomalies=tuple(anomalies),
         date_ouverture=ouverture,
         verse_mouvements=verse_mouvements,
+        gain_operations=gain_operations,
     )
 
 

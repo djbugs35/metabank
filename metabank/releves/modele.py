@@ -88,6 +88,8 @@ class Releve:
     versements_annee_en_cours: Decimal | None = None
     rachats_annee_en_cours: Decimal | None = None
     frais_annee_en_cours: Decimal | None = None
+    # Situation : « Performance (+/- value fiscale) en € » imprimée par l'assureur ; elle fait foi. MODELE § 2.3.
+    performance_annoncee: Decimal | None = None
     # Situation : coupons de l'historique, clé du support (ISIN, sinon libellé en majuscules). MODELE § 13.1.
     distributions: tuple[Distribution, ...] = field(default=())
     anomalies: tuple[str, ...] = field(default=())

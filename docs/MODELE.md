@@ -54,9 +54,12 @@ Gain = valeur de rachat − total brut versé depuis l'origine + total racheté,
 Ni frais ni rendement annuel : il faut les relevés annuels.
 
 ### 2.3 Relevés annuels suivis d'une situation plus récente (Suravenir, « Situation de votre contrat au … »)
-Valeur, versé et rachats : ceux lus sur la situation (valeur, cumul des versements bruts, cumul des rachats bruts) ;
-gain = valeur − versé + rachats (comme 2.2), les années restant celles des relevés annuels plus l'année en cours
-(§ 2.4) ; frais = Σ F des mêmes années.
+La situation est un document légal : ses chiffres de synthèse font foi. Valeur, versé et rachats : ceux lus sur la
+situation (valeur, cumul des versements bruts, cumul des rachats bruts) ; gagné = « Performance (+/- value fiscale)
+en € » imprimée, ou valeur − versé + rachats si elle ne l'est pas (comme 2.2) ; les années restent celles des relevés
+annuels plus l'année en cours (§ 2.4) ; frais = Σ F des mêmes années.
+Contrôle du gagné : gagné refait = Σ gains des années (mêmes conditions que le contrôle du versé ci-dessous) ;
+écart = gagné du document − gagné refait.
 Contrôle du versé : quand les relevés annuels partent de l'ouverture (V₀ = 0) et que la situation donne l'année en
 cours, versé refait = Σ A des relevés annuels + versé de l'année en cours. Écart = versé lu − versé refait ; plus de
 1 € : affiché sous le versé et signalé. Cas connu : un transfert entrant d'un autre PER compte dans le cumul de
@@ -149,14 +152,11 @@ relevé + frais des fonds, comme § 6.1), gagné net G. Une ligne par personne (
 « Total » somment les contrats, année par année ; la colonne « Cumul » somme les années affichées. Le total de chaque
 année égale l'année de l'ensemble (§ 6.1). Chaque année montre aussi la valeur au 31/12 (à la date de la situation pour l'année en cours) ; une ligne de cumul
 y somme, pour chaque contrat, sa dernière valeur connue (§ 6.4).
-Colonnes « Depuis l'ouverture » : versé lu sur le document (§ 2.3), gain hors frais et frais sommés sur toutes les
-années, écart de versé (versé lu − versé des mouvements, § 2.3), gagné = valeur − versé lu + rachats, valeur
-d'aujourd'hui. Pour un contrat à historique complet : gagné = gain hors frais − frais − écart. Un contrat à situation
-seule n'a ni années ni gain hors frais : versé, gagné et valeur seulement. Les lignes de total somment ces colonnes et
-retombent sur les tuiles (versé, valeur, gagné).
-Rapprochement avec les tuiles, toutes années affichées : versé de la tuile = cumul versé du total + versé des contrats
-à situation seule + écart de versé (§ 2.3) ; gagné de la tuile = cumul gagné net du total + gagné des contrats à
-situation seule − écart de versé.
+Colonnes « Depuis l'ouverture », en trois blocs. Document (fait foi) : versé, gagné (§ 2.3) et valeur d'aujourd'hui.
+Opérations (contrôle) : versé, gain hors frais, frais et gagné sommés sur toutes les années, quand ils se refont
+depuis l'ouverture. Écart = document − opérations, pour le versé et pour le gagné ; un écart de plus de 1 € est
+signalé. Un contrat à situation seule n'a que le bloc document. Les lignes de total somment chaque colonne sur les
+contrats qui la renseignent ; le bloc document du total égale les tuiles (versé, gagné, valeur).
 
 ### 6.2 Rentabilité annualisée depuis l'ouverture
 Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :

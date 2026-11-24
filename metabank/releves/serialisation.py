@@ -52,6 +52,7 @@ def releve_depuis_json(texte: str) -> Releve:
         versements_annee_en_cours=_decimal(d.get("versements_annee_en_cours")),
         rachats_annee_en_cours=_decimal(d.get("rachats_annee_en_cours")),
         frais_annee_en_cours=_decimal(d.get("frais_annee_en_cours")),
+        performance_annoncee=_decimal(d.get("performance_annoncee")),
         distributions=tuple(
             Distribution(date.fromisoformat(x["jour"]), x["support"], Decimal(x["montant"]))
             for x in d.get("distributions", [])

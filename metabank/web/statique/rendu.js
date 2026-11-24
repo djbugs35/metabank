@@ -19,7 +19,7 @@ export function tuilesHtml(vue) {
       vue.ecart_verse !== null && vue.ecart_verse !== undefined],
     ["Valeur aujourd'hui", euros(vue.valeur), pct(vue.part_valeur), "des placements du foyer"],
     ["Gagné, frais déduits", eurosSignes(vue.gain), pct(vue.gain_taux, true),
-      `du versé, sur toute la période${vue.gain_par_an === null ? "" : ` ; soit ${pct(vue.gain_par_an, true)} par an`}`],
+      `du versé, sur toute la période, d'après les documents (performance annoncée par l'assureur quand il l'imprime)${vue.gain_par_an === null ? "" : ` ; soit ${pct(vue.gain_par_an, true)} par an`}`],
     ["Frais payés", euros(vue.frais), pct(vue.frais_taux), fraisNote],
   ];
   return tuiles
