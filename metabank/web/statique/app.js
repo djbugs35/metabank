@@ -281,16 +281,17 @@ function afficherTableauContrats(vue, annees) {
   const lignes = vue.tableau ?? [];
   if (!lignes.length) return;
   const choisie = lignes.find((l) => l.nom === ligneChoisie) ?? lignes[lignes.length - 1];
-  const cumul = (l, champ) => annees.reduce((t, a) => t + (l.annees[a.annee]?.[champ] ?? 0), 0);
-  const cellule = (v, champ) => `<td class="n">${v === undefined ? "—" : ["verse", "frais", "valeur"].includes(champ) ? euros(v) : eurosSignes(v)}</td>`;
-  const groupes = [...annees.map((a) => anneeLibelle(a)), "Cumul"];
-  // Cumul : versé, gain et frais sommés sur les années ; la valeur, elle, est celle d'aujourd'hui.
+  const cellule = (v, champ) => `<td class="n">${v === undefined || v === null ? "—" : ["verse", "frais", "valeur", "ecart"].includes(champ) ? euros(v) : eurosSignes(v)}</td>`;
+  // Depuis l'ouverture (MODELE § 6.5) : versé et gagné du document ; gain hors frais − frais − écart = gagné.
+  const DEPUIS = [["verse", "Versé (document)"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"],
+    ["ecart", "Écart de versé"], ["gain", "Gagné"], ["valeur", "Valeur aujourd'hui"]];
   const vide = (l) => !Object.keys(l.annees).length;
-  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${groupes.map((g) => `<th colspan="4" class="n">${echapper(g)}</th>`).join("")}</tr>
-    <tr>${groupes.map((g) => CHAMPS_TABLEAU.map(([champ, titre]) => `<th class="n">${g === "Cumul" && champ === "valeur" ? "Valeur aujourd'hui" : titre}</th>`).join("")).join("")}</tr></thead>
+  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${annees.map((a) => `<th colspan="4" class="n">${echapper(anneeLibelle(a))}</th>`).join("")}
+      <th colspan="6" class="n">Depuis l'ouverture</th></tr>
+    <tr>${annees.map(() => CHAMPS_TABLEAU.map(([, titre]) => `<th class="n">${titre}</th>`).join("")).join("")}${DEPUIS.map(([, titre]) => `<th class="n">${titre}</th>`).join("")}</tr></thead>
     <tbody>${lignes.map((l) => `<tr class="cliquable ligne-${l.niveau}${l === choisie ? " ligne-choisie" : ""}" data-ligne="${echapper(l.nom)}">
       <td>${echapper(l.nom)}</td>${annees.map((a) => CHAMPS_TABLEAU.map(([champ]) => cellule(l.annees[a.annee]?.[champ], champ)).join("")).join("")}
-      ${CHAMPS_TABLEAU.map(([champ]) => cellule(champ === "valeur" ? l.valeur_actuelle : vide(l) ? undefined : cumul(l, champ), champ)).join("")}</tr>`).join("")}</tbody>`;
+      ${DEPUIS.map(([champ]) => cellule(champ === "ecart" && !l.depuis_ouverture.ecart ? null : l.depuis_ouverture[champ], champ)).join("")}</tr>`).join("")}</tbody>`;
   $("table-annees").querySelectorAll("tr[data-ligne]").forEach((tr) => tr.addEventListener("click", () => {
     if (vide(lignes.find((l) => l.nom === tr.dataset.ligne))) return;
     ligneChoisie = tr.dataset.ligne;
@@ -315,14 +316,9 @@ function afficherTableauContrats(vue, annees) {
     },
   });
   $("infobulle-annees").textContent = "Cliquez une ligne du tableau pour la voir ici.";
-  const total = lignes[lignes.length - 1], ecart = vue.ecart_verse ?? 0;
-  const toutes = annees.length === vue.annees.length;
-  $("rapprochement").textContent = toutes && (vue.sans_historique.length || ecart)
-    ? `Rapprochement avec les tuiles : versé ${euros(cumul(total, "verse"))} au tableau`
-      + (vue.sans_historique.length ? ` + ${euros(vue.verse_sans_historique)} des contrats sans historique annuel (${vue.sans_historique.join(", ")})` : "")
-      + (ecart ? ` + ${euros(ecart)} d'écart de versé (voir « Versé »)` : "") + ` = ${euros(vue.verse)} ; gagné net ${eurosSignes(cumul(total, "gain"))} au tableau`
-      + (vue.sans_historique.length ? ` ${eurosSignes(vue.gain_sans_historique)} des contrats sans historique` : "")
-      + (ecart ? ` − ${euros(ecart)} d'écart` : "") + ` = ${eurosSignes(vue.gain)}.`
+  $("rapprochement").textContent = lignes.some((l) => l.depuis_ouverture.ecart)
+    ? "Écart de versé : ce que le document compte en plus des versements lus dans les mouvements de chaque année, "
+      + "par exemple un transfert entrant compté pour les versements faits sur l'ancien contrat. Gagné = valeur − versé du document."
     : "";
 }
 
