@@ -7,7 +7,6 @@ from decimal import Decimal
 from metabank.bilan import BilanContrat
 from metabank.corrections import ANOMALIE_VERSEMENTS
 from metabank.frais_historique import HistoriqueFrais
-from metabank.rapport import nom_contrat
 from metabank.releves.modele import cle_du_contrat
 
 ZERO = Decimal(0)
@@ -70,39 +69,6 @@ class Progression:
 
 
 @dataclass(frozen=True)
-class ChiffresAnnee:
-    """Une année d'une ligne du tableau par contrat, en euros. MODELE § 6.5."""
-
-    verse: Decimal
-    gain_avant_frais: Decimal
-    frais: Decimal
-    gain: Decimal
-    # Valeur au 31/12, ou à la date de la situation pour l'année en cours.
-    valeur: Decimal = ZERO
-
-
-@dataclass(frozen=True)
-class LigneContrats:
-    """Une ligne du tableau : un contrat, le cumul d'une personne (« personne ») ou le total (« total »)."""
-
-    nom: str
-    niveau: str
-    annees: dict[int, ChiffresAnnee]
-    # Valeur au dernier relevé ou à la dernière situation (euros) : l'argent qui y est aujourd'hui.
-    valeur_actuelle: Decimal = ZERO
-    # Depuis l'ouverture (euros), MODELE § 6.5. Document (fait foi) : versé, gagné. Opérations (contrôle) : versé,
-    # gain hors frais, frais et gagné des années ; None quand elles ne se refont pas. Écarts : document moins opérations.
-    verse: Decimal = ZERO
-    gain: Decimal = ZERO
-    verse_operations: Decimal | None = None
-    gain_avant_frais: Decimal | None = None
-    frais: Decimal | None = None
-    gain_operations: Decimal | None = None
-    ecart_verse: Decimal | None = None
-    ecart_gain: Decimal | None = None
-
-
-@dataclass(frozen=True)
 class Synthese:
     """Chiffres d'un ensemble de contrats ; les relevés de situation n'entrent que dans les totaux."""
 
@@ -123,7 +89,6 @@ class Synthese:
     valeur_sans_historique: Decimal = ZERO
     verse_sans_historique: Decimal = ZERO
     gain_sans_historique: Decimal = ZERO
-    tableau: tuple[LigneContrats, ...] = ()
 
     @property
     def frais_par_an(self) -> Decimal | None:
@@ -151,7 +116,6 @@ def synthetiser(nom: str, bilans: list[BilanContrat], historiques: list[Historiq
         situations_dans_rendement=tuple(f"{b.titulaire} · {b.produit}" for b in bilans if _situation_datee(b)),
         versements_incertains=any(ANOMALIE_VERSEMENTS in a for b in bilans for a in b.anomalies),
         progression=tuple(progresser(suivis, annees)),
-        tableau=tuple(tableau_par_contrat(bilans, frais_fonds)),
         valeur_sans_historique=sum((b.valeur for b in bilans if not b.annees), ZERO),
         verse_sans_historique=sum((b.apports_cumules or ZERO for b in bilans if not b.annees), ZERO),
         gain_sans_historique=sum((b.gain_cumule or ZERO for b in bilans if not b.annees), ZERO),
@@ -218,66 +182,6 @@ def progresser(bilans: list[BilanContrat], annees: tuple[AnneeSynthese, ...]) ->
                                     a.verse - a.rachats, a.gain))  # fmt: skip
         precedente = valeur
     return resultat
-
-
-def tableau_par_contrat(bilans: list[BilanContrat], frais_fonds: dict) -> list[LigneContrats]:
-    """Rendre une ligne par contrat, le cumul de chaque personne (s'il y en a plusieurs) et le total. MODELE § 6.5.
-
-    Un contrat à situation seule a une ligne sans années, avec sa seule valeur actuelle : le total retombe sur la
-    valeur de l'ensemble.
-
-    Args:
-        frais_fonds: frais des fonds par (titulaire, contrat, année), en euros, comme pour l'année du foyer (§ 6.1).
-    """
-    contrats = []
-    for b in sorted(bilans, key=lambda b: (b.titulaire, nom_contrat(b))):
-        annees = {}
-        for a in b.annees:
-            frais = (a.frais or ZERO) + frais_fonds.get((b.titulaire, cle_du_contrat(b.numero), a.annee), ZERO)
-            annees[a.annee] = ChiffresAnnee(a.apports, a.gain + frais, frais, a.gain, a.valeur_fin)
-        verse, gain = b.apports_cumules or ZERO, b.gain_cumule or ZERO
-        refait = b.verse_mouvements is not None and b.gain_operations is not None
-        contrats.append((b.titulaire, LigneContrats(
-            nom_contrat(b), "contrat", annees, b.valeur, verse, gain, b.verse_mouvements,
-            sum((c.gain_avant_frais for c in annees.values()), ZERO) if refait else None,
-            sum((c.frais for c in annees.values()), ZERO) if refait else None, b.gain_operations,
-            verse - b.verse_mouvements if b.verse_mouvements is not None else None,
-            gain - b.gain_operations if b.gain_operations is not None else None,
-        )))  # fmt: skip
-    lignes: list[LigneContrats] = []
-    titulaires = list(dict.fromkeys(t for t, _ in contrats))
-    for titulaire in titulaires:
-        siens = [ligne for t, ligne in contrats if t == titulaire]
-        lignes += siens
-        if len(titulaires) > 1:
-            lignes.append(_sommer(f"Total {titulaire}", "personne", siens))
-    return [*lignes, _sommer("Total", "total", [ligne for _, ligne in contrats])] if contrats else []
-
-
-def _sommer(nom: str, niveau: str, lignes: list[LigneContrats]) -> LigneContrats:
-    def somme(annee: int, champ: str) -> Decimal:
-        return sum((getattr(ligne.annees[annee], champ) for ligne in lignes if annee in ligne.annees), ZERO)
-
-    annees = sorted({an for ligne in lignes for an in ligne.annees})
-    sommes = {an: ChiffresAnnee(somme(an, "verse"), somme(an, "gain_avant_frais"), somme(an, "frais"), somme(an, "gain"),
-                                sum((_valeur_en(ligne, an) for ligne in lignes), ZERO)) for an in annees}  # fmt: skip
-
-    def total(champ: str) -> Decimal:
-        return sum((getattr(ligne, champ) or ZERO for ligne in lignes), ZERO)
-
-    def controle(champ: str) -> Decimal | None:
-        valeurs = [getattr(ligne, champ) for ligne in lignes if getattr(ligne, champ) is not None]
-        return sum(valeurs, ZERO) if valeurs else None
-
-    return LigneContrats(nom, niveau, sommes, total("valeur_actuelle"), total("verse"), total("gain"),
-                         *(controle(c) for c in ("verse_operations", "gain_avant_frais", "frais", "gain_operations",
-                                                 "ecart_verse", "ecart_gain")))  # fmt: skip
-
-
-def _valeur_en(ligne: LigneContrats, annee: int) -> Decimal:
-    """Rendre la valeur du contrat en fin d'année : sa dernière connue (§ 6.4), 0 avant ses relevés."""
-    connues = [an for an in ligne.annees if an <= annee]
-    return ligne.annees[max(connues)].valeur if connues else ZERO
 
 
 def _division(numerateur: Decimal, base: Decimal) -> Decimal | None:

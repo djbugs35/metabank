@@ -153,13 +153,8 @@ def test_le_verse_est_celui_du_document_et_l_ecart_avec_les_mouvements_est_signa
     assert bilan.gain_cumule < 0 and synthese.rendement_annualise < 0
     sans_ecart = synthetiser("Alice", [replace(bilan, verse_mouvements=None)], [])
     assert sans_ecart.rendement_annualise > 0
-    # Tableau, depuis l'ouverture : versé du document, et gain hors frais moins frais moins écart = gagné.
-    ligne = synthese.tableau[0]
-    assert (ligne.verse, ligne.ecart_verse, ligne.gain) == (Decimal(30000), Decimal(30000) - refait, bilan.gain_cumule)
-    assert (
-        ligne.gain_avant_frais - ligne.frais == ligne.gain_operations == sum((a.gain for a in bilan.annees), Decimal(0))
-    )
-    assert ligne.ecart_gain == ligne.gain - ligne.gain_operations
+    # Contrôle du gagné : refait année par année.
+    assert bilan.gain_operations == sum((a.gain for a in bilan.annees), Decimal(0))
 
 
 def test_la_performance_imprimee_sur_la_situation_fait_foi_pour_le_gagne():
