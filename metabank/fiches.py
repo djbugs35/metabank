@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from metabank.base.archives import DOSSIERS_RESERVES
+from metabank.base.verrou import VERROU_DONNEES
 from metabank.connecteurs._provenance import morceaux_provenance
 from metabank.connecteurs._releves import ConnecteurReleve
 from metabank.connecteurs.contrat import Connecteur
@@ -31,19 +32,20 @@ class BilanFiches:
 
 def preparer_fiches(dossier_data: Path, connecteurs: list[Connecteur], relire: bool = False) -> BilanFiches:
     """Rendre le bilan de l'écriture des fiches manquantes (ou de toutes, si relire) à côté des PDF de contrats."""
-    lecteurs = [c for c in connecteurs if isinstance(c, ConnecteurReleve)]
-    bilan = BilanFiches()
-    par_dossier: dict[Path, list[Path]] = defaultdict(list)
-    for pdf in sorted(dossier_data.glob("*/*/**/*")):
-        if (
-            pdf.is_file()
-            and pdf.suffix.lower() == ".pdf"
-            and pdf.relative_to(dossier_data).parts[0] not in DOSSIERS_RESERVES
-        ):
-            par_dossier[pdf.parent].append(pdf)
-    for dossier, pdfs in par_dossier.items():
-        _preparer_dossier(dossier_data, dossier, pdfs, lecteurs, relire, bilan)
-    return bilan
+    with VERROU_DONNEES:
+        lecteurs = [c for c in connecteurs if isinstance(c, ConnecteurReleve)]
+        bilan = BilanFiches()
+        par_dossier: dict[Path, list[Path]] = defaultdict(list)
+        for pdf in sorted(dossier_data.glob("*/*/**/*")):
+            if (
+                pdf.is_file()
+                and pdf.suffix.lower() == ".pdf"
+                and pdf.relative_to(dossier_data).parts[0] not in DOSSIERS_RESERVES
+            ):
+                par_dossier[pdf.parent].append(pdf)
+        for dossier, pdfs in par_dossier.items():
+            _preparer_dossier(dossier_data, dossier, pdfs, lecteurs, relire, bilan)
+        return bilan
 
 
 def _preparer_dossier(dossier_data: Path, dossier: Path, pdfs: list[Path], lecteurs: list[ConnecteurReleve],

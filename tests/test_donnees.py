@@ -1,5 +1,7 @@
 """Écrans branchés sur la base : mêmes chiffres qu'avec les anciens lecteurs, fichiers rangés à la main repris."""
 
+import sqlite3
+import threading
 from datetime import date
 
 import pytest
@@ -60,3 +62,29 @@ def test_le_patrimoine_compte_le_capital_projete_au_mois_en_cours(donnees):
     trois_mois_plus_tard = vues.etat(donnees, date(2026, 9, 10))
     assert trois_mois_plus_tard["patrimoine"]["foyer"]["credits"] < a_l_export
     assert trois_mois_plus_tard["credits"][0]["projete_depuis"] == "2026-06-20"
+
+
+def test_deux_chargements_simultanes_apres_un_changement_de_lecteurs_ne_se_genent_pas(donnees):
+    """Au lancement, la synchronisation et la page chargent ensemble : fiches et base s'écrivent l'une après l'autre."""
+    charger(donnees)
+    for fiche in donnees.rglob("metabank-*.csv"):
+        fiche.unlink()
+    connexion = sqlite3.connect(donnees / "metabank.db")
+    with connexion:
+        connexion.execute("UPDATE meta SET valeur = 'ancienne' WHERE cle = 'version_des_lecteurs'")
+    connexion.close()
+    erreurs: list[BaseException] = []
+
+    def charger_et_noter() -> None:
+        try:
+            charger(donnees)
+        except Exception as erreur:  # noqa: BLE001 (le test relève toute erreur d'un fil)
+            erreurs.append(erreur)
+
+    fils = [threading.Thread(target=charger_et_noter) for _ in range(4)]
+    for fil in fils:
+        fil.start()
+    for fil in fils:
+        fil.join()
+    assert erreurs == []
+    assert len(charger(donnees).releves) == 3

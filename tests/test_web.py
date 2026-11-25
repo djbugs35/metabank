@@ -21,7 +21,7 @@ from metabank.frais import projeter
 from metabank.releves import ReleveRange, lire_releve
 from metabank.web import assistant, depot, vues
 from metabank.web.depot import DepotRefuse, deposer_releve
-from metabank.web.serveur import creer_serveur
+from metabank.web.serveur import EtatEnCache, creer_serveur
 from metabank.web.simulation import SimulationInvalide, simuler
 
 EXEMPLES = Path(__file__).parent / "exemples"
@@ -209,3 +209,12 @@ def test_serveur_refuse_un_envoi_venu_d_une_autre_page(serveur):
 def test_ouverture_lue_avec_le_contrat(tmp_path):
     ecrire_corrections(tmp_path, {"ouvertures": {"12345678": "2023-03-30"}})
     assert date_ouverture("U2 12345678", lire_ouvertures(tmp_path)) == date(2023, 3, 30)
+
+
+def test_une_erreur_imprevue_rend_un_message_et_non_une_connexion_coupee(serveur, monkeypatch):
+    def en_panne(_cache):
+        raise RuntimeError("base en travaux")
+
+    monkeypatch.setattr(EtatEnCache, "lire", en_panne)
+    statut, corps = _requete(f"{serveur}/api/etat")
+    assert (statut, json.loads(corps)["erreur"]) == (500, "erreur interne : RuntimeError : base en travaux")
