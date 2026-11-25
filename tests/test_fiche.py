@@ -113,3 +113,14 @@ def test_chaque_contrat_montre_sa_synthese_en_distinguant_le_document_du_calcul(
         ("Valeur", "document"), ("Cumul des versements", "document"), ("Gagné (valeur moins versé)", "calcul"),
     ]  # fmt: skip
     assert cardif["annees"] == [] and cardif["fichier"].startswith("metabank-")
+
+
+def test_un_contrat_suivi_depuis_un_releve_intermediaire_montre_sa_valeur_de_depart(donnees):
+    """PER de Bruno : premier relevé en 2024, valeur au 1er janvier imprimée ; le gagné en part, et le dit."""
+    contenu = etat(donnees)
+    per = next(c["fiche"] for c in contenu["contrats"] if c["titulaire"] == "Bruno" and c["fiche"]["annees"])
+    libelles = [ligne["libelle"] for ligne in per["lignes"]]
+    assert "Valeur au 1er janvier 2024" in libelles and "Gagné depuis le 1er janvier 2024" in libelles
+    foyer = next(v for v in contenu["vues"] if v["niveau"] == "foyer")
+    # Dernière colonne de la progression : versé et valeurs de départ, plus le gagné, font la valeur.
+    assert foyer["verse_et_depart"] + foyer["gain"] == pytest.approx(foyer["valeur"])

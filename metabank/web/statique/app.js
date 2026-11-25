@@ -242,27 +242,28 @@ function afficherProgression(vue) {
   if (!p.length) return;
   const fin = (x) => (x.en_cours_au ? `${x.annee} (au ${x.en_cours_au.slice(8, 10)}/${x.en_cours_au.slice(5, 7)})` : `fin ${x.annee}`);
   // Dernière colonne : les tuiles, tous contrats (situations seules comprises) ; mêmes chiffres que « Versé » et « Valeur ».
-  const tous = { valeur: vue.valeur, verse: vue.verse, gain: vue.gain };
+  const tous = { valeur: vue.valeur, verse: vue.verse_et_depart, gain: vue.gain };
   barresEmpilees($("graphique-progression"), {
     titre: "Valeur des placements en fin d'année, et variation de l'année",
-    abscisses: [...p.map(fin), "Aujourd'hui, tous contrats"],
+    abscisses: [...p.map(fin), "Tous contrats"],
     parts: [
       { classe: "serie-1", nom: "Versé net cumulé", valeurs: [...p.map((x) => x.verse_cumule), tous.verse] },
       { classe: "serie-3", classeNegative: "serie-2", nom: "Gagné cumulé", nomNegatif: "Perdu cumulé", valeurs: [...p.map((x) => x.gain_cumule), tous.gain] },
     ],
     totaux: [...p.map((x) => x.valeur), tous.valeur],
-    sous: [...p.map((x) => `${eurosSignes(x.variation)} sur l'année`),
-      vue.valeur_sans_historique ? `dont ${euros(vue.valeur_sans_historique)} sans historique` : "= tuiles"],
+    sous: [...p.map((x) => `${eurosSignes(x.variation)} sur l'année`), "aujourd'hui"],
     formater: euros,
     survol: (rang) => {
       const x = rang === null ? null : p[rang];
       $("infobulle-progression").textContent = x
         ? `${fin(x)} : valeur ${euros(x.valeur)} · variation ${eurosSignes(x.variation)} = versé net ${eurosSignes(x.verse_net_annee)} + gagné ${eurosSignes(x.gain_annee)} · depuis le début : versé net ${euros(x.verse_cumule)}, gagné ${eurosSignes(x.gain_cumule)}`
-        : rang === p.length ? `Aujourd'hui, tous contrats : valeur ${euros(tous.valeur)} · versé ${euros(tous.verse)} (lu sur les documents) · gagné ${eurosSignes(tous.gain)}` : "";
+        : rang === p.length ? `Aujourd'hui, tous contrats : valeur ${euros(tous.valeur)} · versé ${euros(vue.verse)} (lu sur les documents) · gagné ${eurosSignes(tous.gain)}` : "";
     },
   });
   const notes = [];
-  if (vue.sans_historique.length) notes.push(`Fins d'année : contrats à relevés annuels seulement ; sans historique annuel, ${vue.sans_historique.join(", ")} n'apparaissent que dans la dernière colonne.`);
+  notes.push(`Dernière colonne : tous les contrats aujourd'hui, comme les tuiles (valeur ${euros(vue.valeur)}).`);
+  if (vue.sans_historique.length) notes.push(`Fins d'année : contrats à relevés annuels seulement ; sans historique annuel, ${vue.sans_historique.join(", ")} (${euros(vue.valeur_sans_historique)}) n'apparaissent que dans la dernière colonne.`);
+  if (Math.abs(vue.verse_et_depart - vue.verse) >= 1) notes.push(`En bleu dans cette colonne : le versé et la valeur de départ des contrats suivis depuis un relevé intermédiaire.`);
   if (vue.ecart_verse !== null && vue.ecart_verse !== undefined) notes.push(`Les fins d'année suivent les mouvements de chaque année ; le versé lu sur les documents en diffère de ${eurosSignes(vue.ecart_verse)} (voir « Versé »).`);
   $("note-progression").textContent = notes.join(" ");
 }
@@ -273,7 +274,7 @@ function ficheContratHtml(c) {
   const f = c.fiche;
   const jour = (iso) => new Date(iso).toLocaleDateString("fr-FR");
   const lignes = f.lignes.map((l) => `<tr><td>${echapper(l.libelle)}${l.origine === "calcul" ? ' <span class="note">calculé</span>' : ""}</td>
-    <td class="n">${l.libelle === "Valeur" || l.libelle.startsWith("Cumul") || l.libelle.startsWith("Versements") ? euros(l.montant) : eurosSignes(l.montant)}</td></tr>`).join("");
+    <td class="n">${/^(Gagné|Performance)/.test(l.libelle) ? eurosSignes(l.montant) : euros(l.montant)}</td></tr>`).join("");
   const k = f.controle;
   const ecartVerse = k && Math.abs(k.ecart_verse) >= 1, ecartGain = k && Math.abs(k.ecart_gain) >= 1;
   const ecarts = [
