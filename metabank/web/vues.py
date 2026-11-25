@@ -131,6 +131,9 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
         "frais_sur_partie": bool(s.sans_historique) and frais_connus,
         "sans_historique": list(s.sans_historique),
         "valeur_sans_historique": _nombre(s.valeur_sans_historique),
+        # Dernière colonne de la progression : valeur moins gagné, versé et valeurs de départ des contrats suivis
+        # depuis un relevé intermédiaire (MODELE § 6.4) ; empilé avec le gagné, il retombe sur la valeur.
+        "verse_et_depart": _nombre(s.valeur - s.gain),
         "verse_sans_historique": _nombre(s.verse_sans_historique),
         "gain_sans_historique": _nombre(s.gain_sans_historique),
         "progression": [
@@ -202,10 +205,18 @@ def _fiche(bilan: BilanContrat) -> dict:
         lignes.append(
             {"libelle": "Cumul des rachats", "montant": _nombre(bilan.rachats_cumules), "origine": "document"}
         )
+    depart = bilan.annees[0].valeur_debut if bilan.annees and not situation else ZERO
+    if depart:
+        # Suivi depuis un relevé intermédiaire : le gagné part de la valeur au 1er janvier imprimée. MODELE § 2.1.
+        lignes.append({"libelle": f"Valeur au 1er janvier {bilan.annees[0].annee}", "montant": _nombre(depart),
+                       "origine": "document"})  # fmt: skip
     if bilan.gain_cumule is not None:
+        libelle = "Performance annoncée" if bilan.gain_imprime else "Gagné (valeur moins versé)"
+        if depart:
+            libelle = f"Gagné depuis le 1er janvier {bilan.annees[0].annee}"
         lignes.append(
             {
-                "libelle": "Performance annoncée" if bilan.gain_imprime else "Gagné (valeur moins versé)",
+                "libelle": libelle,
                 "montant": _nombre(bilan.gain_cumule),
                 "origine": "document" if bilan.gain_imprime else "calcul",
             }
