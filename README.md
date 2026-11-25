@@ -10,7 +10,7 @@ crédits, dans une application web qui tourne sur votre Mac.
 
 ![Tableau de bord du foyer](docs/captures/tableau.png)
 
-*Captures réalisées avec des données fictives (Alice et Bruno), avant la séparation en onglets de la v0.5.0.*
+*Captures réalisées avec des données fictives (Alice et Bruno).*
 
 ## Le principe : le document de l'assureur fait foi
 
@@ -54,6 +54,8 @@ première page prend quelques secondes de plus.
 Les puces en haut choisissent le foyer ou une personne ; elles valent pour le tableau de bord et les onglets de
 catégorie. Thème clair ou sombre selon le Mac.
 
+![Onglet Placements, contrats d'une personne, thème sombre](docs/captures/placements-sombre.png)
+
 ### Tableau de bord
 
 La synthèse : patrimoine net, actifs, une tuile par famille (placements, épargne disponible, comptes courants,
@@ -68,6 +70,10 @@ rachats, performance annoncée), le nom de la fiche et du PDF lus, le contrôle 
 années (valeur au 31/12, versé, frais, gagné). Les puces de contrat descendent à un seul contrat. Repliés en bas :
 le rendement de chaque année face aux repères publics, les fonds du plus coûteux au moins coûteux, les échéances
 (8 ans des assurances vie, transfert des PER, 31 décembre).
+
+![Onglet Placements : tuiles et valeur en fin d'année](docs/captures/placements.png)
+
+![Onglet Placements : une fiche par contrat](docs/captures/placements-contrats.png)
 
 Entre deux relevés annuels, une **situation Suravenir** (« Situation de votre contrat au… ») donne la valeur du
 jour et l'année en cours ; son historique des opérations sert au versé de l'année et aux coupons reçus.
@@ -88,12 +94,16 @@ dépenses régulières, objectifs par catégorie, comparaison d'une année sur l
 dort. Les virements entre ses propres comptes et vers ses placements ne comptent pas comme des dépenses. Les
 dépenses non classées se rangent depuis la page ; les règles de classement se gèrent dans l'onglet.
 
+![Budget](docs/captures/budget.png)
+
 ### Allocation
 
 Répartition du patrimoine financier par classe (choisie ou déduite du libellé du fonds), concentration au-delà de
 20 %, cible et versements de rééquilibrage sans rien vendre. Fonds par fonds : prix de revient, plus-value latente,
 coupons reçus, et alerte quand un coupon attendu n'est pas venu. Simulateur d'arbitrage : effet des frais d'un
 fonds à l'autre.
+
+![Allocation](docs/captures/allocation.png)
 
 ### Revue du mois
 
@@ -145,6 +155,8 @@ tourne sans outil, dans un dossier vide. Le texte exact envoyé est affiché sou
 « Exporter en PDF » : cocher les vues, les options (détail des fonds, points d'attention, prénoms, fiche de
 rendez-vous par contrat), puis « Créer le PDF ». L'aperçu A4 s'ouvre ; choisir « Enregistrer au format PDF » dans
 la fenêtre d'impression.
+
+![Choix de l'export](docs/captures/export.png)
 
 ![Aperçu du rapport PDF](docs/captures/rapport.png)
 

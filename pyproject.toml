@@ -1,6 +1,6 @@
 [project]
 name = "metabank"
-version = "0.5.0"
+version = "0.5.1"
 description = "Vision globale et analyse de mon patrimoine financier, en local"
 requires-python = ">=3.12"
 # Aucune dépendance Python : la lecture des PDF passe par pdftotext (poppler), installé à part.
