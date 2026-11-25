@@ -8,6 +8,7 @@ DEUX BARRIÈRES, ET UNE SEULE EST UNE GARANTIE (comme Passerelle dans metascrap)
 """
 
 import json
+import logging
 import threading
 from collections.abc import Callable
 from http import HTTPStatus
@@ -34,6 +35,7 @@ from metabank.web.synoptique_vues import etat_synoptique
 from metabank.web.vues import etat
 
 ADRESSE = "127.0.0.1"
+JOURNAL = logging.getLogger(__name__)
 PORT_DEFAUT = 8770
 STATIQUE = Path(__file__).resolve().parent / "statique"
 FICHIERS = {
@@ -135,8 +137,28 @@ class _Gestionnaire(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         """Servir la page, le rapport à enregistrer en PDF, l'état ou le texte envoyé à Claude."""
-        if not self._requete_sure():
-            return
+        if self._requete_sure():
+            self._sans_coupure(self._servir)
+
+    def do_POST(self) -> None:
+        """Déposer un relevé, enregistrer les corrections ou la configuration, simuler, interroger Claude."""
+        if self._requete_sure():
+            self._sans_coupure(self._recevoir)
+
+    def _sans_coupure(self, traiter: Callable[[], None]) -> None:
+        """Répondre 500 avec le message, plutôt que couper la connexion, sur une erreur que rien n'a prévue.
+
+        Frontière journalisée : sans elle, la page n'affiche que « Failed to fetch ».
+        """
+        try:
+            traiter()
+        except Exception as erreur:  # noqa: BLE001 (frontière : journalisée et rendue à la page)
+            JOURNAL.exception("requête %s %s", self.command, self.path)
+            self._json(
+                HTTPStatus.INTERNAL_SERVER_ERROR, {"erreur": f"erreur interne : {type(erreur).__name__} : {erreur}"}
+            )
+
+    def _servir(self) -> None:
         chemin = urlsplit(self.path).path
         if chemin in FICHIERS:
             nom, type_ = FICHIERS[chemin]
@@ -165,10 +187,7 @@ class _Gestionnaire(BaseHTTPRequestHandler):
         else:
             self._json(HTTPStatus.NOT_FOUND, {"erreur": "introuvable"})
 
-    def do_POST(self) -> None:
-        """Déposer un relevé, enregistrer les corrections ou la configuration, simuler, interroger Claude."""
-        if not self._requete_sure():
-            return
+    def _recevoir(self) -> None:
         longueur = int(self.headers.get("Content-Length") or 0)
         if longueur > CORPS_MAX:
             self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"erreur": "fichier trop gros"})

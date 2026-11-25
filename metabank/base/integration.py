@@ -21,6 +21,7 @@ from metabank.base.archives import (
 from metabank.base.ecriture import enregistrer_lot
 from metabank.base.lot import Lot
 from metabank.base.schema import ouvrir
+from metabank.base.verrou import VERROU_DONNEES
 
 FICHIER_BASE = "metabank.db"
 # À augmenter quand un lecteur (connecteur) comprend mieux un document déjà archivé : à l'ouverture suivante, la base
@@ -53,18 +54,19 @@ class Resultat:
 
 def ouvrir_base(dossier_data: Path, lire: Lecteur) -> sqlite3.Connection:
     """Rendre une connexion à data/metabank.db, reconstruite depuis les archives si le fichier a disparu."""
-    chemin = dossier_data / FICHIER_BASE
-    if not chemin.exists() and lister_archives(dossier_data):
-        reconstruire(dossier_data, lire)
-    connexion = ouvrir(chemin)
-    version = connexion.execute("SELECT valeur FROM meta WHERE cle = 'version_des_lecteurs'").fetchone()
-    if version is None and not connexion.execute("SELECT 1 FROM archives LIMIT 1").fetchone():
-        _noter_version(connexion)
-    elif version is None or version[0] != VERSION_DES_LECTEURS:
-        connexion.close()
-        reconstruire(dossier_data, lire)
+    with VERROU_DONNEES:
+        chemin = dossier_data / FICHIER_BASE
+        if not chemin.exists() and lister_archives(dossier_data):
+            reconstruire(dossier_data, lire)
         connexion = ouvrir(chemin)
-    return connexion
+        version = connexion.execute("SELECT valeur FROM meta WHERE cle = 'version_des_lecteurs'").fetchone()
+        if version is None and not connexion.execute("SELECT 1 FROM archives LIMIT 1").fetchone():
+            _noter_version(connexion)
+        elif version is None or version[0] != VERSION_DES_LECTEURS:
+            connexion.close()
+            reconstruire(dossier_data, lire)
+            connexion = ouvrir(chemin)
+        return connexion
 
 
 def _noter_version(connexion: sqlite3.Connection) -> None:
@@ -82,31 +84,32 @@ def importer_fichier(dossier_data: Path, provenance: str, nom: str, contenu: byt
         ValueError: reconnu mais illisible (LectureImpossible), ou lot invalide (rien n'est archivé).
         CheminRefuse: provenance ou nom de fichier dangereux.
     """
-    connexion = ouvrir_base(dossier_data, lire)
-    try:
-        deja = connexion.execute(
-            "SELECT chemin FROM archives WHERE empreinte = ?", (calculer_empreinte(contenu),)
-        ).fetchone()
-        if deja:
-            connecteur = connexion.execute(
-                "SELECT connecteur FROM imports JOIN archives a ON a.id = archive_id WHERE a.chemin = ?", deja
-            ).fetchone()
-            return Resultat(chemin=deja[0], connecteur=connecteur[0] if connecteur else "", deja_present=True)
-        chemin = choisir_chemin(dossier_data, provenance, nom)
-        lot = lire(provenance, chemin.name, contenu)
-        if lot is None:
-            raise FichierNonReconnu(f"{nom} : aucun connecteur ne reconnaît ce fichier")
-        archive = ecrire_archive(dossier_data, chemin, contenu)
+    with VERROU_DONNEES:
+        connexion = ouvrir_base(dossier_data, lire)
         try:
-            with connexion:
-                elements = _integrer(connexion, archive, lot)
-        except BaseException:
-            # Une archive sans ligne en base serait réintégrée à la prochaine reconstruction : on la retire.
-            chemin.unlink()
-            raise
-        return Resultat(chemin=archive.chemin, connecteur=lot.connecteur, deja_present=False, elements=elements)
-    finally:
-        connexion.close()
+            deja = connexion.execute(
+                "SELECT chemin FROM archives WHERE empreinte = ?", (calculer_empreinte(contenu),)
+            ).fetchone()
+            if deja:
+                connecteur = connexion.execute(
+                    "SELECT connecteur FROM imports JOIN archives a ON a.id = archive_id WHERE a.chemin = ?", deja
+                ).fetchone()
+                return Resultat(chemin=deja[0], connecteur=connecteur[0] if connecteur else "", deja_present=True)
+            chemin = choisir_chemin(dossier_data, provenance, nom)
+            lot = lire(provenance, chemin.name, contenu)
+            if lot is None:
+                raise FichierNonReconnu(f"{nom} : aucun connecteur ne reconnaît ce fichier")
+            archive = ecrire_archive(dossier_data, chemin, contenu)
+            try:
+                with connexion:
+                    elements = _integrer(connexion, archive, lot)
+            except BaseException:
+                # Une archive sans ligne en base serait réintégrée à la prochaine reconstruction : on la retire.
+                chemin.unlink()
+                raise
+            return Resultat(chemin=archive.chemin, connecteur=lot.connecteur, deja_present=False, elements=elements)
+        finally:
+            connexion.close()
 
 
 def reconstruire(dossier_data: Path, lire: Lecteur) -> Path:
@@ -115,18 +118,19 @@ def reconstruire(dossier_data: Path, lire: Lecteur) -> Path:
     La base est construite à côté puis renommée : l'ancienne reste intacte si la reconstruction échoue.
     Une archive illisible ou plus reconnue est notée au journal sans arrêter les autres.
     """
-    cible = dossier_data / FICHIER_BASE
-    temporaire = cible.with_name(FICHIER_BASE + ".tmp")
-    temporaire.unlink(missing_ok=True)
-    connexion = ouvrir(temporaire)
-    try:
-        for archive in lister_archives(dossier_data):
-            _rejouer(connexion, dossier_data, archive, lire)
-        _noter_version(connexion)
-    finally:
-        connexion.close()
-    temporaire.replace(cible)
-    return cible
+    with VERROU_DONNEES:
+        cible = dossier_data / FICHIER_BASE
+        temporaire = cible.with_name(FICHIER_BASE + ".tmp")
+        temporaire.unlink(missing_ok=True)
+        connexion = ouvrir(temporaire)
+        try:
+            for archive in lister_archives(dossier_data):
+                _rejouer(connexion, dossier_data, archive, lire)
+            _noter_version(connexion)
+        finally:
+            connexion.close()
+        temporaire.replace(cible)
+        return cible
 
 
 def _rejouer(connexion: sqlite3.Connection, dossier_data: Path, archive: Archive, lire: Lecteur) -> None:

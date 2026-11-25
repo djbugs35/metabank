@@ -11,6 +11,7 @@ from metabank.banque import lire_comptes
 from metabank.base.archives import DOSSIERS_RESERVES
 from metabank.base.integration import importer_fichier, ouvrir_base
 from metabank.base.lecture import lire_comptes_bancaires, lire_releves
+from metabank.base.verrou import VERROU_DONNEES
 from metabank.connecteurs.contrat import Connecteur
 from metabank.connecteurs.registre import composer_lecteur
 from metabank.fiches import preparer_fiches
@@ -33,31 +34,32 @@ def archiver_donnees(dossier_data: Path, connecteurs: list[Connecteur]) -> Bilan
 
     Ordre des chemins : celui des anciens lecteurs, pour que le dernier export d'un compte en donne la description.
     """
-    lire = composer_lecteur(connecteurs)
-    # Les fiches CSV des contrats d'abord, à côté de leurs PDF : l'archivage les prend avec eux. MODELE § 0.
-    bilan = BilanArchivage(refus=preparer_fiches(dossier_data, connecteurs).illisibles)
-    fichiers = sorted(
-        f
-        for f in dossier_data.glob("*/*/**/*")
-        if f.is_file()
-        and f.suffix.lower() in EXTENSIONS
-        and f.relative_to(dossier_data).parts[0] not in DOSSIERS_RESERVES
-    )
-    for fichier in fichiers:
-        relatif = fichier.relative_to(dossier_data)
-        try:
-            resultat = importer_fichier(
-                dossier_data, relatif.parent.as_posix(), fichier.name, fichier.read_bytes(), lire
-            )
-        except ValueError as erreur:
-            # FichierNonReconnu, LectureImpossible, CheminRefuse, montant inexact : le fichier suivant passe quand même.
-            bilan.refus.append(f"{relatif} : {erreur}")
-            continue
-        if resultat.deja_present:
-            bilan.deja_presents += 1
-        else:
-            bilan.archives += 1
-    return bilan
+    with VERROU_DONNEES:
+        lire = composer_lecteur(connecteurs)
+        # Les fiches CSV des contrats d'abord, à côté de leurs PDF : l'archivage les prend avec eux. MODELE § 0.
+        bilan = BilanArchivage(refus=preparer_fiches(dossier_data, connecteurs).illisibles)
+        fichiers = sorted(
+            f
+            for f in dossier_data.glob("*/*/**/*")
+            if f.is_file()
+            and f.suffix.lower() in EXTENSIONS
+            and f.relative_to(dossier_data).parts[0] not in DOSSIERS_RESERVES
+        )
+        for fichier in fichiers:
+            relatif = fichier.relative_to(dossier_data)
+            try:
+                resultat = importer_fichier(
+                    dossier_data, relatif.parent.as_posix(), fichier.name, fichier.read_bytes(), lire
+                )
+            except ValueError as erreur:
+                # FichierNonReconnu, LectureImpossible, CheminRefuse, montant inexact : le fichier suivant passe quand même.
+                bilan.refus.append(f"{relatif} : {erreur}")
+                continue
+            if resultat.deja_present:
+                bilan.deja_presents += 1
+            else:
+                bilan.archives += 1
+        return bilan
 
 
 def comparer_avec_fichiers(dossier_data: Path, connecteurs: list[Connecteur]) -> list[str]:
