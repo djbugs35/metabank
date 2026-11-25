@@ -112,3 +112,9 @@ tr.detail > td { background: var(--surface-2); white-space: normal; }
 rect.serie-5, i.serie-5 { fill: var(--texte-2); background: var(--texte-2); }
 rect.serie-6, i.serie-6 { fill: var(--trait); background: var(--trait); }
 path.serie-4 { stroke: var(--serie-4); } circle.serie-4 { fill: var(--serie-4); }
+
+.fiches { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+.fiche-contrat table { font-size: 14px; }
+.fiche-contrat h3 { margin: 0 0 4px; font-size: 16px; }
+.fiche-contrat table.synthese td { padding: 3px 0; }
+.fiche-contrat table.synthese { width: 100%; margin: 8px 0; }

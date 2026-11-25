@@ -57,6 +57,9 @@ class BilanContrat:
     verse_mouvements: Decimal | None = None
     # Gagné refait par les mouvements des années (Σ gains), contrôle du gagné lu ; None s'il ne se refait pas. § 2.3.
     gain_operations: Decimal | None = None
+    # PDF du document le plus récent, et vrai si le gagné est la performance qu'il imprime (non un calcul).
+    document: str = ""
+    gain_imprime: bool = False
 
     @property
     def numero_masque(self) -> str:
@@ -192,6 +195,8 @@ def _bilan_contrat(titulaire: str, releves: list[Releve], ouverture: date | None
         date_ouverture=ouverture,
         verse_mouvements=verse_mouvements,
         gain_operations=gain_operations,
+        document=dernier.fichier,
+        gain_imprime=not dernier.est_annuel and dernier.performance_annoncee is not None,
     )
 
 

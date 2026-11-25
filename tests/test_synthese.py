@@ -1,4 +1,3 @@
-from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 
@@ -94,28 +93,3 @@ def test_un_contrat_sans_chiffres_une_annee_garde_sa_derniere_valeur_dans_la_pro
     synthese = synthetiser("Foyer", faire_bilans(releves), [])
     fin_2025 = synthese.progression[-1]
     assert (fin_2025.valeur, fin_2025.variation, fin_2025.gain_cumule) == (Decimal(16100), Decimal(500), Decimal(1100))
-
-
-def test_le_tableau_donne_chaque_contrat_le_cumul_par_personne_et_le_total():
-    releves = [_annee(2024, "10500", "0", "10000", "A"), _annee(2024, "4900", "0", "5000", "B")]
-    synthese = synthetiser("Foyer", faire_bilans(releves), [])
-    assert [(ligne.nom.split(" ·")[0], ligne.niveau) for ligne in synthese.tableau] == [
-        ("A", "contrat"), ("Total A", "personne"), ("B", "contrat"), ("Total B", "personne"), ("Total", "total"),
-    ]  # fmt: skip
-    total = synthese.tableau[-1].annees[2024]
-    # Frais du relevé : 10 € par contrat ; gain hors frais = gagné net + frais.
-    assert (total.gain, total.frais, total.gain_avant_frais) == (Decimal(400), Decimal(20), Decimal(420))
-    assert total.gain == synthese.annees[0].gain and total.frais == synthese.annees[0].frais
-    assert synthese.tableau[-2].annees[2024].gain == Decimal(-100)
-
-
-def test_le_tableau_donne_la_valeur_de_chaque_annee_et_celle_d_aujourd_hui_situations_comprises():
-    a, b = faire_bilans([_annee(2023, "10250", "10000", None, "A"), _annee(2024, "5100", "0", "5000", "B")])
-    situation_seule = replace(b, titulaire="C", annees=(), valeur=Decimal(3000))
-    synthese = synthetiser("Foyer", [a, b, situation_seule], [])
-    total = synthese.tableau[-1]
-    # Fin 2024 : A garde sa valeur de fin 2023 (pas de relevé 2024), B vaut 5 100.
-    assert (total.annees[2023].valeur, total.annees[2024].valeur) == (Decimal(10250), Decimal(15350))
-    assert total.valeur_actuelle == synthese.valeur == Decimal(18350)
-    ligne_c = next(ligne for ligne in synthese.tableau if ligne.nom.startswith("C ·"))
-    assert (ligne_c.annees, ligne_c.valeur_actuelle) == ({}, Decimal(3000))

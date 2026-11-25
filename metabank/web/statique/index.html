@@ -72,25 +72,21 @@
       <figure id="graphique-progression"></figure>
       <div class="infobulle" id="infobulle-progression"></div>
       <p class="note" id="note-progression"></p></div>
-    <div class="carte" id="bloc-annees">
-      <div class="puces" id="choix-annees"><span class="titre-puces">Années :</span></div>
-      <div class="selection" id="selection"></div>
-      <figure id="graphique-annees"></figure>
-      <div class="infobulle" id="infobulle-annees"></div>
-      <div class="defile"><table id="table-annees"></table></div>
-      <p class="note" id="rapprochement"></p>
-      <div id="bloc-reperes"><figure id="graphique-reperes"></figure><div class="infobulle" id="infobulle-reperes"></div>
-        <details><summary>Face aux repères publics : le tableau</summary>
-        <div class="defile"><table id="table-reperes"></table></div>
-        <p class="note">Votre rendement de l'année (gagné rapporté aux sommes placées, frais déduits) face aux moyennes
-          publiques. Fonds en euros : moyenne des contrats (ACPR), nette de frais. Unités de compte : moyenne des
-          supports (France Assureurs), avant les frais de gestion du contrat. MSCI World : actions mondiales en euros,
-          sans aucun frais. Sources et méthode : docs/MODELE.md § 10. Une case vide : repère non publié ou non vérifié.</p>
-      </details></div>
-    </div>
+    <h2>Contrat par contrat</h2>
+    <p class="discret">Les chiffres viennent de la fiche CSV du contrat, écrite à côté de ses PDF : ceux du document de
+      l'assureur, qui font foi. Un chiffre « calculé » est refait par metabank parce que le document ne l'imprime pas.</p>
+    <div class="fiches" id="fiches-contrats"></div>
+    <details class="carte" id="bloc-reperes"><summary>Rendement de chaque année face aux repères publics</summary>
+      <figure id="graphique-reperes"></figure><div class="infobulle" id="infobulle-reperes"></div>
+      <div class="defile"><table id="table-reperes"></table></div>
+      <p class="note">Votre rendement de l'année (gagné rapporté aux sommes placées, frais déduits) face aux moyennes
+        publiques. Fonds en euros : moyenne des contrats (ACPR), nette de frais. Unités de compte : moyenne des
+        supports (France Assureurs), avant les frais de gestion du contrat. MSCI World : actions mondiales en euros,
+        sans aucun frais. Sources et méthode : docs/MODELE.md § 10. Une case vide : repère non publié ou non vérifié.</p>
+    </details>
     <div id="notes"></div>
-    <div class="carte" id="bloc-graphique-fonds"><figure id="graphique-fonds"></figure></div>
     <details class="carte"><summary>Fonds de cette vue, du plus coûteux au moins coûteux</summary>
+      <div id="bloc-graphique-fonds"><figure id="graphique-fonds"></figure></div>
       <div class="defile"><table id="table-fonds"></table></div>
       <p class="note">Frais totaux = frais du fonds + frais du contrat. Les rétrocessions, entre parenthèses, font partie des
         frais du fonds : la part que le fonds reverse à l'assureur et au distributeur, déjà comptée, pas un frais de plus.</p></details>

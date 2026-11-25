@@ -133,40 +133,6 @@ def _vue(ident: str, niveau: str, parent: str | None, s: Synthese, foyer: Synthe
         "valeur_sans_historique": _nombre(s.valeur_sans_historique),
         "verse_sans_historique": _nombre(s.verse_sans_historique),
         "gain_sans_historique": _nombre(s.gain_sans_historique),
-        "tableau": [
-            {
-                "nom": ligne.nom,
-                "niveau": ligne.niveau,
-                "annees": {
-                    str(an): {
-                        "verse": _nombre(c.verse),
-                        "gain_avant_frais": _nombre(c.gain_avant_frais),
-                        "frais": _nombre(c.frais),
-                        "gain": _nombre(c.gain),
-                        "valeur": _nombre(c.valeur),
-                    }
-                    for an, c in ligne.annees.items()
-                },
-                "valeur_actuelle": _nombre(ligne.valeur_actuelle),
-                "depuis_ouverture": {
-                    "verse": _nombre(ligne.verse),
-                    "gain": _nombre(ligne.gain),
-                    "valeur": _nombre(ligne.valeur_actuelle),
-                    **{
-                        champ: None if getattr(ligne, champ) is None else _nombre(getattr(ligne, champ))
-                        for champ in (
-                            "verse_operations",
-                            "gain_avant_frais",
-                            "frais",
-                            "gain_operations",
-                            "ecart_verse",
-                            "ecart_gain",
-                        )
-                    },
-                },
-            }
-            for ligne in s.tableau
-        ],
         "progression": [
             {
                 "annee": p.annee,
@@ -213,7 +179,53 @@ def _contrat(bilan: BilanContrat, analyses: list[AnalyseFrais]) -> dict:
         "produit": bilan.produit,
         "cout_frais_annuel": _nombre(analyse.cout_total) if analyse else None,
         "retrocessions_annuelles": _nombre(analyse.retrocessions) if analyse else None,
+        "fiche": _fiche(bilan),
     }
+
+
+def _fiche(bilan: BilanContrat) -> dict:
+    """Rendre la synthèse d'un contrat telle que sa fiche CSV la donne, son contrôle et ses années. MODELE § 0, § 2.3.
+
+    origine : « document » pour un chiffre imprimé, « calcul » pour un chiffre refait (dit dans le libellé).
+    """
+    situation = not bilan.annees or bilan.annees[-1].en_cours_au is not None or bilan.date_valeur.month != 12
+    lignes = [{"libelle": "Valeur", "montant": _nombre(bilan.valeur), "origine": "document"}]
+    if bilan.apports_cumules is not None:
+        lignes.append(
+            {
+                "libelle": "Cumul des versements" if situation else "Versements (somme des relevés annuels)",
+                "montant": _nombre(bilan.apports_cumules),
+                "origine": "document" if situation else "calcul",
+            }
+        )
+    if bilan.rachats_cumules:
+        lignes.append(
+            {"libelle": "Cumul des rachats", "montant": _nombre(bilan.rachats_cumules), "origine": "document"}
+        )
+    if bilan.gain_cumule is not None:
+        lignes.append(
+            {
+                "libelle": "Performance annoncée" if bilan.gain_imprime else "Gagné (valeur moins versé)",
+                "montant": _nombre(bilan.gain_cumule),
+                "origine": "document" if bilan.gain_imprime else "calcul",
+            }
+        )
+    controle = None
+    if bilan.verse_mouvements is not None and bilan.apports_cumules is not None and bilan.gain_operations is not None:
+        controle = {
+            "verse": _nombre(bilan.verse_mouvements),
+            "ecart_verse": _nombre(bilan.apports_cumules - bilan.verse_mouvements),
+            "gain": _nombre(bilan.gain_operations),
+            "ecart_gain": _nombre((bilan.gain_cumule or ZERO) - bilan.gain_operations),
+        }
+    return {
+        "date": bilan.date_valeur.isoformat(), "document": bilan.document,
+        "fichier": f"metabank-{bilan.date_valeur.year}.csv", "lignes": lignes, "controle": controle,
+        "remarques": [a for a in bilan.anomalies if "d'après les mouvements" not in a],
+        "annees": [{"annee": a.annee, "en_cours_au": a.en_cours_au.isoformat() if a.en_cours_au else None,
+                    "valeur": _nombre(a.valeur_fin), "verse": _nombre(a.apports), "frais": _nombre(a.frais),
+                    "gain": _nombre(a.gain)} for a in bilan.annees],
+    }  # fmt: skip
 
 
 def _taux_cible(analyse: AnalyseFrais) -> Decimal | None:

@@ -11,6 +11,7 @@ from metabank.releves import lire_releve
 from metabank.releves.fiche import BOM, ENTETE, ecrire_fiche, lignes_du_releve, lire_fiche
 from metabank.releves.suravenir_situation import lire_situation_suravenir
 from metabank.web.serveur import ENVOIS_JSON
+from metabank.web.vues import etat
 from tests.conftest import EXEMPLES, pdf, ranger
 
 pytestmark = pytest.mark.usefixtures("pdf_simules")
@@ -102,3 +103,13 @@ def test_le_bouton_relire_les_pdf_rend_les_fiches_reecrites(tmp_path):
     preparer_fiches(tmp_path, lister_connecteurs())
     reponse = ENVOIS_JSON["/api/fiches/relire"](tmp_path, {})
     assert reponse == {"ecrites": [f"{DOSSIER_AV}/metabank-2025.csv"], "illisibles": []}
+
+
+def test_chaque_contrat_montre_sa_synthese_en_distinguant_le_document_du_calcul(donnees):
+    fiches = {c["produit"]: c["fiche"] for c in etat(donnees)["contrats"]}
+    cardif = next(f for nom, f in fiches.items() if "Cardif" in nom or "Essentiel" in nom)
+    # Situation Cardif : valeur et versé imprimés ; le gagné n'y figure pas, il est calculé et dit comme tel.
+    assert [(ligne["libelle"], ligne["origine"]) for ligne in cardif["lignes"]] == [
+        ("Valeur", "document"), ("Cumul des versements", "document"), ("Gagné (valeur moins versé)", "calcul"),
+    ]  # fmt: skip
+    assert cardif["annees"] == [] and cardif["fichier"].startswith("metabank-")

@@ -9,7 +9,7 @@ import { afficherRevue, preparerRevue } from "./revue.js";
 import { afficherCreditsSimulation, preparerCreditsSimulation } from "./credits.js";
 import { afficherRegles, preparerRegles } from "./regles.js";
 import { afficherSynoptique, preparerSynoptique } from "./synoptique.js";
-import { barresEmpilees, barresGroupees, courbes, echapper } from "./graphiques.js";
+import { barresEmpilees, courbes, echapper } from "./graphiques.js";
 import {
   anneeLibelle, creditsDeVue, creditsHtml, epargneHtml, euros, eurosSignes, fondsDeVue, livretsDeVue, livretsHtml, noteSansHistorique, patrimoineHtml, pct,
   reperesHtml, tableFondsHtml, tuilesHtml,
@@ -19,8 +19,6 @@ const $ = (id) => document.getElementById(id);
 
 let etat = null;
 let vueChoisie = "foyer";
-let anneesChoisies = null;
-let ligneChoisie = null;
 
 async function appeler(chemin, options = {}) {
   const reponse = await fetch(chemin, options);
@@ -93,8 +91,6 @@ function puce(texte, actif, action) {
 
 function choisirVue(id) {
   vueChoisie = id;
-  anneesChoisies = null;
-  ligneChoisie = null;
   afficherTableau();
 }
 
@@ -121,7 +117,7 @@ function afficherTableau() {
     afficherHistorique(etat.historique?.[vue.id] ?? { points: [], reportes: [] }, patrimoine);
   }
   const avecPlacements = vue.verse > 0 || vue.valeur > 0;
-  for (const id of ["titre-placements", "tuiles", "bloc-progression", "bloc-annees", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
+  for (const id of ["titre-placements", "tuiles", "bloc-progression", "fiches-contrats", "notes"]) $(id).classList.toggle("cache", !avecPlacements);
   $("titre-placements").textContent = vue.niveau === "contrat" ? "Ce contrat" : "Placements : assurance vie, PER, PERP";
   const livrets = vue.niveau === "contrat" ? [] : livretsDeVue(etat, vue);
   $("bloc-livrets").classList.toggle("cache", !livrets.length);
@@ -135,7 +131,7 @@ function afficherTableau() {
   afficherEcheances(vue);
   afficherTuiles(vue);
   afficherProgression(vue);
-  afficherAnnees(vue);
+  afficherFichesContrats(vue);
   afficherReperes(vue);
   afficherGraphiques(etat, vue);
   afficherNotes(vue);
@@ -271,83 +267,38 @@ function afficherProgression(vue) {
   $("note-progression").textContent = notes.join(" ");
 }
 
-// Tableau par contrat (MODELE § 6.5) : versé, gain hors frais et frais de chaque année choisie, puis leur cumul ;
-// lignes des contrats, cumul par personne, total. Le graphique montre la ligne cliquée (le total d'abord).
-// « +8,1 k€ » : étiquettes courtes, trois barres par année tiennent sans se chevaucher.
-const kiloEuros = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} k€` : euros(Math.abs(v))}`;
-const CHAMPS_TABLEAU = [["verse", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"], ["valeur", "Valeur"]];
-
-function afficherTableauContrats(vue, annees) {
-  const lignes = vue.tableau ?? [];
-  if (!lignes.length) return;
-  const choisie = lignes.find((l) => l.nom === ligneChoisie) ?? lignes[lignes.length - 1];
-  const cellule = (v, champ) => {
-    if (v === undefined || v === null) return `<td class="n">—</td>`;
-    const ecart = champ.startsWith("ecart");
-    const texte = ecart ? (Math.abs(v) < 1 ? "0 €" : eurosSignes(v)) : ["verse", "verse_operations", "frais", "valeur"].includes(champ) ? euros(v) : eurosSignes(v);
-    return `<td class="n${ecart && Math.abs(v) >= 1 ? " alerte" : ""}">${texte}</td>`;
-  };
-  // Depuis l'ouverture (MODELE § 6.5) : le document fait foi ; les opérations le contrôlent ; l'écart est montré.
-  const DEPUIS = [["verse", "Versé"], ["gain", "Gagné"], ["valeur", "Valeur"],
-    ["verse_operations", "Versé"], ["gain_avant_frais", "Gain hors frais"], ["frais", "Frais"], ["gain_operations", "Gagné"],
-    ["ecart_verse", "Versé"], ["ecart_gain", "Gagné"]];
-  const vide = (l) => !Object.keys(l.annees).length;
-  $("table-annees").innerHTML = `<thead><tr><th rowspan="2">Contrat</th>${annees.map((a) => `<th colspan="4" class="n">${echapper(anneeLibelle(a))}</th>`).join("")}
-      <th colspan="3" class="n">Depuis l'ouverture : document</th><th colspan="4" class="n">Opérations (contrôle)</th>
-      <th colspan="2" class="n">Écart document − opérations</th></tr>
-    <tr>${annees.map(() => CHAMPS_TABLEAU.map(([, titre]) => `<th class="n">${titre}</th>`).join("")).join("")}${DEPUIS.map(([, titre]) => `<th class="n">${titre}</th>`).join("")}</tr></thead>
-    <tbody>${lignes.map((l) => `<tr class="cliquable ligne-${l.niveau}${l === choisie ? " ligne-choisie" : ""}" data-ligne="${echapper(l.nom)}">
-      <td>${echapper(l.nom)}</td>${annees.map((a) => CHAMPS_TABLEAU.map(([champ]) => cellule(l.annees[a.annee]?.[champ], champ)).join("")).join("")}
-      ${DEPUIS.map(([champ]) => cellule(champ === "ecart" && !l.depuis_ouverture.ecart ? null : l.depuis_ouverture[champ], champ)).join("")}</tr>`).join("")}</tbody>`;
-  $("table-annees").querySelectorAll("tr[data-ligne]").forEach((tr) => tr.addEventListener("click", () => {
-    if (vide(lignes.find((l) => l.nom === tr.dataset.ligne))) return;
-    ligneChoisie = tr.dataset.ligne;
-    afficherTableauContrats(vue, annees);
-  }));
-  const chiffres = annees.map((a) => choisie.annees[a.annee] ?? null);
-  barresGroupees($("graphique-annees"), {
-    titre: `${choisie.nom} : gain hors frais, frais et gagné net, année par année`,
-    annees: annees.map((a) => anneeLibelle(a)),
-    series: [
-      { classe: "serie-1", nom: "Gain hors frais", valeurs: chiffres.map((c) => c?.gain_avant_frais ?? null) },
-      { classe: "serie-2", nom: "Frais", valeurs: chiffres.map((c) => (c ? -c.frais : null)) },
-      { classe: "serie-3", nom: "Gagné net (frais déduits)", valeurs: chiffres.map((c) => c?.gain ?? null) },
-    ],
-    formater: kiloEuros,
-    largeur: 960,
-    survol: (rang) => {
-      const c = rang === null ? null : chiffres[rang];
-      $("infobulle-annees").textContent = c
-        ? `${anneeLibelle(annees[rang])} : versé ${euros(c.verse)} · gain hors frais ${eurosSignes(c.gain_avant_frais)} − frais ${euros(c.frais)} = gagné net ${eurosSignes(c.gain)}`
-        : "Cliquez une ligne du tableau pour la voir ici.";
-    },
-  });
-  $("infobulle-annees").textContent = "Cliquez une ligne du tableau pour la voir ici.";
-  $("rapprochement").textContent = "Le document de l'assureur fait foi (versé, gagné ou performance annoncée, valeur). "
-    + "Les opérations refont ces chiffres année par année pour les contrôler ; un écart s'affiche en couleur. Exemple : "
-    + "un transfert entrant compté dans le versé du document pour les versements faits sur l'ancien contrat.";
+// Une carte par contrat (MODELE § 0, § 2.3) : la synthèse telle que la fiche CSV la donne, le contrôle seulement s'il
+// trouve un écart, les remarques du lecteur, puis les années.
+function ficheContratHtml(c) {
+  const f = c.fiche;
+  const jour = (iso) => new Date(iso).toLocaleDateString("fr-FR");
+  const lignes = f.lignes.map((l) => `<tr><td>${echapper(l.libelle)}${l.origine === "calcul" ? ' <span class="note">calculé</span>' : ""}</td>
+    <td class="n">${l.libelle === "Valeur" || l.libelle.startsWith("Cumul") || l.libelle.startsWith("Versements") ? euros(l.montant) : eurosSignes(l.montant)}</td></tr>`).join("");
+  const k = f.controle;
+  const ecartVerse = k && Math.abs(k.ecart_verse) >= 1, ecartGain = k && Math.abs(k.ecart_gain) >= 1;
+  const ecarts = [
+    ecartVerse ? `le versé vaut ${euros(k.verse)} (écart ${eurosSignes(k.ecart_verse)})` : "",
+    ecartGain ? `le gagné vaut ${eurosSignes(k.gain)} (écart ${eurosSignes(k.ecart_gain)})` : "",
+  ].filter(Boolean);
+  const controle = !k ? "" : ecarts.length
+    ? `<p class="alerte">Contrôle : refait année par année, ${ecarts.join(" et ")}. Le document fait foi.${ecartVerse
+        ? " Un écart de versé vient souvent d'un transfert entrant, compté pour les versements faits sur l'ancien contrat." : ""}</p>`
+    : `<p class="ok">Contrôle : les années refont le même versé et le même gagné.</p>`;
+  const remarques = f.remarques.length ? `<details><summary>Remarques du lecteur (${f.remarques.length})</summary><ul>${f.remarques
+    .map((r) => `<li class="note">${echapper(r)}</li>`).join("")}</ul></details>` : "";
+  const annees = f.annees.length ? `<div class="defile"><table><thead><tr><th>Année</th><th class="n">Valeur fin</th><th class="n">Versé</th>
+    <th class="n">Frais</th><th class="n">Gagné</th></tr></thead><tbody>${f.annees.map((a) => `<tr><td>${a.en_cours_au ? `${a.annee} (au ${jour(a.en_cours_au).slice(0, 5)})` : a.annee}</td>
+    <td class="n">${euros(a.valeur)}</td><td class="n">${euros(a.verse)}</td><td class="n">${euros(a.frais)}</td><td class="n">${eurosSignes(a.gain)}</td></tr>`).join("")}</tbody></table></div>`
+    : `<p class="note">Pas de relevés annuels : pas de détail par année.</p>`;
+  return `<div class="carte fiche-contrat"><h3>${echapper(c.nom)}</h3>
+    <p class="note">Au ${jour(f.date)}, d'après ${echapper(f.fichier)} (lu dans ${echapper(f.document)})</p>
+    <table class="synthese"><tbody>${lignes}</tbody></table>${controle}${remarques}${annees}</div>`;
 }
 
-function afficherAnnees(vue) {
-  const bloc = $("bloc-annees");
-  bloc.classList.toggle("cache", !vue.annees.length || $("tuiles").classList.contains("cache"));
-  if (!vue.annees.length) return;
-  anneesChoisies ??= new Set(vue.annees.map((a) => a.annee));
-  const choix = $("choix-annees");
-  choix.replaceChildren(choix.firstElementChild, ...vue.annees.map((a) => puce(String(a.annee), anneesChoisies.has(a.annee), () => {
-    if (anneesChoisies.has(a.annee) && anneesChoisies.size > 1) anneesChoisies.delete(a.annee);
-    else anneesChoisies.add(a.annee);
-    afficherAnnees(vue);
-  })));
-  const annees = vue.annees.filter((a) => anneesChoisies.has(a.annee));
-  const somme = (cle) => annees.reduce((t, a) => t + (a[cle] ?? 0), 0);
-  const capital = somme("capital");
-  const periode = annees.length === 1 ? `En ${annees[0].annee}` : `Sur ${annees.map((a) => a.annee).join(", ")}`;
-  $("selection").innerHTML = `${periode} : <strong>gagné ${eurosSignes(somme("gain"))}</strong>
-    (${pct(capital ? somme("gain") / capital : null, true)} des sommes placées),
-    <strong>frais ${euros(somme("frais"))}</strong> (${pct(capital ? somme("frais") / capital : null)}),
-    versé ${euros(somme("verse"))}.`;
-  afficherTableauContrats(vue, annees);
+function afficherFichesContrats(vue) {
+  const titulaire = vue.niveau === "personne" ? vue.nom : null;
+  const contrats = etat.contrats.filter((c) => vue.niveau === "foyer" || (titulaire ? c.titulaire === titulaire : `c:${c.cle}` === vue.id));
+  $("fiches-contrats").innerHTML = contrats.map(ficheContratHtml).join("");
 }
 
 function afficherNotes(vue) {

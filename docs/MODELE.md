@@ -162,17 +162,12 @@ Si |F_courant| > 25 % de V₀, la date inconnue des versements pèse : l'année 
 donnée, de G / (V₀ + F_ouverture + F_courant) (tout versé en janvier) à G / (V₀ + F_ouverture) (tout en décembre).
 Le gain G, lui, est exact. Les relevés de situation n'entrent que dans la valeur, le versé et le gain.
 
-### 6.5 Tableau par contrat
-Une ligne par contrat à relevés annuels ; pour chaque année : versé A, gain hors frais = G + F, frais F (frais du
-relevé + frais des fonds, comme § 6.1), gagné net G. Une ligne par personne (s'il y en a plusieurs) et une ligne
-« Total » somment les contrats, année par année ; la colonne « Cumul » somme les années affichées. Le total de chaque
-année égale l'année de l'ensemble (§ 6.1). Chaque année montre aussi la valeur au 31/12 (à la date de la situation pour l'année en cours) ; une ligne de cumul
-y somme, pour chaque contrat, sa dernière valeur connue (§ 6.4).
-Colonnes « Depuis l'ouverture », en trois blocs. Document (fait foi) : versé, gagné (§ 2.3) et valeur d'aujourd'hui.
-Opérations (contrôle) : versé, gain hors frais, frais et gagné sommés sur toutes les années, quand ils se refont
-depuis l'ouverture. Écart = document − opérations, pour le versé et pour le gagné ; un écart de plus de 1 € est
-signalé. Un contrat à situation seule n'a que le bloc document. Les lignes de total somment chaque colonne sur les
-contrats qui la renseignent ; le bloc document du total égale les tuiles (versé, gagné, valeur).
+### 6.5 Fiche de chaque contrat (onglet Placements)
+Pour chaque contrat : les chiffres de synthèse de son document le plus récent, tels que la fiche CSV les donne
+(§ 0) — valeur, cumul des versements, cumul des rachats, performance annoncée ; un chiffre que le document n'imprime
+pas est calculé et dit comme tel (gagné = valeur − versé + rachats, versé = somme des relevés annuels). Contrôle,
+quand les relevés annuels partent de l'ouverture : versé et gagné refaits année par année (§ 2.3) ; seul un écart de
+plus de 1 € est affiché. Puis les années : valeur au 31/12 (ou à la date de la situation), versé, frais, gagné (§ 1).
 
 ### 6.2 Rentabilité annualisée depuis l'ouverture
 Taux de rendement interne r tel que Σ flux / (1 + r)^t = 0, t en années depuis le premier flux :
